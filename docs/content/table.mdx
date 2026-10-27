@@ -1,0 +1,22 @@
+import {Demo} from '../Demo';
+import {TableDemo} from '../demos/TableDemo';
+import {TABLE_CODE} from '../snippets';
+
+## 高性能可编辑表格
+
+可编辑表格的每个单元格**不是** Formily `<Field>`——每个单元格只订阅
+`form.values` 的叶子节点。编辑一格只重渲染**该格**，不波及其余 N×M−1 格；
+`columns` 引用在整个编辑过程中保持稳定。
+
+### 为什么快
+
+- **读**：单元格在 `observer` 内读 `form.values[arrName][rowIndex][dataIndex]`，
+  Formily 响应式只追踪这个叶子节点——编辑 (i,j) 只通知 (i,j) 的观察者。
+- **写**：`field.onInput(v)` 触发该格订阅、跑校验、触发 effect，且不替换行对象，
+  同行其它格也不重渲染。
+- **表体**：通过 `untracked` 读数组值，只在行数变化时 bump 一个 `lenTick`，
+  编辑过程不重渲染整表。
+
+<Demo code={TABLE_CODE} title="单元格编辑">
+  <TableDemo />
+</Demo>

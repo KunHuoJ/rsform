@@ -19,7 +19,7 @@ import {prefixCls} from '../shared/prefixCls';
 import {FieldContext} from '../shared/FieldContext';
 import {useContentName} from '../field/useContentName';
 import {ArrayFieldContext} from './useArrayItems';
-import {SortableItem} from './SortableItem';
+import {ArrayRow, SortableItem} from './SortableItem';
 
 export interface ArrayItemsProps {
     /** Array field name; may be relative (`.foo`, `..foo`) against the parent context. */
@@ -40,6 +40,12 @@ export interface ArrayItemsProps {
     addText?: React.ReactNode;
     /** Hide the add button entirely. */
     addDisabled?: boolean;
+    /**
+     * Enable drag-to-sort via @dnd-kit. Defaults to `false` — most forms only
+     * need add/remove; set `dragable` for ordered lists (priorities, steps).
+     * When off, rows render as a plain list with up/down/remove buttons.
+     */
+    dragable?: boolean;
     /**
      * Row content. A render-prop `(value, index) => ReactNode` is typical —
      * return relative-name Fields (e.g. `<Field name=".label">`) which resolve
@@ -72,6 +78,7 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
     validateBeforeAdd,
     addText,
     addDisabled,
+    dragable,
     children,
 }: Omit<ArrayItemsProps, 'name'> & {name: string}): React.ReactElement {
     const field: any = useField();
@@ -117,22 +124,25 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
             typeof children === 'function'
                 ? (children as (v: any, i: number) => React.ReactNode)(value, index)
                 : children;
+        const rowProps = {
+            index,
+            total: values.length,
+            min,
+            onRemove: () => handleRemove(index),
+            onMoveUp: () => field?.moveUp(index),
+            onMoveDown: () => field?.moveDown(index),
+            children: content,
+        };
         return (
             <FieldContext.Provider
                 key={rowId(name, index)}
                 value={{preName: rowPath, name: rowPath, state: null}}
             >
-                <SortableItem
-                    id={rowId(name, index)}
-                    index={index}
-                    total={values.length}
-                    min={min}
-                    onRemove={() => handleRemove(index)}
-                    onMoveUp={() => field?.moveUp(index)}
-                    onMoveDown={() => field?.moveDown(index)}
-                >
-                    {content}
-                </SortableItem>
+                {dragable ? (
+                    <SortableItem id={rowId(name, index)} {...rowProps} />
+                ) : (
+                    <ArrayRow {...rowProps} />
+                )}
             </FieldContext.Provider>
         );
     };
@@ -140,15 +150,19 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
     return (
         <ArrayFieldContext.Provider value={field}>
             <div className={`${prefixCls}-array-items`}>
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                >
-                    <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-                        {values.map((v, i) => renderRow(v, i))}
-                    </SortableContext>
-                </DndContext>
+                {dragable ? (
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+                            {values.map((v, i) => renderRow(v, i))}
+                        </SortableContext>
+                    </DndContext>
+                ) : (
+                    values.map((v, i) => renderRow(v, i))
+                )}
                 {!addDisabled && (
                     <button
                         type="button"

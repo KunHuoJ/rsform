@@ -397,8 +397,69 @@ a:hover {
     letter-spacing: 0.06em;
     font-weight: 600;
 }
+.rsfd-demo-toggle {
+    font-size: 12px;
+    color: var(--rsf-accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.rsfd-demo-toggle:hover {
+    background: var(--rsf-accent-soft);
+}
 .rsfd-demo-body {
     padding: 22px;
+}
+.rsfd-demo-code {
+    border-top: 1px solid var(--rsf-border);
+    background: var(--rsf-code-bg);
+}
+.rsfd-demo-code .rsfd-codeblock {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+}
+
+/* —— MDX 内容表格 —— */
+.rsfd-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+    display: block;
+    overflow-x: auto;
+}
+.rsfd-content thead {
+    background: var(--rsf-bg-soft);
+}
+.rsfd-content th,
+.rsfd-content td {
+    border: 1px solid var(--rsf-border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+.rsfd-content th {
+    font-weight: 600;
+    color: var(--rsf-fg-strong);
+}
+.rsfd-content td code {
+    white-space: nowrap;
+}
+.rsfd-content blockquote {
+    border-left: 3px solid var(--rsf-accent);
+    margin: 16px 0;
+    padding: 4px 16px;
+    color: var(--rsf-muted);
+    background: var(--rsf-bg-soft);
+    border-radius: 0 6px 6px 0;
+}
+.rsfd-content hr {
+    border: none;
+    border-top: 1px solid var(--rsf-border);
+    margin: 32px 0;
 }
 
 /* —— 代码块 —— */

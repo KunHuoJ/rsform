@@ -1,0 +1,19 @@
+import {Demo} from '../Demo';
+import {BasicFormDemo} from '../demos/BasicFormDemo';
+import {BASIC_CODE} from '../snippets';
+
+## 基础表单
+
+`Form` + `Form.Field` 自动注入 value/onChange，控件丢进去即受控。
+`Form.Submit` 等校验通过再触发 `onSubmit`；`Form.FormError` 聚合表单级错误。
+
+<Demo code={BASIC_CODE} title="基础表单">
+  <BasicFormDemo />
+</Demo>
+
+### 字段属性
+
+- `name`：字段路径，支持相对路径（`.foo` 在 ArrayItems 行内）。
+- `title`：label 文本；`required` 显示红星（仅展示，校验逻辑写在 `validator`）。
+- `validator`：同步/异步校验，返回空串或 `''` 表示通过，非空串为错误信息。
+- `editable={false}`：字段只读，渲染为 `NonEditable` 文本态。

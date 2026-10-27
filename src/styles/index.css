@@ -1,0 +1,285 @@
+/**
+ * rsform base stylesheet — 所有视觉 token 用 `--rsf-*` CSS 变量定义，antd 风格默认值。
+ *
+ * 用法：
+ *   import 'rsform/styles';            // 用默认 antd 风格
+ *   :root { --rsf-color-error: #f00; } // 覆盖单个变量
+ *   // 或完全不 import，按下面这些 rsf-* 类名自己写样式
+ *
+ * 变量分三类：颜色、排版、间距/形状。深色模式按 [data-theme="dark"] 或
+ * prefers-color-scheme 覆盖。
+ */
+
+:root {
+    /* —— 颜色 —— */
+    --rsf-color-primary: #1677ff;
+    --rsf-color-primary-hover: #4096ff;
+    --rsf-color-error: #ff4d4f;
+    --rsf-color-error-bg: #fff2f0;
+    --rsf-color-error-border: #ffccc7;
+    --rsf-color-success: #52c41a;
+    --rsf-color-warning: #faad14;
+
+    /* —— 文本 —— */
+    --rsf-text-color: rgba(0, 0, 0, 0.88);
+    --rsf-text-color-secondary: rgba(0, 0, 0, 0.65);
+    --rsf-text-color-tertiary: rgba(0, 0, 0, 0.45);
+
+    /* —— 控件/卡片 —— */
+    --rsf-border-color: #d9d9d9;
+    --rsf-border-color-split: #f0f0f0;
+    --rsf-bg-color: #ffffff;
+    --rsf-bg-color-fill: #f5f5f5;
+    --rsf-bg-color-hover: #f5f5f5;
+
+    /* —— 间距/形状 —— */
+    --rsf-radius: 6px;
+    --rsf-radius-sm: 4px;
+    --rsf-field-gap: 8px;        /* label → 控件 */
+    --rsf-field-margin: 24px;    /* 字段间 */
+    --rsf-control-height: 32px;
+
+    /* —— 排版 —— */
+    --rsf-font-size: 14px;
+    --rsf-font-size-sm: 12px;
+    --rsf-line-height: 1.5715;
+    --rsf-font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+        'Hiragino Sans GB', 'Microsoft YaHei', Roboto, Helvetica, Arial,
+        sans-serif;
+
+    /* —— 拖拽 —— */
+    --rsf-handle-color: #bfbfbf;
+    --rsf-handle-color-hover: #8c8c8c;
+}
+
+/* 深色变量覆盖：手动切换（data-theme=dark）与系统偏好（且未显式设 light）各一份。 */
+:root[data-theme='dark'] {
+    --rsf-color-primary: #1668dc;
+    --rsf-color-primary-hover: #15417e;
+    --rsf-color-error: #dc4446;
+    --rsf-color-error-bg: #2a1215;
+    --rsf-color-error-border: #591f1f;
+
+    --rsf-text-color: rgba(255, 255, 255, 0.85);
+    --rsf-text-color-secondary: rgba(255, 255, 255, 0.65);
+    --rsf-text-color-tertiary: rgba(255, 255, 255, 0.45);
+
+    --rsf-border-color: #434343;
+    --rsf-border-color-split: #303030;
+    --rsf-bg-color: #141414;
+    --rsf-bg-color-fill: #1f1f1f;
+    --rsf-bg-color-hover: #1f1f1f;
+
+    --rsf-handle-color: #5a5a5a;
+    --rsf-handle-color-hover: #8c8c8c;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --rsf-color-primary: #1668dc;
+        --rsf-color-primary-hover: #15417e;
+        --rsf-color-error: #dc4446;
+        --rsf-color-error-bg: #2a1215;
+        --rsf-color-error-border: #591f1f;
+
+        --rsf-text-color: rgba(255, 255, 255, 0.85);
+        --rsf-text-color-secondary: rgba(255, 255, 255, 0.65);
+        --rsf-text-color-tertiary: rgba(255, 255, 255, 0.45);
+
+        --rsf-border-color: #434343;
+        --rsf-border-color-split: #303030;
+        --rsf-bg-color: #141414;
+        --rsf-bg-color-fill: #1f1f1f;
+        --rsf-bg-color-hover: #1f1f1f;
+
+        --rsf-handle-color: #5a5a5a;
+        --rsf-handle-color-hover: #8c8c8c;
+    }
+}
+
+/* —— Field 布局 —— */
+.rsf-field {
+    margin-bottom: var(--rsf-field-margin);
+    font-family: var(--rsf-font-family);
+    font-size: var(--rsf-font-size);
+    line-height: var(--rsf-line-height);
+}
+
+.rsf-field:last-child {
+    margin-bottom: 0;
+}
+
+.rsf-field-label {
+    display: inline-block;
+    color: var(--rsf-text-color);
+    font-size: var(--rsf-font-size);
+    line-height: var(--rsf-line-height);
+    margin-bottom: var(--rsf-field-gap);
+}
+
+.rsf-field-required {
+    color: var(--rsf-color-error);
+    margin-right: 4px;
+    font-family: SimSun, sans-serif;
+}
+
+.rsf-field-required::before {
+    content: '*';
+}
+
+/* 用 `<span className="rsf-field-required"></span>` 渲染星号；这里也兼容
+   直接放文字的场景，避免重复星号。 */
+.rsf-field-required:not(:empty)::before {
+    content: '';
+}
+
+/* `.rsf-field-control` is the control slot — antd 控件自带样式，此处无补充规则。 */
+
+.rsf-field-error-message {
+    color: var(--rsf-color-error);
+    font-size: var(--rsf-font-size-sm);
+    line-height: var(--rsf-line-height);
+    margin-top: 8px;
+    min-height: 0;
+    transition: color 0.2s;
+}
+
+/* —— ArrayItems —— */
+.rsf-array-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: var(--rsf-font-family);
+}
+
+.rsf-array-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--rsf-bg-color);
+    border: 1px solid var(--rsf-border-color-split);
+    border-radius: var(--rsf-radius);
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.rsf-array-item:hover {
+    border-color: var(--rsf-color-primary-hover);
+}
+
+.rsf-array-item-dragging {
+    opacity: 0.6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    z-index: 1;
+}
+
+.rsf-array-item-handle {
+    display: inline-flex;
+    align-items: center;
+    cursor: grab;
+    color: var(--rsf-handle-color);
+    user-select: none;
+    padding: 2px 2px;
+    line-height: 0;
+    transition: color 0.15s ease;
+}
+
+.rsf-array-item-handle:hover {
+    color: var(--rsf-handle-color-hover);
+}
+
+.rsf-array-item-handle:active {
+    cursor: grabbing;
+}
+
+.rsf-array-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 控件在行内时收紧间距 */
+.rsf-array-item-content .rsf-field {
+    margin-bottom: 0;
+}
+
+.rsf-array-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.rsf-array-item-up,
+.rsf-array-item-down,
+.rsf-array-item-remove {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--rsf-border-color);
+    border-radius: var(--rsf-radius-sm);
+    background: var(--rsf-bg-color);
+    color: var(--rsf-text-color-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease,
+        background 0.15s ease;
+}
+
+.rsf-array-item-up:hover,
+.rsf-array-item-down:hover {
+    color: var(--rsf-color-primary);
+    border-color: var(--rsf-color-primary-hover);
+}
+
+.rsf-array-item-remove {
+    color: var(--rsf-text-color-tertiary);
+}
+
+.rsf-array-item-remove:hover {
+    color: var(--rsf-color-error);
+    border-color: var(--rsf-color-error);
+}
+
+.rsf-array-item-up:disabled,
+.rsf-array-item-down:disabled,
+.rsf-array-item-remove:disabled {
+    color: var(--rsf-text-color-tertiary);
+    background: var(--rsf-bg-color-fill);
+    cursor: not-allowed;
+}
+
+.rsf-array-items-add {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 15px;
+    border: 1px dashed var(--rsf-border-color);
+    border-radius: var(--rsf-radius);
+    background: var(--rsf-bg-color);
+    color: var(--rsf-text-color);
+    cursor: pointer;
+    font-size: var(--rsf-font-size);
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.rsf-array-items-add:hover {
+    color: var(--rsf-color-primary);
+    border-color: var(--rsf-color-primary-hover);
+}
+
+.rsf-array-items-add:disabled {
+    color: var(--rsf-text-color-tertiary);
+    background: var(--rsf-bg-color-fill);
+    cursor: not-allowed;
+}

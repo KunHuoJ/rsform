@@ -1,0 +1,67 @@
+## 主题变量
+
+rsform 的 base 样式表（`rsform/styles`）所有视觉 token 都是 `--rsf-*` CSS 变量。
+引入默认样式后，覆盖变量即可定制主题：
+
+```jsx
+import 'rsform/styles';
+```
+
+```css
+:root {
+  --rsf-color-primary: #722ed1;
+  --rsf-color-error: #f5222d;
+}
+```
+
+也可以完全不引入默认样式，按 `rsf-field` / `rsf-array-item` 等类名自己写。
+
+### 颜色
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `--rsf-color-primary` | `#1677ff` | 主色 |
+| `--rsf-color-primary-hover` | `#4096ff` | 主色 hover |
+| `--rsf-color-error` | `#ff4d4f` | 错误色（校验提示文字） |
+| `--rsf-color-error-bg` | `#fff2f0` | 错误背景 |
+| `--rsf-color-error-border` | `#ffccc7` | 错误边框 |
+| `--rsf-color-success` | `#52c41a` | 成功色 |
+| `--rsf-color-warning` | `#faad14` | 警告色 |
+
+### 文本
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `--rsf-text-color` | `rgba(0,0,0,0.88)` | 主文本（label） |
+| `--rsf-text-color-secondary` | `rgba(0,0,0,0.65)` | 次要文本 |
+| `--rsf-text-color-tertiary` | `rgba(0,0,0,0.45)` | 占位/禁用 |
+
+### 间距与形状
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `--rsf-field-gap` | `8px` | label → 控件 |
+| `--rsf-field-margin` | `24px` | 字段间距 |
+| `--rsf-radius` | `6px` | 圆角 |
+| `--rsf-radius-sm` | `4px` | 小圆角 |
+
+### 边框与背景
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `--rsf-border-color` | `#d9d9d9` | 控件边框 |
+| `--rsf-border-color-split` | `#f0f0f0` | 分割线 |
+| `--rsf-bg-color` | `#ffffff` | 背景 |
+| `--rsf-bg-color-hover` | `#f5f5f5` | hover 背景 |
+
+### 拖拽
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `--rsf-handle-color` | `#bfbfbf` | 拖拽手柄色 |
+| `--rsf-handle-color-hover` | `#8c8c8c` | 手柄 hover |
+
+### 深色模式
+
+默认样式表内置深色覆盖，按 `[data-theme="dark"]` 或 `prefers-color-scheme: dark`
+自动生效。手动切换在 `<html>` 上设 `data-theme="dark"` 即可。

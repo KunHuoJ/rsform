@@ -41,10 +41,12 @@
       "import": "./dist/effects/index.js",
       "require": "./dist/effects/index.cjs"
     },
+    "./styles": "./src/styles/index.css",
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
+    "src/styles",
     "README.md",
     "LICENSE"
   ],
@@ -81,6 +83,7 @@
     "@changesets/cli": "^3.0.3",
     "@formily/core": "^2.3.7",
     "@formily/react": "^2.3.7",
+    "@mdx-js/rollup": "^3.1.1",
     "@rslib/core": "^1.0.4",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.0.0",

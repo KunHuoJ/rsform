@@ -1,0 +1,31 @@
+import {Demo} from '../Demo';
+import {ArrayItemsDemo} from '../demos/ArrayItemsDemo';
+import {ARRAY_ITEMS_CODE, ARRAY_ITEMS_DRAG_CODE} from '../snippets';
+import {CodeBlock} from '../CodeBlock';
+
+## ArrayItems 可增删列表
+
+基于 Formily `ArrayField` mutators，支持增删与上下移动。`Form.Field` 的相对路径
+`name=".label"` 自动绑定到当前行。
+
+### 拖拽排序（可选）
+
+默认**不启用**拖拽——多数表单只需增删。需要排序的场景（优先级、步骤序）加
+`dragable` 属性，启用后行首出现拖拽手柄，支持自由拖动排序。
+
+<CodeBlock code={ARRAY_ITEMS_DRAG_CODE} />
+
+### 属性
+
+| 属性 | 默认 | 说明 |
+|---|---|---|
+| `name` | — | 数组字段名 |
+| `itemDefaultValue` | `{}` | 新增行的默认值 |
+| `min` / `max` | — | 行数上下限，到限禁用对应按钮 |
+| `validateBeforeAdd` | — | 新增前门禁，返回 `false` 静默阻止，`string` 报错 |
+| `dragable` | `false` | 启用拖拽排序 |
+| `addDisabled` | `false` | 隐藏新增按钮 |
+
+<Demo code={ARRAY_ITEMS_CODE} title="增删列表（默认无拖拽）">
+  <ArrayItemsDemo />
+</Demo>
