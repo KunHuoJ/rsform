@@ -563,20 +563,7 @@ a:hover {
     word-break: break-all;
 }
 
-/* —— 表格 demo 添加行 / 合计 —— */
-.rsfd-table-add {
-    margin-top: 12px;
-    padding: 4px 14px;
-    border: 1px dashed var(--rsf-color-primary);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--rsf-color-primary);
-    cursor: pointer;
-    font-size: 13px;
-}
-.rsfd-table-add:hover {
-    background: color-mix(in srgb, var(--rsf-color-primary) 8%, transparent);
-}
+/* —— 表格 demo 合计 —— */
 .rsfd-table-summary {
     margin-top: 12px;
     display: flex;

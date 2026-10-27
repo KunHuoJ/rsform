@@ -126,16 +126,22 @@ const INITIAL_ROWS: Row[] = [
 </Form>`;
 
 export const TABLE_SUMMARY_CODE = `import { useForm } from '@formily/react';
+import { Button } from 'antd';
 import { Form } from 'rsform/table';
 
-// 添加行：往数组追加一行默认值，长度变化触发表体重渲染
+// 添加行：antd link 按钮（与删除按钮统一 link 样式，不依赖 rsform/styles）
 function AddRowButton({ arrayName, defaultRow }) {
   const form = useForm();
   return (
-    <button onClick={() => {
-      const arr = form.values[arrayName] ?? [];
-      form.setValuesIn(arrayName, [...arr, { ...defaultRow }]);
-    }}>+ 添加一行</button>
+    <Button
+      type="link"
+      onClick={() => {
+        const arr = form.values[arrayName] ?? [];
+        form.setValuesIn(arrayName, [...arr, { ...defaultRow }]);
+      }}
+    >
+      + 添加一行
+    </Button>
   );
 }
 
@@ -151,4 +157,24 @@ function Summary() {
     </Form.Consumer>
   );
 }`;
+
+export const TABLE_CUSTOM_REMOVE_CODE = `import { Button } from 'antd';
+import { Form } from 'rsform/table';
+
+<Form.Table<Row>
+  name="rows"
+  removeButton
+  removeButtonProps={{
+    title: '操作',
+    width: 100,
+    // 自定义删除按钮：render(index, record, onRemove)
+    // 用 antd Button type="link" 自定义，也可换任意元素
+    render: (index, record, onRemove) => (
+      <Button type="link" danger size="small" onClick={onRemove}>
+        删除
+      </Button>
+    ),
+  }}
+  columns={[/* ... */]}
+/>`;
 

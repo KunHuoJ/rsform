@@ -61,9 +61,57 @@ registerControl('cascader', MyCascader);
 | `pagination` | `false \| object` | `false` | antd 分页；默认不分页 |
 | `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key；默认用注入的 `__rsfIdx`（跨页稳定） |
 | `removeButton` | `boolean` | `false` | 末尾加一列删除按钮 |
-| `removeButtonProps` | `{title?, width?, fixed?, text?}` | — | 删除列配置 |
+| `removeButtonProps` | 见下 | — | 删除列配置 |
 | `disableRemove` | `boolean` | `false` | 禁用删除按钮（如到最小行数） |
 | `itemDefaultValue` | `any` | `{}` | 删除列附带的新增行的默认值（若内部有新增） |
+
+#### `removeButtonProps`
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `title` | `ReactNode` | `'操作'` | 列标题 |
+| `width` / `fixed` | — | `80` / `'right'` | antd 列宽/固定 |
+| `text` | `ReactNode` | `'删除'` | 默认删除按钮文字 |
+| `className` | `string` | — | 默认删除按钮额外类名（透传给 antd `Button`，用于覆盖样式） |
+| `render` | `(index, record, onRemove) => ReactNode` | — | **完全自定义删除控件**。`onRemove()` 删除该行；返回你的按钮/元素，可自由加样式 |
+
+### 操作按钮样式
+
+删除按钮默认是 antd `Button type="link" danger`——**用户装库即用即有 link 样式**，无需引入任何额外 CSS（table 本身依赖 antd）。自定义方式由「改样式」到「换控件」三档：
+
+1. **透传 className**：`removeButtonProps={{ className: 'my-remove' }}`，在你的 CSS 里覆盖 antd link 按钮样式。
+2. **完全自定义控件**：`removeButtonProps.render` 返回任意节点，删除按钮整棵换成你的组件——可用 antd `Button` 自己配样式，或换任何元素：
+3. **用导出的 `Form.Button`**：从 `rsform/antd` 导出 antd `Button`（`import { Form } from 'rsform/antd'`，用 `Form.Button`），表格外自己写的「添加一行」等按钮复用同一个 antd `Button type="link"`，与删除按钮保持一致。
+
+```jsx
+import { Button } from 'antd';
+import { Form } from 'rsform/table';
+
+<Form.Table
+  name="rows"
+  removeButton
+  removeButtonProps={{
+    title: '操作',
+    width: 100,
+    // 完全自定义删除控件——这里用 antd Button type="link"
+    render: (index, record, onRemove) => (
+      <Button type="link" danger size="small" onClick={onRemove}>
+        删除
+      </Button>
+    ),
+  }}
+  columns={[/* ... */]}
+/>
+```
+
+表格外自己写的「添加一行」按钮，用同一个 antd `Button type="link"` 与删除按钮统一：
+
+```jsx
+import { Button } from 'antd';
+// 或从 rsform/antd 导出：import { Form } from 'rsform/antd'; <Form.Button />
+
+<Button type="link" onClick={addRow}>+ 添加一行</Button>
+```
 
 ### 校验
 
@@ -77,7 +125,7 @@ registerControl('cascader', MyCascader);
   <TableDemo />
 </Demo>
 
-- **添加行**：`useForm` 拿 form，`form.setValuesIn(name, [...arr, defaultRow])` 替换整个数组——长度变化触发 `lenTick` 重渲染表体（单元格各订阅自己的叶子，已编辑的值不丢）。
+- **添加行**：`useForm` 拿 form，`form.setValuesIn(name, [...arr, defaultRow])` 替换整个数组——长度变化触发 `lenTick` 重渲染表体（单元格各订阅自己的叶子，已编辑的值不丢）。按钮用 antd `Button type="link"` 与删除按钮统一。
 - **合计**：`Form.Consumer` 订阅整个 `rows`，实时 `reduce` 出行数与合计金额。任一单元格编辑 → `rows` 变化 → 合计重算。这就是 [Consumer 订阅](#consumer) 在表格场景的应用。
 
 ### 性能自测

@@ -7,6 +7,7 @@
  * the high-perf Table.
  */
 import * as React from 'react';
+import {Button as AntdButton} from 'antd';
 import {Form as BaseForm} from '../form/FormNamespace';
 import {Submit} from '../form/Submit';
 import {Input, TextArea} from './Input';
@@ -37,6 +38,9 @@ export type ControlsForm = typeof BaseForm & {
     RadioGroup: typeof RadioGroup;
     Switch: typeof Switch;
     Submit: typeof Submit;
+    /** antd `Button` re-export, so consumers can build custom action buttons
+     * (e.g. a custom Table remove/add button) from the same antd the lib uses. */
+    Button: typeof AntdButton;
 };
 
 export const Form: ControlsForm = Object.assign(BaseForm, {
@@ -47,6 +51,7 @@ export const Form: ControlsForm = Object.assign(BaseForm, {
     RadioGroup,
     Switch,
     Submit,
+    Button: AntdButton,
 }) as ControlsForm;
 
 export {Input, TextArea};
@@ -57,6 +62,8 @@ export type {RadioGroupProps} from './RadioGroup';
 export {Switch} from './Switch';
 export {Submit} from '../form/Submit';
 export type {SubmitProps} from '../form/Submit';
+/** antd `Button` re-export (also `Form.Button`). Use for custom action buttons. */
+export {Button as AntdButton} from 'antd';
 export {
     getControl,
     registerControl,

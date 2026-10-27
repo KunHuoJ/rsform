@@ -1,7 +1,7 @@
 import * as React from 'react';
+import {Button as AntdButton} from 'antd';
 import {useForm, useField} from '@formily/react';
 import {autorun, untracked} from '@formily/reactive';
-import {prefixCls} from '../shared/prefixCls';
 import {useLatestRef} from '../shared/useLatestRef';
 import {CellBridge, resolveAbsoluteIndex} from './CellBridge';
 import type {BuiltColumns, RsfTableProps} from './types';
@@ -129,17 +129,28 @@ export function useTable<RecordType extends Record<string, any>>(
                         pageSizeRef.current,
                         idField,
                     );
+                    const onRemove = () => {
+                        field?.remove?.(abs);
+                    };
+                    // Custom render wins — hand the caller the absolute index,
+                    // the record, and an onRemove callback.
+                    if (typeof removeButtonProps?.render === 'function') {
+                        return removeButtonProps.render(abs, _record, onRemove);
+                    }
+                    // Default: antd link-style Button — link look out of the
+                    // box (no need to import rsform/styles), `danger` tints the
+                    // remove button red. `className` lets consumers override.
                     return (
-                        <button
-                            type="button"
-                            className={`${prefixCls}-table-remove`}
+                        <AntdButton
+                            type="link"
+                            danger
+                            size="small"
                             disabled={!!disableRemove}
-                            onClick={() => {
-                                field?.remove?.(abs);
-                            }}
+                            onClick={onRemove}
+                            className={removeButtonProps?.className}
                         >
                             {removeText}
-                        </button>
+                        </AntdButton>
                     );
                 },
             } as any);

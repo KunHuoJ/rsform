@@ -37,3 +37,32 @@ import {CONSUMER_CODE} from '../snippets';
 | 表单外部按钮读取/提交当前值 | `formRef.current.values` 或 `formRef.current.submit()` |
 
 一句话：**只读展示用 Consumer，写值联动用 effects**。
+
+### 不用 Consumer 怎么实现同样的效果
+
+`Form.Consumer` 底层就是 `observer` + 读 `form.values`/`form.getValuesIn`。不用它，等价写法是手动 `useForm` + `observer` 包一层——同样能响应式，只是样板多了：
+
+```jsx
+import { useForm } from '@formily/react';
+import { observer } from '@formily/reactive-react';
+
+// 等价于 <Form.Consumer>{values => …}</Form.Consumer>
+const WholeValues = observer(function WholeValues({ children }) {
+  const form = useForm();
+  return <>{children(form.values)}</>;
+});
+
+// 等价于 <Form.Consumer name="name">{name => …}</Form.Consumer>
+const FieldValue = observer(function FieldValue({ name, children }) {
+  const form = useForm();
+  // getValuesIn 在 observer 内读，Formily 只追踪这个叶子
+  return <>{children(form.getValuesIn(name))}</>;
+});
+
+// 用法与 Form.Consumer 完全等价
+<WholeValues>{values => <pre>{JSON.stringify(values)}</pre>}</WholeValues>
+<FieldValue name="name">{name => <span>{name}</span>}</FieldValue>
+```
+
+关键点：**必须包在 `observer` 里读**，否则拿到的是快照、字段变化不重渲染。`Form.Consumer` 只是把这层样板封成了一个声明式组件——少写 `useForm` + `observer` + 函数定义，丢进 JSX 即用。所以你能自己写出来，`Form.Consumer` 只是省事，不是魔法。
+

@@ -49,8 +49,27 @@ export interface RsfTableProps<RecordType = any> {
     pagination?: false | Record<string, any>;
     /** Show a remove column with a per-row delete button. */
     removeButton?: boolean;
-    /** Props for the remove button (title, text, …). */
-    removeButtonProps?: Record<string, any>;
+    /**
+     * Props for the remove column/button (title, width, text, …).
+     *  - `render?: (index, record, onRemove) => ReactNode` — fully custom
+     *    remove control (your own button/element); `onRemove` removes the row.
+     *    Omit to render the default link-style remove button.
+     *  - `text?: ReactNode` — label of the default remove button (default '删除').
+     *  - `className?: string` — extra class on the default remove button.
+     *  - `title?` / `width?` / `fixed?` — antd column config.
+     */
+    removeButtonProps?: {
+        title?: React.ReactNode;
+        width?: number | string;
+        fixed?: 'left' | 'right' | boolean;
+        text?: React.ReactNode;
+        className?: string;
+        render?: (
+            index: number,
+            record: RecordType,
+            onRemove: () => void,
+        ) => React.ReactNode;
+    };
     /** Disable the remove button (e.g. at min rows). */
     disableRemove?: boolean;
     /** Default value pushed when adding a row via the remove column's add. */

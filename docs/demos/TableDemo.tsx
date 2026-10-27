@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {useForm} from '@formily/react';
+import {Button} from 'antd';
 import {Form} from 'rsform/table';
 
 interface Row {
@@ -28,20 +29,20 @@ const INITIAL_ROWS: Row[] = [
  * 添加行按钮：用 useForm 拿到 form，往数组追加一行默认值。
  * setValuesIn 替换整个数组 → 长度变化 → 表体的 lenTick 重渲染（只重渲表体，
  * 不波及已编辑的单元格值，单元格各自订阅自己的叶子）。
+ * 用 antd `Button type="link"` 与删除按钮统一 link 样式（不依赖 rsform/styles）。
  */
 function AddRowButton({arrayName, defaultRow}: {arrayName: string; defaultRow: Row}) {
     const form: any = useForm();
     return (
-        <button
-            type="button"
-            className="rsfd-table-add"
+        <Button
+            type="link"
             onClick={() => {
                 const arr = form?.values?.[arrayName] ?? [];
                 form.setValuesIn(arrayName, [...arr, {...defaultRow}]);
             }}
         >
             + 添加一行
-        </button>
+        </Button>
     );
 }
 
