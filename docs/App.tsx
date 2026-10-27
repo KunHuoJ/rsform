@@ -94,7 +94,7 @@ export function App(): React.ReactElement {
                     <span className="rsfd-logo">r</span>
                     rsform
                     <span className="rsfd-topbar-tagline">
-                        Formily v2 · antd 5 · 高性能表格
+                        Formily v2 · antd 5 · 高性能表单
                     </span>
                 </a>
                 <div className="rsfd-topbar-actions">
@@ -109,7 +109,7 @@ export function App(): React.ReactElement {
                     </button>
                     <a
                         className="rsfd-gh-link"
-                        href="https://github.com/rsform/rsform"
+                        href="https://github.com/KunHuoJ/rsform.git"
                         target="_blank"
                         rel="noreferrer"
                         aria-label="GitHub"

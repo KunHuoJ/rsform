@@ -2,7 +2,7 @@ import {Demo} from '../Demo';
 import {TableDemo} from '../demos/TableDemo';
 import {TABLE_CODE} from '../snippets';
 
-## 高性能可编辑表格
+## 可编辑表格
 
 可编辑表格的每个单元格**不是** Formily `<Field>`——每个单元格只订阅
 `form.values` 的叶子节点。编辑一格只重渲染**该格**，不波及其余 N×M−1 格；

@@ -1,0 +1,59 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  # Allow manual runs for debugging the deploy.
+  workflow_dispatch:
+
+# One deploy at a time per ref; new pushes cancel in-progress ones.
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+# GITHUB_TOKEN write permission for Pages deployments.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build docs
+        run: pnpm docs:build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
