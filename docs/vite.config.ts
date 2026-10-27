@@ -1,6 +1,7 @@
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 import mdx from '@mdx-js/rollup';
+import remarkGfm from 'remark-gfm';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -18,7 +19,9 @@ export default defineConfig({
     // @vitejs/plugin-react 默认只处理 .jsx/.tsx——不要把 .mdx 加进 include，
     // 否则 dev 模式 babel 会把 MDX 产物再当 JSX 解析（## 标题 → Unexpected token）。
     // .mdx 交给 @mdx-js/rollup，它产出合法 JSX 后再由 react 插件处理。
-    plugins: [mdx(), react()],
+    // remarkGfm 启用 GFM 扩展（表格/删除线/任务列表/自动链接），否则 | 表格管道符
+    // 会被当纯文字渲染到页面上。
+    plugins: [mdx({remarkPlugins: [remarkGfm]}), react()],
     root: resolve(here),
     resolve: {
         alias: [
