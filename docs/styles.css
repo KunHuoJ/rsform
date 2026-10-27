@@ -1,0 +1,159 @@
+:root {
+    --rsf-bg: #fff;
+    --rsf-fg: #1f2328;
+    --rsf-muted: #57606a;
+    --rsf-border: #d0d7de;
+    --rsf-accent: #0969da;
+    --rsf-sidebar: #f6f8fa;
+    --rsf-code-bg: #f6f8fa;
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --rsf-bg: #0d1117;
+        --rsf-fg: #e6edf3;
+        --rsf-muted: #8b949e;
+        --rsf-border: #30363d;
+        --rsf-accent: #58a6ff;
+        --rsf-sidebar: #161b22;
+        --rsf-code-bg: #161b22;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--rsf-bg);
+    color: var(--rsf-fg);
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+        sans-serif;
+    line-height: 1.6;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+.rsfd-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.rsfd-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--rsf-sidebar);
+    border-right: 1px solid var(--rsf-border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.rsfd-brand {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.rsfd-brand a {
+    color: var(--rsf-fg);
+    text-decoration: none;
+}
+
+.rsfd-tagline {
+    font-size: 12px;
+    color: var(--rsf-muted);
+    margin-bottom: 24px;
+}
+
+.rsfd-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rsfd-nav li {
+    margin: 2px 0;
+}
+
+.rsfd-nav a {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--rsf-fg);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.rsfd-nav a:hover {
+    background: var(--rsf-border);
+}
+
+.rsfd-nav a.is-active {
+    background: var(--rsf-border);
+    font-weight: 600;
+}
+
+.rsfd-content {
+    flex: 1;
+    padding: 40px 48px;
+    max-width: 960px;
+}
+
+.rsfd-content h1 {
+    font-size: 32px;
+    margin-top: 0;
+}
+
+.rsfd-content h2 {
+    margin-top: 40px;
+    border-bottom: 1px solid var(--rsf-border);
+    padding-bottom: 8px;
+}
+
+.rsfd-content code {
+    background: var(--rsf-code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.rsfd-demo {
+    border: 1px solid var(--rsf-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    background: var(--rsf-bg);
+}
+
+.rsfd-demo-label {
+    font-size: 12px;
+    color: var(--rsf-muted);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rsfd-output {
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--rsf-code-bg);
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.rsfd-table-cell input {
+    width: 100%;
+}

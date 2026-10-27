@@ -14,7 +14,7 @@ High-performance React form library built on Formily v2 + antd 5.
 
 - Engine: `@formily/core` + `@formily/react` v2 (open-source, MIT).
 - UI: antd 5 + React 19.
-- Build: `@rslib/core` (bundleless). Docs: Rspress v2. Tests: Vitest.
+- Build: `@rslib/core` (bundleless). Docs: Vite + React. Tests: Vitest.
 - Single package `rsform` with subpath exports: `rsform`, `rsform/antd`, `rsform/table`, `rsform/array-items`, `rsform/effects`.
 
 ## Scripts
@@ -24,7 +24,7 @@ pnpm install
 pnpm build          # bundleless build to dist/
 pnpm test           # vitest
 pnpm typecheck      # tsc --noEmit
-pnpm docs:dev       # rspress docs site
+pnpm docs:dev       # Vite docs site with live demos
 ```
 
 ## License
