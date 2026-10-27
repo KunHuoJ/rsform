@@ -1,0 +1,237 @@
+import {Demo} from '../Demo';
+import {EffectsDemo} from '../demos/EffectsDemo';
+import {CascadeDemo} from '../demos/CascadeDemo';
+import {EFFECTS_CODE, CASCADE_CODE} from '../snippets';
+
+## Effects 详解
+
+`effects` 是 rsform 处理字段联动的核心机制。你把联动逻辑声明在 `effects` 回调里，
+rsform 在表单创建时把它注入一个 `$` helper 包并执行一次——**注册**各类响应式监听。
+之后字段值变化时，对应的监听自动触发，无需手动订阅、无需在组件里写 `useEffect`。
+
+### 工作原理
+
+```jsx
+<Form
+  effects={$ => {
+    // 这里只执行一次（表单创建时），用来「注册」联动监听
+    $.validateField('confirm', ['password', 'confirm'], cb);
+    $.linkedFieldProps('city', ['province'], compute);
+  }}
+>
+```
+
+`$` 包含两类东西：
+
+1. **rsform 糖 helper**：`linkedFieldProps` / `validateField` / `onEachRowChange` /
+   `onEachRowMultiChange`，闭包绑定好了 form，调用即注册，自动随字段卸载而拆卸。
+2. **原始 Formily form**：`$.form`，以及可以直接裸调 Formily 生命周期 hook
+   （如 `onFieldValueChange`），它们自动注册到当前活动 form。
+
+> 关键心智模型：effects 回调是**注册时机**，不是**执行时机**。回调里写的每条
+> 语句都是「当 X 发生时，做 Y」的声明；具体什么时候真跑，取决于 X 什么时候发生。
+
+---
+
+## `$.validateField` — 跨字段响应式校验
+
+最常见的联动校验：A 字段的校验规则依赖 B 字段的值。
+
+### 签名
+
+```ts
+$.validateField(
+  name: string,              // 要校验的字段
+  triggers: string[],        // 依赖的字段名数组
+  cb: (values, targetField) =>   // values 是依赖字段的当前值
+    | string                 //   返回非空串 = 错误信息
+    | string[]               //   返回数组 = 多条错误
+    | null                   //   返回 null/'' = 通过
+): { clearEffect(): void }   // 返回句柄，可手动拆卸
+```
+
+### 触发时机
+
+`triggers` 里**任意一个**字段值变化，`cb` 就重跑；`name` 字段也会在自身变化时
+重跑。`cb` 拿到的 `values` 是 `{ [triggerName]: 当前值 }` 的快照。
+
+### 示例：密码确认一致
+
+<Demo code={EFFECTS_CODE} title="两次密码必须一致">
+  <EffectsDemo />
+</Demo>
+
+输入密码和确认密码，不一致时确认密码字段下方出现红色错误；改一致后错误自动消失。
+这就是 `validateField` 的工作方式——声明依赖，依赖变就重跑校验，无需手动管理。
+
+---
+
+## `$.linkedFieldProps` — 异步派生字段 props
+
+当一个字段的 props（最典型是 Select 的 `options`）依赖其他字段值时用。
+
+### 签名
+
+```ts
+$.linkedFieldProps(
+  target: string,            // 要派生 props 的字段
+  deps: string[],            // 依赖的字段名
+  compute: (values, targetField) =>
+    | Record<string, any>            // 同步返回 props 增量
+    | Promise<Record<string, any>>   // 异步返回（如发请求拉 options）
+): void
+```
+
+`compute` 返回的对象会**合并**进字段的 props，并随依赖变化重新计算。**防 stale 机制**：
+内部用单调计数器，如果在你异步 compute 完成前依赖又变了，旧结果会被丢弃，只采用最新一次。
+
+### 示例：省市级联
+
+<Demo code={CASCADE_CODE} title="级联 Select（异步 options）">
+  <CascadeDemo />
+</Demo>
+
+切换省份 → 城市的 options 重新派生。整个过程没有 `useEffect` / `useState`，联动逻辑
+全部声明在 `effects` 里。
+
+### 与 `validateField` 的区别
+
+| | `validateField` | `linkedFieldProps` |
+|---|---|---|
+| 目的 | 校验 | 派生 props |
+| 回调返回 | 错误信息或空 | props 增量对象 |
+| 是否异步 | 否 | 是（可发请求） |
+| 防 stale | — | 有（单调计数器） |
+
+---
+
+## `$.onFieldValueChange` — 字段值变化监听
+
+Formily v2 原生 hook，rsform 直接透传。比糖 helper 更底层，适合自定义联动逻辑
+（设置其他字段值、改字段可见性等）。
+
+```jsx
+effects={$ => {
+  $.onFieldValueChange('country', field => {
+    // 选了中国，手机号加 +86 前缀
+    if (field.value === 'cn') {
+      $.form.setFieldState('phone', s => { s.value = '+86'; });
+    }
+  });
+}}
+```
+
+---
+
+## `$.onEachRowChange` — 数组按行单 key 联动
+
+当数组字段（Table / ArrayItems）里**每一行的某个 key 变化时**，基于该行其他 key
+做联动。`pre` 是数组字段名，`key` 是监听的 key。
+
+### 签名
+
+```ts
+$.onEachRowChange(
+  pre: string,               // 数组字段名，如 'rows'
+  key: string,               // 监听的 key，如 'qty'
+  cb: (ctx: {
+    index: number,           // 行号（绝对索引）
+    field: DataField,        // 变化的字段模型
+    setFieldState: (key, partial) => void,  // 改该行其他 key 的状态
+  }) => void
+): void
+```
+
+### 示例：数量变化自动算金额
+
+```jsx
+effects={$ => {
+  // 监听每行的 qty 或 price，任一变化重算 total = qty * price
+  // （onEachRowMultiChange 更适合多 key，这里演示单 key）
+  $.onEachRowChange('rows', 'qty', ({index, setFieldState}) => {
+    const row = $.form.getValuesIn(`rows.${index}`);
+    setFieldState('total', {value: (row.qty ?? 0) * (row.price ?? 0)});
+  });
+}}
+```
+
+`setFieldState('total', {value})` 只改**当前行**的 `total`，不会波及其他行。
+
+---
+
+## `$.onEachRowMultiChange` — 数组按行多 key 联动
+
+`onEachRowChange` 的多 key 版本：监听一行里多个 key，任一变化触发，cb 拿到所有监听
+key 的值，并知道是哪个 key 触发的。
+
+### 签名
+
+```ts
+$.onEachRowMultiChange(
+  pre: string,
+  keys: string[],
+  cb: (ctx: {
+    index: number,
+    fields: Record<string, Field>,    // 各 key 的字段模型
+    values: Record<string, any>,       // 各 key 的当前值
+    triggerKey: string,                // 这次是哪个 key 触发的
+    triggerField: DataField,
+    setFieldState: (key, partial) => void,
+  }) => void
+): void
+```
+
+### 示例：qty 或 price 变化都重算 total
+
+```jsx
+effects={$ => {
+  $.onEachRowMultiChange('rows', ['qty', 'price'], ({index, values, setFieldState}) => {
+    const total = (values.qty ?? 0) * (values.price ?? 0);
+    setFieldState('total', {value: total});
+  });
+}}
+```
+
+比写两个 `onEachRowChange` 更省——一次注册，多 key 任一变化都触发。
+
+---
+
+## `$.setRefState` / `$.getRefState` — 非响应式草稿区
+
+在 effect 间共享状态，但**不触发**任何重渲染（区别于 form 字段值）。基于 immer，
+传函数即草稿更新。
+
+```jsx
+effects={$ => {
+  // 记录上一次的省份，城市没变就不重新请求
+  $.onFieldValueChange('province', field => {
+    const last = $.getRefState('lastProvince');
+    if (last !== field.value) {
+      $.setRefState('lastProvince', field.value);
+      // ... 重新派生城市 options
+    }
+  });
+}}
+```
+
+---
+
+## `$` helper 全集
+
+| helper | 触发时机 | 典型用途 |
+|---|---|---|
+| `$.validateField` | 依赖字段值变化 | 跨字段校验 |
+| `$.linkedFieldProps` | 依赖字段值变化 | 级联 options、派生 disabled |
+| `$.onFieldValueChange` | 字段值变化 | 自定义联动（设值/显隐） |
+| `$.onEachRowChange` | 数组行内单 key 变化 | 按行联动 |
+| `$.onEachRowMultiChange` | 数组行内多 key 任一变化 | 按行多 key 联动 |
+| `$.setRefState` / `$.getRefState` | 主动调用 | effect 间共享非响应状态 |
+| `$.form` | — | 原始 Formily form 实例 |
+
+### effects 可以是数组
+
+传数组会按顺序扇出执行，等于把多个 effect 函数合并：
+
+```jsx
+<Form effects={[effectA, effectB, effectC]}>...</Form>
+```

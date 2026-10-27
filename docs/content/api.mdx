@@ -1,0 +1,183 @@
+import {CodeBlock} from '../CodeBlock';
+
+## API 参考
+
+### Form
+
+表单容器。底层 `createForm` + `FormProvider`，children 外包一层空 `preName` 的
+`FieldContext.Provider`，让相对路径 Field 能解析。
+
+```jsx
+import {Form} from 'rsform/antd';  // 或 'rsform' 用纯核心
+```
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `form` | `FormilyForm` | 内部创建 | 外部表单实例；省略则 rsform 创建 |
+| `initialValues` | `Record<string, any>` | — | 初始值 |
+| `asyncInitialValues` | `() => Promise<Record>` | — | 异步初始值；表单等其 resolve 后挂载 |
+| `effects` | `EffectFn \| EffectFn[]` | — | effect 回调，注入 `$` helper 包；数组按序扇出 |
+| `onSubmit` | `(values) => void \| Promise` | — | 提交回调 |
+| `onReset` | `() => void` | — | 重置回调 |
+| `validateFirst` | `boolean` | — | 遇到第一个校验错误即停止 |
+| `validateFailed` | `'scroll' \| (field) => void` | `'scroll'` | 校验失败处理：滚到首个错误或自定义 |
+| `formRef` | `MutableRefObject` | — | 拿到 form 实例的 ref |
+| `children` | `ReactNode` | — | 表单内容 |
+
+`Form` 命名空间挂载：`Form.Field` / `Form.FormError` / `Form.Formily`（纯核心），
+`rsform/antd` 子路径额外挂 `Form.Input` / `Form.TextArea` / `Form.InputNumber` /
+`Form.Select` / `Form.RadioGroup` / `Form.Switch` / `Form.Submit`，
+`rsform/table` 挂 `Form.Table`，`rsform/array-items` 挂 `Form.ArrayItems`。
+
+---
+
+### Form.Field
+
+字段单元。包 Formily `<Field>`，用 `commonMap` 自动把 `field.value` / `field.onInput`
+桥接成 antd 控件的 `value` / `onChange`，无需手写受控样板。
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `name` | `string` | — | 字段路径；支持相对路径 `.foo` / `..foo`（在 ArrayItems 行内） |
+| `title` | `ReactNode` | — | label 文本 |
+| `required` | `boolean` | — | 显示红星（仅展示，校验写 `validator`） |
+| `editable` | `boolean` | `true` | `false` 渲染为 `NonEditable` 文本态 |
+| `format` | `(value) => any` | — | 写入控件前变换值 |
+| `parse` | `(value) => any` | — | 控件 onChange 后写入表单前变换值 |
+| `selectFirst` | `boolean` | — | 挂载时自动选首项（单选 option 控件） |
+| `hideUi` | `boolean` | — | 只渲染控件，无 label/error 外壳 |
+| `requiredOnlyUi` | `boolean` | — | 只渲染红星 + 控件，隐藏 title |
+| `validator` | `FormilyValidator` | — | Formily 校验器 |
+| `reactions` | `FormilyReactions` | — | Formily 字段 reactions |
+| `basePath` | `string` | — | Formily basePath 覆盖 |
+| `children` | `ReactElement \| (api) => Node` | — | 控件元素，或 render-prop |
+
+`children` 为 render-prop 时收到 `{value, onChange, state}`，用于自定义控件。
+
+---
+
+### Form.Submit
+
+提交按钮。包 antd `Button`，点击调 `form.submit()`，提交/校验期间显示 loading。
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `onSubmit` | `(values) => void \| Promise` | Form 的 onSubmit | 仅本次提交覆盖 |
+| `children` | `ReactNode` | — | 按钮文字 |
+| 其余 | — | — | 透传 antd `Button` 的所有 props（除 `onClick`/`htmlType`/`loading`） |
+
+---
+
+### Form.FormError
+
+表单级错误聚合。读取 form 的 `form.errors`（非字段级），渲染为 antd `Alert`。
+
+无 props，直接 `<Form.FormError />` 放在表单内。
+
+---
+
+### 控件（`rsform/antd`）
+
+薄 antd 5 控件 re-export，加静态 `__rsfOptionControl` 标记供 Table 控件注册识别。
+
+| 控件 | 等价 antd | 说明 |
+|---|---|---|
+| `Form.Input` | `Input` | 输入框 |
+| `Form.TextArea` | `Input.TextArea` | 多行输入 |
+| `Form.InputNumber` | `InputNumber` | 数字输入 |
+| `Form.Select` | `Select` | 下拉选择；支持 `options`/`mode` 等 antd props |
+| `Form.RadioGroup` | `Radio.Group` | 单选组；默认 `optionType='button'` |
+| `Form.Switch` | `Switch` | 开关；自动把 `value` 互换成 `checked` |
+
+控件可直接 import：`import {Select} from 'rsform/antd'`，或走 `Form.Select` 命名空间。
+
+#### 自定义控件注册（Table）
+
+Table 的 `control` 列属性接受字符串 key（如 `'input'`），从 `FormComMap` 注册表查。
+自定义控件用 `registerControl` 注册：
+
+```tsx
+import {registerControl} from 'rsform/antd';
+
+registerControl('datePicker', <MyDatePicker />);
+// 之后 Table 列可用 control: 'datePicker'
+```
+
+---
+
+### Form.Table（`rsform/table`）
+
+高性能可编辑表格。单元格**不是** Formily Field——只订阅 `form.values` 的叶子节点，
+编辑一格只重渲染该格。
+
+```tsx
+import {Form} from 'rsform/table';
+
+<Form.Table<Row> name="rows" columns={[...]} />
+```
+
+#### Form.Table props
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `name` | `string` | — | 数组字段名 |
+| `columns` | `RsfTableColumn[]` | — | 列定义（见下） |
+| `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key |
+| `pagination` | `false \| object` | `false` | antd 分页；默认不分页 |
+| `removeButton` | `boolean` | — | 显示删除列（每行一个删除按钮） |
+| `removeButtonProps` | `object` | — | 删除按钮 props（title/text 等） |
+| `disableRemove` | `boolean` | — | 禁用删除按钮（如到 min 行数） |
+| `itemDefaultValue` | `any` | — | 删除列自带的新增行的默认值 |
+| `className` | `string` | — | 表格包装类名 |
+
+#### RsfTableColumn
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `title` | `ReactNode` | — | 列标题 |
+| `dataIndex` | `string` | — | 行对象里对应此列的 key |
+| `width` | `number \| string` | — | 列宽 |
+| `control` | `string \| ReactElement` | — | 控件：`'input'`/`'inputNumber'`/`'select'`/... 或自定义元素；省略=只读文本 |
+| `editable` | `boolean` | `true`（有 control 时） | 单元格是否可编辑 |
+| `validator` | `FormilyValidator` | — | 单元格校验器 |
+| `controlProps` | `object` | — | 控件额外 props（options/placeholder 等） |
+| `align` | `'left' \| 'center' \| 'right'` | — | 对齐 |
+| `fixed` | `'left' \| 'right' \| boolean` | — | 固定列 |
+| `render` | `(value, record, index) => Node` | — | 完全自定义渲染（覆盖 CellBridge，只读） |
+
+---
+
+### Form.ArrayItems（`rsform/array-items`）
+
+可增删/拖拽列表。基于 Formily `ArrayField` mutators + `@dnd-kit/sortable`。
+
+```jsx
+import {Form} from 'rsform/array-items';
+
+<Form.ArrayItems name="tags" itemDefaultValue={{label: ''}}>
+  {() => <Form.Field name=".label"><Form.Input /></Form.Field>}
+</Form.ArrayItems>
+```
+
+#### props
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `name` | `string` | — | 数组字段名；支持相对路径 |
+| `itemDefaultValue` | `any` | `{}` | 新增行默认值 |
+| `min` | `number` | — | 最小行数，到限禁用删除 |
+| `max` | `number` | — | 最大行数，到限禁用新增 |
+| `validateBeforeAdd` | `(values, itemDefault) => boolean \| string \| void` | — | 新增前门禁；`false` 静默阻止，`string` 报错 |
+| `dragable` | `boolean` | `false` | 启用拖拽排序 |
+| `addDisabled` | `boolean` | `false` | 隐藏新增按钮 |
+| `addText` | `ReactNode` | `'添加'` | 新增按钮文字 |
+| `children` | `(value, index) => ReactNode \| ReactNode` | — | 行内容；render-prop 内用相对路径 Field |
+
+#### 相对路径
+
+`children` 是 render-prop 时，内部 `Field name=".label"` 会解析到当前行
+（`name.0.label`、`name.1.label`...），无需手拼路径。
+
+#### 拖拽
+
+默认关。需排序（优先级、步骤序）加 `dragable`，行首出现六点拖拽手柄。

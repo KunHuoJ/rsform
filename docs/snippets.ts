@@ -53,6 +53,29 @@ export const ARRAY_ITEMS_DRAG_CODE = `<Form.ArrayItems name="steps" dragable>
   {() => <Form.Field name=".name"><Form.Input /></Form.Field>}
 </Form.ArrayItems>`;
 
+export const CASCADE_CODE = `import { Form } from 'rsform/antd';
+
+const PROVINCES = [{ label: '广东', value: 'gd' }, /* ... */];
+const CITIES = { gd: [{ label: '广州', value: 'gz' }, /* ... */] };
+
+<Form
+  initialValues={{ province: '', city: '' }}
+  effects={$ =>
+    $.linkedFieldProps('city', ['province'], async ({ province }) => {
+      if (!province) return { options: [] };
+      await new Promise(r => setTimeout(r, 300)); // 模拟请求
+      return { options: CITIES[province] ?? [] };
+    })
+  }
+>
+  <Form.Field name="province" title="省份" required>
+    <Form.Select options={PROVINCES} />
+  </Form.Field>
+  <Form.Field name="city" title="城市" required>
+    <Form.Select />
+  </Form.Field>
+</Form>`;
+
 export const TABLE_CODE = `import { Form } from 'rsform/table';
 
 interface Row { name: string; qty: number; price: number }
