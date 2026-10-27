@@ -39,3 +39,35 @@ export type {
     CommonMapResult,
     IFieldContext,
 } from './field';
+
+// Effects — also available via the `rsform/effects` subpath.
+export {
+    createEffects,
+    mergeEffects,
+    setRefState,
+    getRefState,
+    linkedFieldProps,
+    validateField,
+    onEachRowChange,
+    onEachRowMultiChange,
+    onFieldValueChange,
+    onFieldMount,
+    onFieldUnmount,
+    onFieldReact,
+    onFormSubmit,
+    onFormSubmitValidateFailed,
+    onFormReset,
+    LifeCycleTypes,
+} from './effects';
+export type {
+    EffectHelpers,
+    EffectFn,
+    EffectsProp,
+    LinkedFieldPropsCompute,
+    ValidateFieldCb,
+    ValidateFieldHandle,
+    EachRowCtx,
+    EachRowCb,
+    EachRowMultiCtx,
+    EachRowMultiCb,
+} from './effects';

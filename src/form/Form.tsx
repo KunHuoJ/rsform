@@ -1,8 +1,13 @@
 import * as React from 'react';
-import {createForm, onFormSubmit, onFormSubmitValidateFailed, type Form as FormilyForm} from '@formily/core';
+import {createForm, type Form as FormilyForm} from '@formily/core';
 import {FormProvider} from '@formily/react';
 import {FieldContext} from '../shared/FieldContext';
 import {scrollToFirstError} from './validateFailedScroll';
+import {
+    mergeEffects,
+    type EffectsProp,
+    type MergeEffectsOptions,
+} from '../effects/mergeEffects';
 
 export interface FormProps {
     /** External form instance; rsform creates one if omitted. */
@@ -11,11 +16,13 @@ export interface FormProps {
     /** Async initial values; the form mounts after they resolve. */
     asyncInitialValues?: () => Promise<Record<string, any>>;
     /**
-     * Effect function (or array of them). For Phase 1 these are passed
-     * through to Formily's `createForm` effects verbatim; Phase 2 layers the
-     * rsform sugar (`linkedFieldProps`, `validateField`, etc.) on top.
+     * Effect function (or array of them, fanned out in order). Each receives
+     * the rsform `$` helpers bundle: use `$.linkedFieldProps`,
+     * `$.validateField`, `$.onEachRowChange`, etc., or call bare Formily
+     * lifecycle hooks directly (they auto-register on the active form). For
+     * raw form access use `$.form`.
      */
-    effects?: ((form: FormilyForm) => void) | Array<(form: FormilyForm) => void>;
+    effects?: EffectsProp;
     onSubmit?: (values: any) => void | Promise<void>;
     onReset?: () => void;
     validateFirst?: boolean;
@@ -25,43 +32,21 @@ export interface FormProps {
     children?: React.ReactNode;
 }
 
-function mergeEffects(
+function buildMergeEffects(
     effects: FormProps['effects'],
     validateFailed: FormProps['validateFailed'],
     onSubmitRef: React.MutableRefObject<FormProps['onSubmit']>,
     onResetRef: React.MutableRefObject<FormProps['onReset']>,
 ): (form: FormilyForm) => void {
-    const fns: Array<(form: FormilyForm) => void> = [];
-    if (Array.isArray(effects)) {
-        fns.push(...effects);
-    } else if (typeof effects === 'function') {
-        fns.push(effects);
-    }
-    fns.push(form => {
-        onFormSubmit(() => {
-            if (onSubmitRef.current) {
-                return onSubmitRef.current(form.values);
-            }
-        });
-    });
-    // onReset is exposed via formRef.current.reset(); the onReset prop is held
-    // in a ref for future wiring and to keep the public API stable.
-    void onResetRef;
-    if (validateFailed) {
-        fns.push(form => {
-            onFormSubmitValidateFailed(() => {
-                if (validateFailed === 'scroll') {
-                    scrollToFirstError();
-                } else {
-                    const first = form.query('*').take(field => (field as any)?.errors?.length > 0);
-                    validateFailed(first);
-                }
-            });
-        });
-    }
-    return (form: FormilyForm) => {
-        fns.forEach(fn => fn(form));
+    const opts: MergeEffectsOptions = {
+        validateFailed,
+        onSubmitRef: onSubmitRef as {
+            current: ((values: any) => void | Promise<void>) | undefined;
+        },
+        onResetRef: onResetRef as {current: (() => void) | undefined},
+        scrollToFirstError: validateFailed === 'scroll' ? scrollToFirstError : undefined,
     };
+    return mergeEffects(effects, opts);
 }
 
 export function Form(props: FormProps): React.ReactElement {
@@ -112,7 +97,7 @@ export function Form(props: FormProps): React.ReactElement {
             initialValues: asyncValues && Object.keys(asyncValues).length
                 ? {...asyncValues, ...(initialValues ?? {})}
                 : initialValues,
-            effects: mergeEffects(effects, validateFailed, onSubmitRef, onResetRef),
+            effects: buildMergeEffects(effects, validateFailed, onSubmitRef, onResetRef),
             validateFirst,
         });
         // Re-create the form only when the async values first land or when an

@@ -53,7 +53,7 @@
     "docs:preview": "cd docs && pnpm rspress preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build && changeset publish"

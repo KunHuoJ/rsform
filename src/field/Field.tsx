@@ -117,7 +117,7 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
         );
     } else {
         node = (
-            <FieldUi label={title} required={required} error={(field as any)?.errors?.[0]}>
+            <FieldUi label={title} required={required} error={(field as any)?.selfErrors?.[0]}>
                 {content}
             </FieldUi>
         );

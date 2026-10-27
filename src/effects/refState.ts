@@ -1,37 +1,38 @@
-import type {Form} from '@formily/core';
+import {produce, type Draft} from 'immer';
 
 /**
- * Per-form scratch space for arbitrary state shared between effects (e.g.
- * "is submitting", "last fetch key", cached derived values). Stored on the
- * form instance under a symbol so it never collides with Formily's own fields.
+ * Non-reactive per-form scratch storage. Effects often need to keep a piece of
+ * mutable state that must NOT trigger Formily reactions (counters, caches,
+ * "last value" snapshots). `setRefState`/`getRefState` provide a WeakMap-backed
+ * store keyed by form instance + string key, so it is GC-friendly and never
+ * participates in the reactive graph.
  *
- * rsform deliberately does NOT make this reactive — it's a plain Map. If an
- * effect needs the UI to re-render on change, it should drive a Field instead.
+ * Passing a function as `value` treats it as an immer updater against the
+ * current value (convenient for mutating drafts in place).
  */
-const RSFORM_REFS = typeof Symbol !== 'undefined'
-    ? Symbol('rsform.refState')
-    : '__rsform_refState__';
 
-function refsOf(form: Form): Map<string, any> {
-    const f = form as any;
-    if (!f[RSFORM_REFS]) {
-        f[RSFORM_REFS] = new Map();
+type Store = Map<string, any>;
+const stores = new WeakMap<object, Store>();
+
+function getStore(form: object): Store {
+    let store = stores.get(form);
+    if (!store) {
+        store = new Map();
+        stores.set(form, store);
     }
-    return f[RSFORM_REFS];
+    return store;
 }
 
-export function setRefState<T>(form: Form, key: string, value: T): void {
-    refsOf(form).set(key, value);
+export function setRefState(form: object, key: string, value: any): void {
+    const store = getStore(form);
+    if (typeof value === 'function') {
+        const current = store.get(key);
+        store.set(key, produce(current, value as (draft: Draft<any>) => void));
+    } else {
+        store.set(key, value);
+    }
 }
 
-export function getRefState<T = any>(form: Form, key: string): T | undefined {
-    return refsOf(form).get(key);
-}
-
-export function hasRefState(form: Form, key: string): boolean {
-    return refsOf(form).has(key);
-}
-
-export function deleteRefState(form: Form, key: string): boolean {
-    return refsOf(form).delete(key);
+export function getRefState<T = any>(form: object, key: string): T | undefined {
+    return getStore(form).get(key) as T | undefined;
 }

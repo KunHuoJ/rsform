@@ -20,5 +20,5 @@
       "rsform/effects": ["./src/effects/index.ts"]
     }
   },
-  "include": ["src", "tests", "docs"]
+  "include": ["src"]
 }
