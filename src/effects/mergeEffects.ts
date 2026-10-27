@@ -3,6 +3,7 @@ import {
     onFormSubmitValidateFailed,
 } from '@formily/core';
 import type {Form as FormilyForm} from '@formily/core';
+import type * as React from 'react';
 import {createEffects, type EffectHelpers} from './helpers';
 
 /**
@@ -22,6 +23,8 @@ export interface MergeEffectsOptions {
     onResetRef: {current: (() => void) | undefined};
     /** Invoked when `validateFailed === 'scroll'` to scroll the first error into view. */
     scrollToFirstError?: () => void;
+    /** Holds the in-flight onSubmit promise so Submit can await it for loading. */
+    submitPromiseRef?: React.MutableRefObject<Promise<any> | undefined>;
 }
 
 /**
@@ -41,11 +44,22 @@ export function mergeEffects(
     }
 
     // Wire onSubmit through the held ref so the form (created once) always
-    // invokes the freshest callback without recreating.
+    // invokes the freshest callback without recreating. Capture the returned
+    // promise into submitPromiseRef so Submit can await it for its loading
+    // state (form.submit() fires onSubmit through this lifecycle but does not
+    // await it).
     fns.push($ => {
         onFormSubmit(() => {
-            if (opts.onSubmitRef.current) {
-                return opts.onSubmitRef.current($.form.values);
+            const cb = opts.onSubmitRef.current;
+            if (cb) {
+                const p = Promise.resolve(cb($.form.values));
+                if (opts.submitPromiseRef) {
+                    opts.submitPromiseRef.current = p;
+                }
+                return p;
+            }
+            if (opts.submitPromiseRef) {
+                opts.submitPromiseRef.current = undefined;
             }
         });
     });

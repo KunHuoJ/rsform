@@ -13,6 +13,8 @@ export const VERSION = '0.1.0';
 
 export {Form} from './form/FormNamespace';
 export type {FormProps} from './form/Form';
+export {FormError} from './form/FormError';
+export type {FormErrorProps} from './form/FormError';
 
 export {
     Field,

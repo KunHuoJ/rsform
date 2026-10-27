@@ -10,11 +10,15 @@ export interface UseSelectFirstOptions {
  * Auto-select the first non-disabled option on mount when `selectFirst` is set
  * and the field has no value yet. Targets single-select option controls
  * (Select without `mode='multiple'`, Radio.Group). No-op for multi-select.
+ *
+ * "No value yet" means null/undefined/'' — an empty string is treated as
+ * unset so a field initialised to `''` still picks the first option.
  */
 export function useSelectFirst({field, selectFirst, children}: UseSelectFirstOptions): void {
     const optionsRef = React.useRef<any>(null);
     React.useEffect(() => {
-        if (!selectFirst || !field || field.value != null) {
+        const isEmpty = field == null || field.value == null || field.value === '';
+        if (!selectFirst || !field || !isEmpty) {
             return;
         }
         if (!React.isValidElement(children)) {
