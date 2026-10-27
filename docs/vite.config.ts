@@ -55,6 +55,10 @@ export default defineConfig({
     server: {
         port: 6173,
     },
+    // 部署到 GitHub Pages 子路径 https://kunhuoj.github.io/rsform/——生产构建用相对
+    // base，本地 dev 仍用 '/'（Vite 会读 process.env.NODE_ENV 区分）。这里直接用
+    // 环境变量让 CI（生产）和本地（开发）共用同一份配置。
+    base: process.env.NODE_ENV === 'production' ? '/rsform/' : '/',
     build: {
         outDir: 'dist',
     },
