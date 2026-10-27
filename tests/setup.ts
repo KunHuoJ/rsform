@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 // jsdom + antd 5 may need matchMedia / ResizeObserver polyfills.
 if (typeof (window as any).matchMedia === 'undefined') {
     (window as any).matchMedia = (query: string) => ({

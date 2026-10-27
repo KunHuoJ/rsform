@@ -6,6 +6,7 @@ const externals = [
     '@formily/core',
     '@formily/react',
     '@formily/reactive',
+    '@formily/reactive-react',
     '@formily/shared',
     'antd',
     'react',
