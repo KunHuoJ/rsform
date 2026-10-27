@@ -1,0 +1,39 @@
+import {Demo} from '../Demo';
+import {ConsumerDemo} from '../demos/ConsumerDemo';
+import {CONSUMER_CODE} from '../snippets';
+
+## Form.Consumer — 订阅表单值
+
+`Form.Consumer` 是一个 **render-prop 订阅组件**：把 `children` 写成函数，接收订阅到的表单数据，返回节点。底层基于 Formily v2 的 `observer`——只追踪你读到的那片数据，所以**只有那片数据变化才会重渲染**。
+
+### 两种用法
+
+- **不带 `name`**：订阅整个 `form.values`，任一字段变化都会重渲染。
+- **带 `name`**：只订阅该字段的叶子值，**只有该叶子变化才重渲染**，其它字段怎么变都不影响这里。
+
+`name` 走 `Form.Field` 同一套相对路径规则（`.foo` / `..foo` 在 `Form.Field` 内解析到当前行），所以放在数组/表格行内也能用。
+
+### 为什么不直接读 `form.values`
+
+直接 `const values = form.values` 拿到的是快照，字段变化时**不会**触发组件重渲染。包在 `observer` 里读 `form.values` 才响应式——而 `Form.Consumer` 就是把这层 `observer` + 叶子订阅封装成一个声明式组件，丢进 JSX 即可，不用自己写 `useForm()` + `observer`。
+
+<Demo code={CONSUMER_CODE} title="订阅表单值">
+  <ConsumerDemo />
+</Demo>
+
+### 关键行为
+
+- **不带 `name`** 读 `form.values`（深可观察），任一字段变化都触发本组件重渲染。
+- **带 `name`** 读 `form.getValuesIn(name)`（叶子），只有该叶子变化触发重渲染——相邻字段编辑不波及这里。
+- **相对路径**：在 `Form.Field name="rows.0"` 内用 `<Form.Consumer name="qty">`，解析为 `rows.0.qty`。
+- **不要**在 `children` 里做副作用（写状态、发请求）——它是纯渲染函数；需要副作用请用 `effects` 里的 `$.onFieldValueChange`。
+
+### 何时用 Consumer vs effects
+
+| 场景 | 用什么 |
+|---|---|
+| 把表单值**显示**出来（汇总、镜像、派生展示） | `Form.Consumer` |
+| 字段变化时**改其它字段值 / 触发校验 / 发请求** | `effects`（`$.onFieldValueChange` / `$.linkedFieldProps`） |
+| 表单外部按钮读取/提交当前值 | `formRef.current.values` 或 `formRef.current.submit()` |
+
+一句话：**只读展示用 Consumer，写值联动用 effects**。

@@ -93,7 +93,7 @@ import { Form } from 'rsform/antd';
 </Form>
 ```
 
-### 高性能可编辑表格
+### 可编辑表格
 
 ```jsx
 import { Form } from 'rsform/table';

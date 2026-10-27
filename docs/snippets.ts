@@ -76,20 +76,79 @@ const CITIES = { gd: [{ label: '广州', value: 'gz' }, /* ... */] };
   </Form.Field>
 </Form>`;
 
+export const CONSUMER_CODE = `import { Form } from 'rsform/antd';
+
+<Form initialValues={{ name: 'rsform', age: 1, status: 'draft' }}>
+  <Form.Field name="name" title="名称"><Form.Input /></Form.Field>
+  <Form.Field name="age" title="数量"><Form.InputNumber min={0} /></Form.Field>
+  <Form.Field name="status" title="状态"><Form.Select options={STATUS} /></Form.Field>
+
+  {/* 订阅整个表单值——任一字段变化都会更新这里 */}
+  <Form.Consumer>{values => <pre>{JSON.stringify(values)}</pre>}</Form.Consumer>
+
+  {/* 只订阅 name——只有 name 变化才更新，改 age/status 不会重渲染这里 */}
+  <Form.Consumer name="name">{name => <span>{name}</span>}</Form.Consumer>
+</Form>`;
+
 export const TABLE_CODE = `import { Form } from 'rsform/table';
 
-interface Row { name: string; qty: number; price: number }
+interface Row { name: string; qty: number; price: number; status: string }
 
-<Form initialValues={{ rows }}>
+const STATUS = [
+  { label: '待入库', value: 'pending' },
+  { label: '已入库', value: 'done' },
+];
+
+const INITIAL_ROWS: Row[] = [
+  { name: '组件 A', qty: 2, price: 9.5, status: 'done' },
+  { name: '组件 B', qty: 1, price: 19.0, status: 'pending' },
+];
+
+<Form initialValues={{ rows: INITIAL_ROWS }}>
   <Form.Table<Row>
     name="rows"
     pagination={false}
     removeButton
+    removeButtonProps={{ title: '操作', width: 80 }}
+    itemDefaultValue={{ name: '', qty: 1, price: 0, status: 'pending' }}
     columns={[
-      { title: '名称', dataIndex: 'name', control: 'input' },
-      { title: '数量', dataIndex: 'qty', control: 'inputNumber',
+      { title: '名称', dataIndex: 'name', control: 'input', width: 160 },
+      { title: '数量', dataIndex: 'qty', control: 'inputNumber', width: 100,
         validator: v => (v > 0 ? '' : '必须大于 0') },
-      { title: '单价', dataIndex: 'price', control: 'inputNumber' },
+      { title: '单价', dataIndex: 'price', control: 'inputNumber', width: 100,
+        validator: v => (v >= 0 ? '' : '不能为负') },
+      { title: '状态', dataIndex: 'status', control: 'select', width: 120,
+        controlProps: { options: STATUS } },
+      { title: '小计', dataIndex: 'subtotal', width: 100, editable: false,
+        render: (_v, r) => <span>{(Number(r.qty) * Number(r.price)).toFixed(2)}</span> },
     ]}
   />
 </Form>`;
+
+export const TABLE_SUMMARY_CODE = `import { useForm } from '@formily/react';
+import { Form } from 'rsform/table';
+
+// 添加行：往数组追加一行默认值，长度变化触发表体重渲染
+function AddRowButton({ arrayName, defaultRow }) {
+  const form = useForm();
+  return (
+    <button onClick={() => {
+      const arr = form.values[arrayName] ?? [];
+      form.setValuesIn(arrayName, [...arr, { ...defaultRow }]);
+    }}>+ 添加一行</button>
+  );
+}
+
+// 合计：Form.Consumer 订阅整个 rows，实时派生行数与合计金额
+function Summary() {
+  return (
+    <Form.Consumer>
+      {values => {
+        const rows = values.rows ?? [];
+        const total = rows.reduce((s, r) => s + Number(r.qty) * Number(r.price), 0);
+        return <span>共 {rows.length} 行，合计 {total.toFixed(2)}</span>;
+      }}
+    </Form.Consumer>
+  );
+}`;
+

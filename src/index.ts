@@ -15,6 +15,8 @@ export {Form} from './form/FormNamespace';
 export type {FormProps} from './form/Form';
 export {FormError} from './form/FormError';
 export type {FormErrorProps} from './form/FormError';
+export {Consumer as FormConsumer} from './form/Consumer';
+export type {FormConsumerProps} from './form/FormNamespace';
 
 export {
     Field,

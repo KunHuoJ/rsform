@@ -1,22 +1,85 @@
 import {Demo} from '../Demo';
 import {TableDemo} from '../demos/TableDemo';
-import {TABLE_CODE} from '../snippets';
+import {TABLE_CODE, TABLE_SUMMARY_CODE} from '../snippets';
 
 ## 可编辑表格
 
-可编辑表格的每个单元格**不是** Formily `<Field>`——每个单元格只订阅
-`form.values` 的叶子节点。编辑一格只重渲染**该格**，不波及其余 N×M−1 格；
-`columns` 引用在整个编辑过程中保持稳定。
+`Form.Table` 是 rsform 的性能重点：可编辑表格的每个单元格**不是** Formily `<Field>`——每个单元格只订阅 `form.values` 的叶子节点。编辑一格只重渲染**该格**，不波及其余 N×M−1 格；`columns` 引用在整个编辑过程中保持稳定。
+
+### 完整示例
+
+一个进货单：名称/数量/单价/状态可编辑，小计只读派生，带删除列、校验、添加行、合计。
+
+<Demo code={TABLE_CODE} title="可编辑表格">
+  <TableDemo />
+</Demo>
+
+> 演示里的「添加一行」与「合计」用 `Form.Consumer` + `useForm` 实现，代码见下方 [派生展示与添加行](#派生展示与添加行)。
 
 ### 为什么快
 
-- **读**：单元格在 `observer` 内读 `form.values[arrName][rowIndex][dataIndex]`，
-  Formily 响应式只追踪这个叶子节点——编辑 (i,j) 只通知 (i,j) 的观察者。
-- **写**：`field.onInput(v)` 触发该格订阅、跑校验、触发 effect，且不替换行对象，
-  同行其它格也不重渲染。
-- **表体**：通过 `untracked` 读数组值，只在行数变化时 bump 一个 `lenTick`，
-  编辑过程不重渲染整表。
+普通「每格做成 Formily `<Field>`」的可编辑表格，N×M 个 Field 各自订阅，编辑一格会触发整行甚至整表的响应式重算，行数一多就卡。rsform 的做法是把订阅粒度降到**叶子**：
 
-<Demo code={TABLE_CODE} title="单元格编辑">
+- **读**：单元格在 `observer` 内读 `form.values[arrName][rowIndex][dataIndex]`，Formily 响应式只追踪这个叶子节点——编辑 (i,j) 只通知 (i,j) 的观察者，其余 N×M−1 格不重渲染。
+- **写**：`field.onInput(v)` 设置该叶子值（触发本格重渲染）、跑校验、触发 `onFieldValueChange` effect，且**不替换行对象**——同行其它格也不重渲染。
+- **表体**：通过 `untracked` 读数组值，表体不订阅单元格编辑；只在数组长度变化时 bump 一个 `lenTick` 触发重渲染。所以编辑一格**不会**重渲染表体、不会遍历整棵单元格树。
+- **columns 稳定**：`useTable` 的 `columns` useMemo 依赖只有 `[columns, name, current, pageSize, removeButton, ...]`，**不含**数组值/长度；最新值通过 ref + 叶子订阅读取。100 次按键后 `Object.is(columns, prev)` 仍为 `true`。
+
+一句话：**编辑一格 → 只重渲染该格**。50×5 表格单格输入不卡顿、FPS 不掉。
+
+### 列定义
+
+每列是一个 `RsfTableColumn`：
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `dataIndex` | `string` | — | 行对象里的字段键 |
+| `title` | `ReactNode` | `dataIndex` | 列标题 |
+| `control` | `'input' \| 'inputNumber' \| 'select' \| 'radioGroup' \| 'switch' \| ReactElement` | — | 控件：字符串从控件注册表查（见下），或传一个 React 元素（像 Field 一样被 clone 注入 value/onChange） |
+| `editable` | `boolean` | `control` 存在时 `true` | 是否可编辑；`false` 渲染为只读文本 |
+| `validator` | `(value) => string \| Promise<string>` | — | 单元格校验，返回空串通过、非空串为错误信息，错误显示在单元格下方 |
+| `controlProps` | `Record<string, any>` | — | 合并进控件的额外 props（如 Select 的 `options`、`placeholder`） |
+| `width` / `align` / `fixed` | — | — | 透传 antd 列 |
+| `render` | `(value, record, index) => Node` | — | 完全自定义渲染（只读展示，覆盖 CellBridge） |
+
+#### 控件注册表
+
+`control` 写字符串时，`CellBridge` 从 `FormComMap` 注册表查控件。内置 `input`/`inputNumber`/`select`/`radioGroup`/`switch`。需要扩展时：
+
+```ts
+import { registerControl } from 'rsform/antd';
+registerControl('cascader', MyCascader);
+// 之后列里就能写 control: 'cascader'
+```
+
+### Table props
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `name` | `string` | — | 数组字段名；支持相对路径 |
+| `columns` | `RsfTableColumn[]` | — | 列定义（引用稳定，编辑时不重建） |
+| `pagination` | `false \| object` | `false` | antd 分页；默认不分页 |
+| `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key；默认用注入的 `__rsfIdx`（跨页稳定） |
+| `removeButton` | `boolean` | `false` | 末尾加一列删除按钮 |
+| `removeButtonProps` | `{title?, width?, fixed?, text?}` | — | 删除列配置 |
+| `disableRemove` | `boolean` | `false` | 禁用删除按钮（如到最小行数） |
+| `itemDefaultValue` | `any` | `{}` | 删除列附带的新增行的默认值（若内部有新增） |
+
+### 校验
+
+每列 `validator` 同步或异步，返回错误信息。错误通过单元格订阅的 `selfErrors` 实时显示在单元格下方（红色），不波及其它格。提交时走 Formily 整表校验，失败可配 `Form` 的 `validateFailed="scroll"` 滚到首个错误格。
+
+### 派生展示与添加行
+
+表体只管单元格编辑，行级派生（小计、合计、行数）与增删行用 `Form.Consumer` + `useForm` 在表格外做：
+
+<Demo code={TABLE_SUMMARY_CODE} title="派生展示与添加行">
   <TableDemo />
 </Demo>
+
+- **添加行**：`useForm` 拿 form，`form.setValuesIn(name, [...arr, defaultRow])` 替换整个数组——长度变化触发 `lenTick` 重渲染表体（单元格各订阅自己的叶子，已编辑的值不丢）。
+- **合计**：`Form.Consumer` 订阅整个 `rows`，实时 `reduce` 出行数与合计金额。任一单元格编辑 → `rows` 变化 → 合计重算。这就是 [Consumer 订阅](#consumer) 在表格场景的应用。
+
+### 性能自测
+
+50×5 表格，Chrome Performance 录制单格输入：仅目标格重渲染，FPS 不掉；`columns` 引用 100 次按键后 `Object.is` 仍 `true`。对比「每格 Formily Field」实现，编辑一格的渲染量从 O(N×M) 降到 O(1)。测试见 `tests/table.perf.spec.tsx`。

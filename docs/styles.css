@@ -542,6 +542,54 @@ a:hover {
     width: 100%;
 }
 
+/* —— Form.Consumer demo —— */
+.rsfd-consumer-block {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--rsfd-border, rgba(0, 0, 0, 0.08));
+    border-radius: 8px;
+    background: var(--rsfd-surface-soft, rgba(0, 0, 0, 0.02));
+}
+.rsfd-consumer-label {
+    font-size: 12px;
+    color: var(--rsfd-muted, rgba(0, 0, 0, 0.5));
+    margin-bottom: 8px;
+}
+.rsfd-consumer-out {
+    margin: 0;
+    font-family: var(--rsfd-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* —— 表格 demo 添加行 / 合计 —— */
+.rsfd-table-add {
+    margin-top: 12px;
+    padding: 4px 14px;
+    border: 1px dashed var(--rsf-color-primary);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--rsf-color-primary);
+    cursor: pointer;
+    font-size: 13px;
+}
+.rsfd-table-add:hover {
+    background: color-mix(in srgb, var(--rsf-color-primary) 8%, transparent);
+}
+.rsfd-table-summary {
+    margin-top: 12px;
+    display: flex;
+    gap: 24px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    background: var(--rsfd-surface-soft, rgba(0, 0, 0, 0.02));
+    font-size: 13px;
+}
+.rsfd-table-summary strong {
+    color: var(--rsf-color-primary);
+}
+
 /* —— 响应式 —— */
 @media (max-width: 880px) {
     .rsfd-sidebar {

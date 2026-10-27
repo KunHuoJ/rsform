@@ -68,7 +68,29 @@ import {Form} from 'rsform/antd';  // 或 'rsform' 用纯核心
 
 ---
 
+### Form.Consumer
+
+render-prop 订阅表单值。底层 `observer` + `form.values`/`form.getValuesIn`，只追踪读到的叶子，所以只有那片数据变化才重渲染。
+
+```jsx
+// 订阅整个表单值
+<Form.Consumer>{values => <span>{values.name}</span>}</Form.Consumer>
+
+// 只订阅单个字段——只有该叶子变化才重渲染
+<Form.Consumer name="name">{name => <span>{name}</span>}</Form.Consumer>
+```
+
+| 属性 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `name` | `string` | — | 字段路径；省略则订阅整个 `form.values`。支持相对路径（`.foo` 在 `Form.Field` 内解析到当前行） |
+| `children` | `(data) => ReactNode` | — | render-prop：接收订阅到的数据并返回节点。`name` 省略时 `data` 是整个 `form.values`；有 `name` 时 `data` 是该字段值 |
+
+> `children` 是纯渲染函数，不要在里面写副作用（写状态/发请求）；需要副作用用 `effects` 里的 `$.onFieldValueChange`。
+
+---
+
 ### Form.FormError
+
 
 表单级错误聚合。读取 form 的 `form.errors`（非字段级），渲染为 antd `Alert`。
 

@@ -21,6 +21,7 @@ const NAV_GROUPS: {title: string; items: {id: string; label: string}[]}[] = [
         items: [
             {id: 'basic', label: '基础表单'},
             {id: 'effects', label: 'Effects 联动'},
+            {id: 'consumer', label: 'Consumer 订阅'},
             {id: 'array-items', label: 'ArrayItems 列表'},
             {id: 'table', label: '可编辑表格'},
         ],
