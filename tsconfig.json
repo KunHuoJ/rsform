@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "paths": {
+      "rsform": ["./src/index.ts"],
+      "rsform/antd": ["./src/controls/index.ts"],
+      "rsform/table": ["./src/table/index.ts"],
+      "rsform/array-items": ["./src/array-items/index.ts"],
+      "rsform/effects": ["./src/effects/index.ts"]
+    }
+  },
+  "include": ["src", "tests", "docs"]
+}

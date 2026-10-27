@@ -1,0 +1,23 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# build output
+dist
+*.tsbuildinfo
+
+# docs
+docs/dist
+docs/.rspress
+docs/node_modules
+
+# editor / os
+.idea
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+*.log
+
+# coverage
+coverage
+.nyc_output
