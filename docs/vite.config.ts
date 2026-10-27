@@ -15,7 +15,10 @@ const here = fileURLToPath(new URL('.', import.meta.url));
  * stays on a single build chain, the chosen path.)
  */
 export default defineConfig({
-    plugins: [mdx(), react({include: /\.(jsx|tsx|mdx)$/})],
+    // @vitejs/plugin-react 默认只处理 .jsx/.tsx——不要把 .mdx 加进 include，
+    // 否则 dev 模式 babel 会把 MDX 产物再当 JSX 解析（## 标题 → Unexpected token）。
+    // .mdx 交给 @mdx-js/rollup，它产出合法 JSX 后再由 react 插件处理。
+    plugins: [mdx(), react()],
     root: resolve(here),
     resolve: {
         alias: [
