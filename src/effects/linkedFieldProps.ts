@@ -3,9 +3,11 @@ import type {Form as FormilyForm, GeneralField} from '@formily/core';
 
 /**
  * The compute function receives the current dep values keyed by dep name and
- * the target field model (if mounted). It returns a partial props object that
- * is applied to the target field's state via `form.setFieldState`. Returning a
- * Promise makes the derivation async (e.g. fetching cascade options).
+ * the target field model (if mounted). It returns a partial object that is
+ * split: Formily top-level state keys (visible/title/required/…) are set on the
+ * field state directly; the rest (options/disabled/placeholder/…) are merged
+ * into `componentProps` and forwarded to the control. Returning a Promise makes
+ * the derivation async (e.g. fetching cascade options).
  */
 export type LinkedFieldPropsCompute = (
     values: Record<string, any>,
@@ -13,12 +15,17 @@ export type LinkedFieldPropsCompute = (
 ) => Record<string, any> | Promise<Record<string, any>>;
 
 /**
- * Reactively derive the target field's props from one or more dependency
+ * Reactively derive the target's state/props from one or more dependency
  * fields. When any dep value changes (and once on initial registration), the
  * dep values are collected, `compute({ [dep]: value })` is invoked, and the
- * returned object is merged into the target field's state through
- * `form.setFieldState`. Common keys such as `visible`, `display`, `editable`,
- * `dataSource`, `title`, `required` are honoured by Formily's state setter.
+ * returned object is split and applied to the target field's state:
+ *
+ *  - Formily top-level field state keys (`visible`, `display`, `editable`,
+ *    `required`, `title`, `value`, `dataSource`, …) are set directly on the
+ *    state — so `{visible: false}` hides the field, `{title: 'X'}` relabels it.
+ *  - Everything else (`options`, `disabled`, `placeholder`, `loading`, …) is
+ *    merged into `state.componentProps`, which rsform's Field forwards to the
+ *    control via cloneElement — so `{options: [...]}` reaches the Select.
  *
  * Async results are guarded by a per-target monotonic token so a slow earlier
  * request can never overwrite a newer one.
@@ -30,6 +37,15 @@ export function linkedFieldProps(
     compute: LinkedFieldPropsCompute,
 ): void {
     let token = 0;
+
+    // Formily top-level field state keys that `linkedFieldProps` sets directly
+    // on `state`. Anything else goes into `state.componentProps` for the control.
+    const STATE_KEYS = new Set([
+        'visible', 'display', 'hidden', 'editable', 'readEmpty', 'selfEditable',
+        'required', 'title', 'description', 'value', 'defaultValue',
+        'dataSource', 'loading', 'validateStatus', 'rules', 'validator',
+        'decorator', 'component', 'reactions', 'content',
+    ]);
 
     const run = (): void => {
         const myToken = ++token;
@@ -45,7 +61,20 @@ export function linkedFieldProps(
                 return;
             }
             form.setFieldState(target, (state: any) => {
-                Object.assign(state, result);
+                const compProps: Record<string, any> = {};
+                for (const key of Object.keys(result)) {
+                    if (STATE_KEYS.has(key)) {
+                        state[key] = result[key];
+                    } else {
+                        compProps[key] = result[key];
+                    }
+                }
+                if (Object.keys(compProps).length > 0) {
+                    state.componentProps = {
+                        ...(state.componentProps ?? {}),
+                        ...compProps,
+                    };
+                }
             });
         });
     };

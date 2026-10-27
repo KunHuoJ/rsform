@@ -66,24 +66,34 @@ $.validateField(
 
 ---
 
-## `$.linkedFieldProps` — 异步派生字段 props
+## `$.linkedFieldProps` — 异步派生字段状态/props
 
-当一个字段的 props（最典型是 Select 的 `options`）依赖其他字段值时用。
+当一个字段的 props（最典型是 Select 的 `options`）或状态（显隐、标题）依赖其他字段值时用。
 
 ### 签名
 
 ```ts
 $.linkedFieldProps(
-  target: string,            // 要派生 props 的字段
+  target: string,            // 要派生的字段
   deps: string[],            // 依赖的字段名
   compute: (values, targetField) =>
-    | Record<string, any>            // 同步返回 props 增量
+    | Record<string, any>            // 同步返回对象
     | Promise<Record<string, any>>   // 异步返回（如发请求拉 options）
 ): void
 ```
 
-`compute` 返回的对象会**合并**进字段的 props，并随依赖变化重新计算。**防 stale 机制**：
-内部用单调计数器，如果在你异步 compute 完成前依赖又变了，旧结果会被丢弃，只采用最新一次。
+### `compute` 返回什么 → 赋到哪里
+
+返回对象按 key 名分流，**用户不需要区分，返回啥就在哪儿生效**：
+
+| 返回的 key | 赋到哪 | 举例 |
+|---|---|---|
+| `visible` / `display` / `hidden` | Formily 字段 state 顶层 | `{visible: false}` 隐藏字段 |
+| `editable` / `required` / `title` / `value` / `dataSource` / `loading` | Formily 字段 state 顶层 | `{required: true}` 设必填 |
+| 其他所有 key（`options` / `disabled` / `placeholder` / `mode` / …） | `field.componentProps` → 透传给控件 | `{options: [...]}` 喂给 Select |
+
+`compute` 返回的对象随依赖变化重新计算。**防 stale 机制**：内部用单调计数器，如果在
+你异步 compute 完成前依赖又变了，旧结果会被丢弃，只采用最新一次。
 
 ### 示例：省市级联
 
@@ -91,8 +101,19 @@ $.linkedFieldProps(
   <CascadeDemo />
 </Demo>
 
-切换省份 → 城市的 options 重新派生。整个过程没有 `useEffect` / `useState`，联动逻辑
-全部声明在 `effects` 里。
+切换省份 → 城市的 `options` 重新派生（`{options}` 走 `componentProps` 透传给 Select）。
+整个过程没有 `useEffect` / `useState`，联动逻辑全部声明在 `effects` 里。
+
+### 示例：根据复选框显隐字段
+
+```jsx
+effects={$ => {
+  // 勾选「启用」才显示 detail 字段
+  $.linkedFieldProps('detail', ['enabled'], ({enabled}) => ({
+    visible: enabled === true,   // Formily 顶层 state → 字段显隐
+  }));
+}}
+```
 
 ### 与 `validateField` 的区别
 
@@ -221,7 +242,7 @@ effects={$ => {
 | helper | 触发时机 | 典型用途 |
 |---|---|---|
 | `$.validateField` | 依赖字段值变化 | 跨字段校验 |
-| `$.linkedFieldProps` | 依赖字段值变化 | 级联 options、派生 disabled |
+| `$.linkedFieldProps` | 依赖字段值变化 | 派生 options/disabled（进 componentProps）、visible/required（进字段 state） |
 | `$.onFieldValueChange` | 字段值变化 | 自定义联动（设值/显隐） |
 | `$.onEachRowChange` | 数组行内单 key 变化 | 按行联动 |
 | `$.onEachRowMultiChange` | 数组行内多 key 任一变化 | 按行多 key 联动 |

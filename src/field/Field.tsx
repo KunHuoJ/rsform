@@ -100,6 +100,13 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
         if (!childEl.props.placeholder && typeof title === 'string') {
             injectProps.placeholder = `请输入${title}`;
         }
+        // Forward `linkedFieldProps`-derived control props. The effects helper
+        // merges its `compute` result into `field.componentProps`; spread those
+        // onto the control so e.g. cascading `options` reach the Select.
+        const componentProps = (field as any)?.componentProps;
+        if (componentProps && typeof componentProps === 'object') {
+            Object.assign(injectProps, componentProps);
+        }
         content = React.cloneElement(childEl, injectProps);
     } else {
         content = children ?? null;
