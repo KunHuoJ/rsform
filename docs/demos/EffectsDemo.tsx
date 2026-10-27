@@ -1,34 +1,29 @@
 import * as React from 'react';
 import {Form} from 'rsform/antd';
 
+/**
+ * 跨字段校验演示：在 effects 里用 $.validateField 声明式地做响应式联动校验，
+ * 依赖字段任一变化即重跑，字段卸载时自动清理。
+ */
 export function EffectsDemo(): React.ReactElement {
     return (
-        <div className="rsfd-demo">
-            <div className="rsfd-demo-label">Live demo — cross-field validation</div>
-            <Form
-                initialValues={{password: '', confirm: ''}}
-                effects={$ =>
-                    $.validateField(
-                        'confirm',
-                        ['password', 'confirm'],
-                        ({password, confirm}) =>
-                            password === confirm
-                                ? ''
-                                : 'passwords do not match',
-                    )
-                }
-            >
-                <Form.Field name="password" title="Password" required>
-                    <Form.Input.Password placeholder="set a password" />
-                </Form.Field>
-                <Form.Field name="confirm" title="Confirm" required>
-                    <Form.Input.Password placeholder="repeat it" />
-                </Form.Field>
-            </Form>
-            <p style={{color: 'var(--rsf-muted)', fontSize: 13, marginTop: 8}}>
-                Type a mismatch to see the error appear on the Confirm field; fix
-                it to see the error clear.
-            </p>
-        </div>
+        <Form
+            initialValues={{password: '', confirm: ''}}
+            effects={$ =>
+                $.validateField(
+                    'confirm',
+                    ['password', 'confirm'],
+                    ({password, confirm}) =>
+                        password === confirm ? '' : '两次密码不一致',
+                )
+            }
+        >
+            <Form.Field name="password" title="密码" required>
+                <Form.Input.Password placeholder="请设置密码" />
+            </Form.Field>
+            <Form.Field name="confirm" title="确认密码" required>
+                <Form.Input.Password placeholder="请再次输入" />
+            </Form.Field>
+        </Form>
     );
 }

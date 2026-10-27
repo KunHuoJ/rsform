@@ -18,5 +18,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.spec.{ts,tsx}'],
+    // antd Table 在 jsdom 下渲染开销大（getComputedStyle 桩 + 滚动条测量），
+    // 并行跑全套时单格编辑测试容易顶过 5s 默认超时，按表测试实际耗时放宽。
+    testTimeout: 30000,
+    hookTimeout: 30000,
   },
 });
