@@ -1,9 +1,7 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
 import type * as React from 'react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ArrayItems, arrayUnion } from '../src/array-items/index';
-import { Input } from '../src/controls/index';
-import { Field, Form } from '../src/index';
+import { ArrayItems, arrayUnion, Field, Form, Input } from '../src/index';
 
 async function flush(): Promise<void> {
     await act(async () => {
@@ -161,6 +159,33 @@ describe('ArrayItems (Phase 4)', () => {
         clickUp(2);
         await flush();
         expect(formRef.current.values.tags.map((r: any) => r.label)).toEqual(['a', 'c', 'b']);
+    });
+
+    it('moveUp swaps the displayed input values (UI, not just data)', async () => {
+        // Regression: rows are keyed by index, so after a move the Formily Field
+        // at each row path must re-render with the swapped value. Using the
+        // correct row-child name `label` (append → tags.N.label), each row's
+        // Field binds to its own leaf, so the inputs visibly swap on move.
+        // (The earlier bug used `.label`, which peeled to the sibling `tags.label`
+        // so all rows bound to ONE field and moves had no visible effect.)
+        render(
+            <Form initialValues={{ tags: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] }}>
+                <ArrayItems name="tags">
+                    {() => (
+                        <Field name="label">
+                            <Input />
+                        </Field>
+                    )}
+                </ArrayItems>
+            </Form>,
+        );
+        await flush();
+        const before = (screen.getAllByRole('textbox') as HTMLInputElement[]).map((i) => i.value);
+        expect(before).toEqual(['a', 'b', 'c']);
+        clickUp(2);
+        await flush();
+        const after = (screen.getAllByRole('textbox') as HTMLInputElement[]).map((i) => i.value);
+        expect(after).toEqual(['a', 'c', 'b']);
     });
 
     it('arrayUnion rejects a duplicate value across rows', async () => {

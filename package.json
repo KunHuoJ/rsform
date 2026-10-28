@@ -21,26 +21,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./antd": {
-      "types": "./dist/controls/index.d.ts",
-      "import": "./dist/controls/index.js",
-      "require": "./dist/controls/index.cjs"
-    },
-    "./table": {
-      "types": "./dist/table/index.d.ts",
-      "import": "./dist/table/index.js",
-      "require": "./dist/table/index.cjs"
-    },
-    "./array-items": {
-      "types": "./dist/array-items/index.d.ts",
-      "import": "./dist/array-items/index.js",
-      "require": "./dist/array-items/index.cjs"
-    },
-    "./effects": {
-      "types": "./dist/effects/index.d.ts",
-      "import": "./dist/effects/index.js",
-      "require": "./dist/effects/index.cjs"
-    },
     "./styles": "./src/styles/index.css",
     "./package.json": "./package.json"
   },
@@ -75,8 +55,6 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
     "@formily/reactive": "^2.3.0",
     "@formily/reactive-react": "^2.3.0",
     "@formily/shared": "^2.3.0",

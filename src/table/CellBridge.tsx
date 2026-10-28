@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { useForm } from '@formily/react';
 import { observer } from '@formily/reactive-react';
-import * as React from 'react';
 import { getControl } from '../controls/FormComMap';
 import { prefixCls } from '../shared/prefixCls';
 

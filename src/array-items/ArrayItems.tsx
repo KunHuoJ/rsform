@@ -1,24 +1,9 @@
-import {
-    closestCenter,
-    DndContext,
-    type DragEndEvent,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-} from '@dnd-kit/core';
-import {
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import type * as React from 'react';
 import { ArrayField as FormilyArrayField, useField } from '@formily/react';
 import { observer } from '@formily/reactive-react';
-import type * as React from 'react';
 import { useContentName } from '../field/useContentName';
 import { FieldContext } from '../shared/FieldContext';
 import { prefixCls } from '../shared/prefixCls';
-import { ArrayRow, SortableItem } from './SortableItem';
 import { ArrayFieldContext } from './useArrayItems';
 
 export interface ArrayItemsProps {
@@ -41,28 +26,86 @@ export interface ArrayItemsProps {
     /** Hide the add button entirely. */
     addDisabled?: boolean;
     /**
-     * Enable drag-to-sort via @dnd-kit. Defaults to `false` — most forms only
-     * need add/remove; set `dragable` for ordered lists (priorities, steps).
-     * When off, rows render as a plain list with up/down/remove buttons.
-     */
-    dragable?: boolean;
-    /**
      * Row content. A render-prop `(value, index) => ReactNode` is typical —
-     * return relative-name Fields (e.g. `<Field name=".label">`) which resolve
+     * return relative-name Fields (e.g. `<Field name="label">`) which resolve
      * against this row's path scope.
      */
     children?: ((value: any, index: number) => React.ReactNode) | React.ReactNode;
 }
 
-/** Stable per-row id derived from the array name + row index. */
-function rowId(name: string, index: number): string {
-    return `${name}#${index}`;
+export interface ArrayRowProps {
+    /** Zero-based row index. */
+    index: number;
+    /** Total rows in the array (for disabling up/down on the ends). */
+    total: number;
+    /** Minimum rows; the remove button disables at or below this. */
+    min?: number;
+    /** Remove this row. */
+    onRemove: () => void;
+    /** Move this row up. */
+    onMoveUp: () => void;
+    /** Move this row down. */
+    onMoveDown: () => void;
+    /** Row content (rendered inside a FieldContext scoped to this row). */
+    children?: React.ReactNode;
 }
 
-function parseRowId(name: string, id: string): number {
-    const suffix = String(id).slice(name.length + 1);
-    const n = Number(suffix);
-    return Number.isFinite(n) ? n : -1;
+/**
+ * Presentational array row: the row content plus up/down/remove action buttons.
+ * No drag — reordering is via the up/down buttons (Formily `moveUp`/`moveDown`),
+ * matching antd Form.List's `move`. This keeps ArrayItems dependency-free beyond
+ * Formily + React.
+ */
+function ArrayRow({
+    index,
+    total,
+    min,
+    onRemove,
+    onMoveUp,
+    onMoveDown,
+    children,
+}: ArrayRowProps): React.ReactElement {
+    const atTop = index <= 0;
+    const atBottom = index >= total - 1;
+    const removeDisabled = min != null && total <= min;
+
+    return (
+        <div className={`${prefixCls}-array-item`}>
+            <div className={`${prefixCls}-array-item-content`}>{children}</div>
+            <div className={`${prefixCls}-array-item-actions`}>
+                <button
+                    type="button"
+                    className={`${prefixCls}-array-item-up`}
+                    onClick={onMoveUp}
+                    disabled={atTop}
+                    title="上移"
+                    aria-label="上移"
+                >
+                    ↑
+                </button>
+                <button
+                    type="button"
+                    className={`${prefixCls}-array-item-down`}
+                    onClick={onMoveDown}
+                    disabled={atBottom}
+                    title="下移"
+                    aria-label="下移"
+                >
+                    ↓
+                </button>
+                <button
+                    type="button"
+                    className={`${prefixCls}-array-item-remove`}
+                    onClick={onRemove}
+                    disabled={removeDisabled}
+                    title="删除"
+                    aria-label="删除"
+                >
+                    ×
+                </button>
+            </div>
+        </div>
+    );
 }
 
 /**
@@ -78,27 +121,10 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
     validateBeforeAdd,
     addText,
     addDisabled,
-    dragable,
     children,
 }: Omit<ArrayItemsProps, 'name'> & { name: string }): React.ReactElement {
     const field: any = useField();
     const values: any[] = Array.isArray(field?.value) ? field.value : [];
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-    );
-
-    const ids = values.map((_, i) => rowId(name, i));
-
-    const handleDragEnd = (e: DragEndEvent) => {
-        const { active, over } = e;
-        if (!over || active.id === over.id) return;
-        const from = parseRowId(name, String(active.id));
-        const to = parseRowId(name, String(over.id));
-        if (from < 0 || to < 0) return;
-        field?.move(from, to);
-    };
 
     const atMax = max != null && values.length >= max;
     const handleAdd = async () => {
@@ -124,25 +150,21 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
             typeof children === 'function'
                 ? (children as (v: any, i: number) => React.ReactNode)(value, index)
                 : children;
-        const rowProps = {
-            index,
-            total: values.length,
-            min,
-            onRemove: () => handleRemove(index),
-            onMoveUp: () => field?.moveUp(index),
-            onMoveDown: () => field?.moveDown(index),
-            children: content,
-        };
         return (
             <FieldContext.Provider
-                key={rowId(name, index)}
+                key={`${name}#${index}`}
                 value={{ preName: rowPath, name: rowPath, state: null }}
             >
-                {dragable ? (
-                    <SortableItem id={rowId(name, index)} {...rowProps} />
-                ) : (
-                    <ArrayRow {...rowProps} />
-                )}
+                <ArrayRow
+                    index={index}
+                    total={values.length}
+                    min={min}
+                    onRemove={() => handleRemove(index)}
+                    onMoveUp={() => field?.moveUp(index)}
+                    onMoveDown={() => field?.moveDown(index)}
+                >
+                    {content}
+                </ArrayRow>
             </FieldContext.Provider>
         );
     };
@@ -150,19 +172,7 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
     return (
         <ArrayFieldContext.Provider value={field}>
             <div className={`${prefixCls}-array-items`}>
-                {dragable ? (
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragEnd}
-                    >
-                        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-                            {values.map((v, i) => renderRow(v, i))}
-                        </SortableContext>
-                    </DndContext>
-                ) : (
-                    values.map((v, i) => renderRow(v, i))
-                )}
+                {values.map((v, i) => renderRow(v, i))}
                 {!addDisabled && (
                     <button
                         type="button"
@@ -179,11 +189,13 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
 });
 
 /**
- * rsform ArrayItems: a draggable, editable array list backed by a Formily
- * `ArrayField`. Each row is sortable via @dnd-kit with up/down/remove buttons;
- * `min`/`max`/`validateBeforeAdd` gate mutations. Row content is a render-prop
- * receiving `(value, index)` and runs inside a FieldContext scoped to that
- * row's path, so relative-name Fields (`.foo`) resolve to `name.index.foo`.
+ * rsform ArrayItems: a lightweight add/remove/move list backed by a Formily
+ * `ArrayField`, in the spirit of antd's `Form.List`. `min`/`max`/
+ * `validateBeforeAdd` gate mutations; up/down buttons reorder via Formily
+ * `moveUp`/`moveDown` (no drag library — keeps the subpath dependency-free
+ * beyond Formily + React). Row content is a render-prop receiving
+ * `(value, index)` and runs inside a FieldContext scoped to that row's path, so
+ * relative-name Fields (`.foo`) resolve to `name.index.foo`.
  */
 export function ArrayItems(props: ArrayItemsProps): React.ReactElement {
     const { name, ...rest } = props;

@@ -1,10 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
 import type * as React from 'react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { registerControl } from '../src/controls/FormComMap';
-import { Input, InputNumber } from '../src/controls/index';
-import { Field, Form } from '../src/index';
-import { Table } from '../src/table/index';
+import { Field, Form, Input, InputNumber, Table } from '../src/index';
 
 async function flush(): Promise<void> {
     await act(async () => {
@@ -238,6 +236,77 @@ describe('Table (Phase 5)', () => {
         expect(removes).toHaveLength(3);
         fireEvent.click(removes[1]);
         await flush();
+        expect(formRef.current.values.rows).toHaveLength(2);
+        expect(formRef.current.values.rows.map((r: any) => r.a)).toEqual(['x', 'z']);
+    });
+
+    it('actions.insert adds a visible row to the table body (UI, not just data)', async () => {
+        // Regression: the lenTick autorun subscribes to the array reference via
+        // field.value; Formily's field.insert splices in place (same reference)
+        // and did NOT re-fire the autorun, so the body never re-rendered and the
+        // new row did not appear until an unrelated re-render. actions now use
+        // form.setValuesIn(name, nextArray) (whole-array replace) which reliably
+        // re-fires the autorun, so the new row appears immediately.
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form initialValues={{ rows: [{ a: 'x' }, { a: 'y' }] }} formRef={formRef}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    itemDefaultValue={{ a: '' }}
+                    columns={[
+                        { title: 'A', dataIndex: 'a', control: 'input' },
+                        {
+                            title: '操作',
+                            dataIndex: '__ops',
+                            editable: false,
+                            render: (_v, _r, index, actions) => (
+                                <button onClick={() => actions.insert(index + 1)}>插入</button>
+                            ),
+                        },
+                    ]}
+                />
+            </Form>,
+        );
+        await flush();
+        // Initially 2 editable cells (input controls).
+        expect(screen.getAllByRole('textbox')).toHaveLength(2);
+        // Insert below the first row.
+        fireEvent.click(screen.getAllByText('插入')[0]);
+        await flush();
+        // The new row appears in the body immediately (3 cells), and the data
+        // is consistent with the UI (length 3).
+        expect(screen.getAllByRole('textbox')).toHaveLength(3);
+        expect(formRef.current.values.rows).toHaveLength(3);
+    });
+
+    it('actions.remove drops a visible row from the table body (UI, not just data)', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form initialValues={{ rows: [{ a: 'x' }, { a: 'y' }, { a: 'z' }] }} formRef={formRef}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    columns={[
+                        { title: 'A', dataIndex: 'a', control: 'input' },
+                        {
+                            title: '操作',
+                            dataIndex: '__ops',
+                            editable: false,
+                            render: (_v, _r, index, actions) => (
+                                <button onClick={() => actions.remove(index)}>删除</button>
+                            ),
+                        },
+                    ]}
+                />
+            </Form>,
+        );
+        await flush();
+        expect(screen.getAllByRole('textbox')).toHaveLength(3);
+        fireEvent.click(screen.getAllByText('删除')[1]);
+        await flush();
+        // The row disappears from the body immediately (2 cells).
+        expect(screen.getAllByRole('textbox')).toHaveLength(2);
         expect(formRef.current.values.rows).toHaveLength(2);
         expect(formRef.current.values.rows.map((r: any) => r.a)).toEqual(['x', 'z']);
     });

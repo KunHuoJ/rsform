@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { Field as FormilyField, useField } from '@formily/react';
 import { observer } from '@formily/reactive-react';
-import * as React from 'react';
 import { FieldContext } from '../shared/FieldContext';
 import { prefixCls } from '../shared/prefixCls';
 import { commonMap } from './commonMap';

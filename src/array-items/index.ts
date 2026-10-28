@@ -1,8 +1,8 @@
 /**
- * rsform/array-items — a draggable, editable array list backed by a Formily
- * ArrayField, with @dnd-kit/sortable drag reordering and min/max/
- * validateBeforeAdd gating. Also exports `arrayUnion` for cross-row
- * uniqueness validation.
+ * Lightweight add/remove/move list backed by a Formily ArrayField, in the
+ * spirit of antd's Form.List. `min`/`max`/`validateBeforeAdd` gate mutations;
+ * up/down buttons reorder via Formily mutators (no drag lib). Also exports
+ * `arrayUnion` for cross-row uniqueness validation.
  */
 import { Form as BaseForm } from '../form/FormNamespace';
 import { ArrayItems } from './ArrayItems';
@@ -15,10 +15,10 @@ import { ArrayFieldContext, useArrayField } from './useArrayItems';
 export type { ArrayUnionValidator } from './arrayUnion';
 
 /**
- * The rsform.Form namespace as exposed by the `rsform/array-items` subpath:
- * the bare Form plus ArrayItems attached as a static property. `Object.assign`
- * mutates the shared Form object in place (so the bare Form also gains
- * ArrayItems once this subpath is imported) and widens the type to include it.
+ * Form namespace helper: attaches ArrayItems onto the shared Form as
+ * `Form.ArrayItems`. rsform's single entry (`src/index.ts`) re-exports
+ * `ArrayItems` and attaches it there; this barrel is the implementation
+ * surface for the array-items module.
  */
 export type ArrayItemsForm = typeof BaseForm & {
     ArrayItems: typeof ArrayItems;

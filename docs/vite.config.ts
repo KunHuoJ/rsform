@@ -31,22 +31,6 @@ export default defineConfig({
                 replacement: resolve(here, '../src/styles/index.css'),
             },
             {
-                find: 'rsform/table',
-                replacement: resolve(here, '../src/table/index.ts'),
-            },
-            {
-                find: 'rsform/antd',
-                replacement: resolve(here, '../src/controls/index.ts'),
-            },
-            {
-                find: 'rsform/array-items',
-                replacement: resolve(here, '../src/array-items/index.ts'),
-            },
-            {
-                find: 'rsform/effects',
-                replacement: resolve(here, '../src/effects/index.ts'),
-            },
-            {
                 find: 'rsform',
                 replacement: resolve(here, '../src/index.ts'),
             },

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Form } from 'rsform/antd';
+import { Form } from 'rsform';
 
 /**
  * 基础表单演示：Form + Form.Field 自动注入 value/onChange，Form.Submit 等校验，

@@ -3,7 +3,7 @@
  * `<Form>` 当 JSX 解析。MDX 文件 import 后传给 <Demo code={...} />。
  */
 
-export const BASIC_CODE = `import { Form } from 'rsform/antd';
+export const BASIC_CODE = `import { Form } from 'rsform';
 
 <Form
   initialValues={{ username: '', age: 18 }}
@@ -20,7 +20,7 @@ export const BASIC_CODE = `import { Form } from 'rsform/antd';
   <Form.Submit>提交</Form.Submit>
 </Form>`;
 
-export const EFFECTS_CODE = `import { Form } from 'rsform/antd';
+export const EFFECTS_CODE = `import { Form } from 'rsform';
 
 <Form
   effects={$ =>
@@ -37,23 +37,31 @@ export const EFFECTS_CODE = `import { Form } from 'rsform/antd';
   </Form.Field>
 </Form>`;
 
-export const ARRAY_ITEMS_CODE = `import { Form } from 'rsform/array-items';
+export const ARRAY_ITEMS_CODE = `import { arrayUnion, Form } from 'rsform';
 
-<Form initialValues={{ tags: [{ label: 'react' }, { label: 'formily' }] }}>
-  <Form.ArrayItems name="tags" itemDefaultValue={{ label: '' }}>
+const ROLES = [{ label: '管理员', value: 'admin' }, { label: '开发', value: 'dev' }];
+
+<Form initialValues={{ members: [] }} onSubmit={async v => console.log(v)}>
+  <Form.ArrayItems name="members" itemDefaultValue={{ name: '', email: '', role: 'dev' }} min={1}>
     {() => (
-      <Form.Field name=".label" title="标签">
-        <Form.Input placeholder="输入标签" />
-      </Form.Field>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Form.Field name="name" title="姓名" required>
+          <Form.Input placeholder="姓名" />
+        </Form.Field>
+        <Form.Field name="email" title="邮箱" required
+                    validator={arrayUnion('email', '该邮箱已存在')}>
+          <Form.Input placeholder="邮箱" />
+        </Form.Field>
+        <Form.Field name="role" title="角色">
+          <Form.Select options={ROLES} />
+        </Form.Field>
+      </div>
     )}
   </Form.ArrayItems>
+  <Form.Submit>提交</Form.Submit>
 </Form>`;
 
-export const ARRAY_ITEMS_DRAG_CODE = `<Form.ArrayItems name="steps" dragable>
-  {() => <Form.Field name=".name"><Form.Input /></Form.Field>}
-</Form.ArrayItems>`;
-
-export const CASCADE_CODE = `import { Form } from 'rsform/antd';
+export const CASCADE_CODE = `import { Form } from 'rsform';
 
 const PROVINCES = [{ label: '广东', value: 'gd' }, /* ... */];
 const CITIES = { gd: [{ label: '广州', value: 'gz' }, /* ... */] };
@@ -76,7 +84,7 @@ const CITIES = { gd: [{ label: '广州', value: 'gz' }, /* ... */] };
   </Form.Field>
 </Form>`;
 
-export const CONSUMER_CODE = `import { Form } from 'rsform/antd';
+export const CONSUMER_CODE = `import { Form } from 'rsform';
 
 <Form initialValues={{ name: 'rsform', age: 1, status: 'draft' }}>
   <Form.Field name="name" title="名称"><Form.Input /></Form.Field>
@@ -91,7 +99,7 @@ export const CONSUMER_CODE = `import { Form } from 'rsform/antd';
 </Form>`;
 
 export const TABLE_CODE = `import { Button } from 'antd';
-import { Form } from 'rsform/table';
+import { Form } from 'rsform';
 
 interface Row { name: string; qty: number; price: number; status: string }
 
@@ -144,7 +152,7 @@ const INITIAL_ROWS: Row[] = [
 
 export const TABLE_SUMMARY_CODE = `import { useForm } from '@formily/react';
 import { Button } from 'antd';
-import { Form } from 'rsform/table';
+import { Form } from 'rsform';
 
 // 添加行：antd link 按钮（link 样式，不依赖 rsform/styles）
 function AddRowButton({ arrayName, defaultRow }) {
@@ -176,7 +184,7 @@ function Summary() {
 }`;
 
 export const TABLE_COLUMN_ACTIONS_CODE = `import { Button } from 'antd';
-import { Form } from 'rsform/table';
+import { Form } from 'rsform';
 
 <Form.Table<Row>
   name="rows"

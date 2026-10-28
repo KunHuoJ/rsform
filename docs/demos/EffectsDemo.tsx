@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { Form } from 'rsform/antd';
+import { Form } from 'rsform';
 
 /**
  * 跨字段校验演示：在 effects 里用 $.validateField 声明式地做响应式联动校验，

@@ -1,6 +1,6 @@
+import type * as React from 'react';
 import { useForm } from '@formily/react';
 import { observer } from '@formily/reactive-react';
-import type * as React from 'react';
 import { prefixCls } from '../shared/prefixCls';
 
 export interface FormErrorProps extends React.HTMLAttributes<HTMLDivElement> {

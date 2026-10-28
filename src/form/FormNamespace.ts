@@ -9,9 +9,11 @@ import { FormError } from './FormError';
  * properties: Form.Field, Form.Consumer, Form.FormError, Form.Formily (full
  * @formily/react namespace).
  *
- * Note: antd control wrappers (Form.Input, Form.Select, …) and Form.Submit
- * live on the `rsform/antd` subpath entry so the bare `rsform` entry stays
- * antd-free.
+ * The antd controls (Form.Input, Form.Select, …), Form.Submit, Form.Button,
+ * Form.Table and Form.ArrayItems are attached in `src/index.ts` (the single
+ * `rsform` entry), so `import { Form } from 'rsform'` yields the whole
+ * namespace. This `FormNamespace` module holds only the core (antd-free)
+ * pieces, so it can be reused by the single entry without circular concerns.
  */
 export const Form = Object.assign(FormComponent, {
     Field,

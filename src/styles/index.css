@@ -47,10 +47,6 @@
         -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
         'Hiragino Sans GB', 'Microsoft YaHei', Roboto, Helvetica, Arial,
         sans-serif;
-
-    /* —— 拖拽 —— */
-    --rsf-handle-color: #bfbfbf;
-    --rsf-handle-color-hover: #8c8c8c;
 }
 
 /* 深色变量覆盖：手动切换（data-theme=dark）与系统偏好（且未显式设 light）各一份。 */
@@ -70,9 +66,6 @@
     --rsf-bg-color: #141414;
     --rsf-bg-color-fill: #1f1f1f;
     --rsf-bg-color-hover: #1f1f1f;
-
-    --rsf-handle-color: #5a5a5a;
-    --rsf-handle-color-hover: #8c8c8c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -92,9 +85,6 @@
         --rsf-bg-color: #141414;
         --rsf-bg-color-fill: #1f1f1f;
         --rsf-bg-color-hover: #1f1f1f;
-
-        --rsf-handle-color: #5a5a5a;
-        --rsf-handle-color-hover: #8c8c8c;
     }
 }
 
@@ -168,31 +158,6 @@
 
 .rsf-array-item:hover {
     border-color: var(--rsf-color-primary-hover);
-}
-
-.rsf-array-item-dragging {
-    opacity: 0.6;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    z-index: 1;
-}
-
-.rsf-array-item-handle {
-    display: inline-flex;
-    align-items: center;
-    cursor: grab;
-    color: var(--rsf-handle-color);
-    user-select: none;
-    padding: 2px 2px;
-    line-height: 0;
-    transition: color 0.15s ease;
-}
-
-.rsf-array-item-handle:hover {
-    color: var(--rsf-handle-color-hover);
-}
-
-.rsf-array-item-handle:active {
-    cursor: grabbing;
 }
 
 .rsf-array-item-content {

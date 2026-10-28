@@ -1,8 +1,7 @@
+import React from 'react';
 import { useForm } from '@formily/react';
 import { Button } from 'antd';
-import React from 'react';
-import { Form as AForm } from 'rsform/antd';
-import { Form } from 'rsform/table';
+import { Form } from 'rsform';
 
 interface Row {
     name: string;
@@ -170,7 +169,7 @@ export function TableDemo(): React.ReactElement {
             <AddRowButton arrayName="rows" defaultRow={DEFAULT_ROW} />
             <Summary />
             <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-                <AForm.Submit>提交</AForm.Submit>
+                <Form.Submit>提交</Form.Submit>
             </div>
             {result && (
                 <pre className="rsfd-output" style={{ marginTop: 12 }}>

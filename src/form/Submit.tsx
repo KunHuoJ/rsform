@@ -1,8 +1,8 @@
+import * as React from 'react';
 import { useForm } from '@formily/react';
 import { toJS } from '@formily/reactive';
 import { observer } from '@formily/reactive-react';
 import { Button } from 'antd';
-import * as React from 'react';
 import { useFormInternals } from './RsfFormInternals';
 
 export interface SubmitProps

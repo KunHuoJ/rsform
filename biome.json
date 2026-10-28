@@ -11,9 +11,9 @@
             "src/**",
             "tests/**",
             "docs/**",
-            "!**/node_modules/**",
-            "!**/dist/**",
-            "!**/docs/dist/**",
+            "!**/node_modules",
+            "!**/dist",
+            "!**/docs/dist",
             "!**/*.md",
             "!**/*.mdx",
             "!**/*.json",
@@ -74,9 +74,20 @@
         }
     },
     "assist": {
+        "enabled": true,
         "actions": {
             "source": {
-                "organizeImports": "on"
+                "organizeImports": {
+                    "level": "on",
+                    "options": {
+                        "sortBareImports": false,
+                        "groups": [
+                            ["react", "react-dom", "react/jsx-runtime"],
+                            ["**"],
+                            ["../**", "./**"]
+                        ]
+                    }
+                }
             }
         }
     }

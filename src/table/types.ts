@@ -1,5 +1,5 @@
-import type { ColumnsType } from 'antd/es/table';
 import type * as React from 'react';
+import type { ColumnsType } from 'antd/es/table';
 
 /**
  * Row actions handed to a column's `render` so a custom cell can mutate the

@@ -1,8 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
 import type * as React from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Input } from '../src/controls/index';
-import { Field, Form } from '../src/index';
+import { Field, Form, Input } from '../src/index';
 
 describe('Form + Field + Input end-to-end', () => {
     it('flows input value to form.values and submit calls onSubmit', async () => {

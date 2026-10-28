@@ -1,7 +1,7 @@
+import * as React from 'react';
 import { ArrayField as FormilyArrayField } from '@formily/react';
 import { observer } from '@formily/reactive-react';
 import { Table as AntdTable } from 'antd';
-import * as React from 'react';
 import { useContentName } from '../field/useContentName';
 import { FieldContext } from '../shared/FieldContext';
 import { prefixCls } from '../shared/prefixCls';

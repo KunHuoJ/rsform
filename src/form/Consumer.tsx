@@ -1,6 +1,6 @@
+import type * as React from 'react';
 import { useForm } from '@formily/react';
 import { observer } from '@formily/reactive-react';
-import type * as React from 'react';
 import { useContentName } from '../field/useContentName';
 
 export interface FormConsumerProps {

@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { createForm, type Form as FormilyForm } from '@formily/core';
 import { FormProvider } from '@formily/react';
-import * as React from 'react';
 import { type EffectsProp, type MergeEffectsOptions, mergeEffects } from '../effects/mergeEffects';
 import { FieldContext } from '../shared/FieldContext';
 import { type RsfFormInternals, RsfFormInternalsContext } from './RsfFormInternals';

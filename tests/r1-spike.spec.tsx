@@ -1,8 +1,7 @@
-import { render } from '@testing-library/react';
 import * as React from 'react';
+import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Input } from '../src/controls/index';
-import { Field, Form } from '../src/index';
+import { Field, Form, Input } from '../src/index';
 
 /**
  * R1 spike: verify form.createField({name, validator}) registers a field for

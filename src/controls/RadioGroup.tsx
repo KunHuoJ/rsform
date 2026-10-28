@@ -1,5 +1,5 @@
-import { Radio } from 'antd';
 import type * as React from 'react';
+import { Radio } from 'antd';
 
 export interface RadioGroupProps
     extends Omit<React.ComponentProps<typeof Radio.Group>, 'optionType'> {

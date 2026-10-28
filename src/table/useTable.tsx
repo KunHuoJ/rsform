@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { useField, useForm } from '@formily/react';
 import { autorun, untracked } from '@formily/reactive';
-import * as React from 'react';
 import { useLatestRef } from '../shared/useLatestRef';
 import { CellBridge, resolveAbsoluteIndex } from './CellBridge';
 import type { BuiltColumns, RsfTableProps } from './types';
@@ -75,24 +75,49 @@ export function useTable<RecordType extends Record<string, any>>(
     const idField = typeof props.rowKey === 'string' ? props.rowKey : undefined;
 
     const columns = React.useMemo<BuiltColumns<RecordType>>(() => {
-        // Build the row-mutation actions handed to a custom column `render`.
-        // `field` is the stable Formily ArrayField model — its mutators are
-        // stable references, safe to capture in the memoised columns closure.
-        // `add`/`insert` default to the Table's `itemDefaultValue` so a custom
-        // action column (add button, etc.) doesn't need to know the default.
+        // Row-mutation actions handed to a column `render`. All structural
+        // mutations go through `form.setValuesIn(name, nextArray)` — an
+        // immutable whole-array replace — rather than Formily's `field.*`
+        // mutators. Reason: the `lenTick` autorun (below) subscribes to the
+        // array *reference* via `field.value`; `setValuesIn` replaces that
+        // reference and reliably re-fires the autorun, so add/insert/remove
+        // re-render the body immediately. The `field.*` mutators splice the
+        // array in place (same reference), which does NOT re-fire the autorun,
+        // so the body would not re-render and the new row would not appear
+        // until the next unrelated re-render (the "insert then add → +2 rows"
+        // bug). `add`/`insert` default to the Table's `itemDefaultValue`.
+        // Cell EDITS do NOT go through here — they use `cellField.onInput(v)`
+        // (a single leaf, no array replacement), so the per-cell perf contract
+        // is preserved; only structural changes re-render the body, as they
+        // should.
         const itemDefault = props.itemDefaultValue;
-        // Row-mutation actions handed to a column `render`. `add`/`insert`
-        // default to the Table's `itemDefaultValue`. `field` is the stable
-        // Formily ArrayField model — its mutators are stable references, safe
-        // to capture in the memoised columns closure.
+        const getArr = (): RecordType[] => {
+            const v = form?.values?.[name];
+            return Array.isArray(v) ? (v as RecordType[]) : [];
+        };
+        const setArr = (next: RecordType[]) => {
+            form?.setValuesIn?.(name, next);
+        };
         const actions = () => ({
-            add: (value?: RecordType) => field?.push?.(value ?? itemDefault),
-            insert: (index: number, value?: RecordType) =>
-                field?.insert?.(index, value ?? itemDefault),
-            remove: (index: number) => field?.remove?.(index),
-            move: (from: number, to: number) => field?.move?.(from, to),
-            moveUp: (index: number) => field?.moveUp?.(index),
-            moveDown: (index: number) => field?.moveDown?.(index),
+            add: (value?: RecordType) => setArr([...getArr(), value ?? itemDefault]),
+            insert: (index: number, value?: RecordType) => {
+                const arr = getArr();
+                const at = Math.max(0, Math.min(index, arr.length));
+                setArr([...arr.slice(0, at), value ?? itemDefault, ...arr.slice(at)]);
+            },
+            remove: (index: number) => setArr(getArr().filter((_, k) => k !== index)),
+            move: (from: number, to: number) => {
+                const arr = getArr();
+                if (from < 0 || to < 0 || from >= arr.length || to >= arr.length || from === to) {
+                    return;
+                }
+                const next = arr.slice();
+                const [moved] = next.splice(from, 1);
+                next.splice(to, 0, moved);
+                setArr(next);
+            },
+            moveUp: (index: number) => actions().move(index, index - 1),
+            moveDown: (index: number) => actions().move(index, index + 1),
             form,
             field,
         });

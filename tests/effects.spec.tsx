@@ -1,9 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
 import type * as React from 'react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Input } from '../src/controls/index';
 import { type EffectHelpers, getRefState } from '../src/effects';
-import { Field, Form } from '../src/index';
+import { Field, Form, Input } from '../src/index';
 
 /**
  * Helpers to read a field's state from the rendered form via its formRef.

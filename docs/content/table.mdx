@@ -57,7 +57,7 @@ import {TABLE_CODE, TABLE_SUMMARY_CODE} from '../snippets';
 
 ```jsx
 import { Button } from 'antd';
-import { Form } from 'rsform/table';
+import { Form } from 'rsform';
 
 <Form.Table<Row>
   name="rows"
@@ -93,7 +93,7 @@ import { Form } from 'rsform/table';
 `control` 写字符串时，`CellBridge` 从 `FormComMap` 注册表查控件。内置 `input`/`inputNumber`/`select`/`radioGroup`/`switch`。需要扩展时：
 
 ```ts
-import { registerControl } from 'rsform/antd';
+import { registerControl } from 'rsform';
 registerControl('cascader', MyCascader);
 // 之后列里就能写 control: 'cascader'
 ```

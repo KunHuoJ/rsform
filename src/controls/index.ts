@@ -1,14 +1,13 @@
 /**
- * rsform/antd — antd 5 control wrappers.
- *
- * Bare `rsform` keeps Form/Field antd-agnostic; this subpath adds the antd
- * controls and attaches them onto the Form namespace (Form.Input, …) for
- * ergonomic access. Also exports the control registry (FormComMap) used by
- * the high-perf Table.
+ * antd 5 control wrappers + the control registry (FormComMap) used by the
+ * high-perf Table. The single `rsform` entry (`src/index.ts`) re-exports these
+ * and attaches them onto the `Form` namespace (Form.Input, …, Form.Submit,
+ * Form.Button). This module is the implementation surface for the controls;
+ * consumers import from `rsform` directly.
  */
 
-import { Button as AntdButton } from 'antd';
 import type * as React from 'react';
+import { Button as AntdButton } from 'antd';
 import { Form as BaseForm } from '../form/FormNamespace';
 import { Submit } from '../form/Submit';
 import { prefixCls } from '../shared/prefixCls';
@@ -19,17 +18,15 @@ import { Select } from './Select';
 import { Switch } from './Switch';
 
 /**
- * The rsform.Form namespace as exposed by the `rsform/antd` subpath: the bare
- * Form (Field/FormError/Formily) plus the antd controls and Submit attached
- * as static properties. `Object.assign` mutates the shared Form object in
- * place (so any code holding the bare Form also sees the controls once this
- * subpath is imported) and widens the type to include them.
+ * The rsform.Form namespace augmented with the antd controls + Submit (the
+ * "controls" layer of the Form namespace). `Object.assign` mutates the shared
+ * Form object in place and widens the type to include the controls.
  *
  * `InputNumber`/`Select` are typed as `React.ComponentType<any>` here to keep
  * the emitted declaration portable (antd's exact types reference internal
  * `rc-*` packages that aren't resolvable from a consumer's `.d.ts`). Consumers
  * wanting precise antd prop types should import the components directly:
- * `import {InputNumber} from 'rsform/antd'`.
+ * `import { InputNumber } from 'rsform'`.
  */
 export type ControlsForm = typeof BaseForm & {
     Input: typeof Input;

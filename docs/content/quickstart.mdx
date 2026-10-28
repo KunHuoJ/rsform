@@ -2,28 +2,24 @@
 
 ### 安装
 
-rsform 是单包多入口，按需从子路径导入：
-
 ```sh
 pnpm add rsform @formily/core @formily/react antd react react-dom
 ```
 
-### 子路径导出
+### 导出
 
-| 子路径 | 内容 |
+rsform 是单入口：`import { Form } from 'rsform'` 一个 `Form` 拿到全部语法糖——`Form.Field` / `Form.Input` / `Form.Select` / … / `Form.Submit` / `Form.Table` / `Form.ArrayItems`，无需多 import + 起别名。
+
+| 路径 | 内容 |
 |---|---|
-| `rsform` | 核心：Form / Field / FormError / Formily（无 antd 依赖） |
-| `rsform/antd` | antd 控件 + Submit（挂在 `Form.Input` 等命名空间） |
-| `rsform/table` | 高性能可编辑表格 Form.Table |
-| `rsform/array-items` | 可增删/拖拽列表 Form.ArrayItems |
-| `rsform/effects` | effects `$` helper 集合 |
-| `rsform/styles` | base 样式表（CSS 变量主题） |
+| `rsform` | 全部：Form 命名空间（Field / 控件 / Submit / Table / ArrayItems）+ effects helper |
+| `rsform/styles` | base 样式表（CSS 变量主题，按需 `import 'rsform/styles'`） |
 
 ### 最小示例
 
 ```jsx
 import 'rsform/styles';                 // 引入默认 antd 风格主题（可选）
-import { Form } from 'rsform/antd';
+import { Form } from 'rsform';
 
 <Form initialValues={{ name: '' }} onSubmit={async v => console.log(v)}>
   <Form.Field name="name" title="姓名" required>

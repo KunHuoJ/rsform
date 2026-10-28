@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { Form } from 'rsform/antd';
+import { Form } from 'rsform';
 
 interface Status {
     label: string;
