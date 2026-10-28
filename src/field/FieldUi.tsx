@@ -1,5 +1,5 @@
-import {prefixCls} from '../shared/prefixCls';
-import {FieldError} from './FieldError';
+import { prefixCls } from '../shared/prefixCls';
+import { FieldError } from './FieldError';
 
 export interface FieldUiProps {
     label?: React.ReactNode;
@@ -13,7 +13,13 @@ export interface FieldUiProps {
  * Layout shell for a field: a label row (with optional required asterisk) and
  * the control, followed by an inline error message below.
  */
-export function FieldUi({label, required, error, className, children}: FieldUiProps): React.ReactElement {
+export function FieldUi({
+    label,
+    required,
+    error,
+    className,
+    children,
+}: FieldUiProps): React.ReactElement {
     return (
         <div className={`${prefixCls}-field ${className ?? ''}`.trim()}>
             {label != null && (

@@ -4,4 +4,4 @@
  * Re-exported directly from antd so the component's full prop types are
  * preserved for consumers.
  */
-export {Select} from 'antd';
+export { Select } from 'antd';

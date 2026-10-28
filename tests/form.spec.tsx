@@ -1,18 +1,18 @@
-import * as React from 'react';
-import {describe, it, expect, vi} from 'vitest';
-import {render, screen, fireEvent} from '@testing-library/react';
-import {Form, Field} from '../src/index';
-import {Input} from '../src/controls/index';
+import { fireEvent, render, screen } from '@testing-library/react';
+import type * as React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { Input } from '../src/controls/index';
+import { Field, Form } from '../src/index';
 
 describe('Form + Field + Input end-to-end', () => {
     it('flows input value to form.values and submit calls onSubmit', async () => {
         const submitted = vi.fn();
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
 
         render(
             <Form
-                initialValues={{name: ''}}
-                onSubmit={values => submitted(values)}
+                initialValues={{ name: '' }}
+                onSubmit={(values) => submitted(values)}
                 formRef={formRef}
             >
                 <Field name="name">
@@ -22,17 +22,17 @@ describe('Form + Field + Input end-to-end', () => {
         );
 
         const input = screen.getByTestId('name-input') as HTMLInputElement;
-        fireEvent.change(input, {target: {value: 'typed'}});
+        fireEvent.change(input, { target: { value: 'typed' } });
         expect(formRef.current.values.name).toBe('typed');
 
         await formRef.current.submit();
         expect(submitted).toHaveBeenCalledTimes(1);
-        expect(submitted).toHaveBeenCalledWith({name: 'typed'});
+        expect(submitted).toHaveBeenCalledWith({ name: 'typed' });
     });
 
     it('renders NonEditable when editable={false}', () => {
         render(
-            <Form initialValues={{name: 'locked-value'}}>
+            <Form initialValues={{ name: 'locked-value' }}>
                 <Field name="name" editable={false} title="Name" />
             </Form>,
         );
@@ -40,11 +40,11 @@ describe('Form + Field + Input end-to-end', () => {
     });
 
     it('supports render-prop children receiving {value, onChange, state}', () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{count: 0}} formRef={formRef}>
+            <Form initialValues={{ count: 0 }} formRef={formRef}>
                 <Field name="count">
-                    {({value, onChange}) => (
+                    {({ value, onChange }) => (
                         <button data-testid="inc" onClick={() => onChange(value + 1)}>
                             {value}
                         </button>

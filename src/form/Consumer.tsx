@@ -1,7 +1,7 @@
-import * as React from 'react';
-import {useForm} from '@formily/react';
-import {observer} from '@formily/reactive-react';
-import {useContentName} from '../field/useContentName';
+import { useForm } from '@formily/react';
+import { observer } from '@formily/reactive-react';
+import type * as React from 'react';
+import { useContentName } from '../field/useContentName';
 
 export interface FormConsumerProps {
     /**
@@ -35,7 +35,7 @@ export interface FormConsumerProps {
  * icloud-ui API (icloud-ui exposes a `useData()` hook instead). Implemented
  * clean-room on Formily v2's reactive primitives.
  */
-export const Consumer = observer(function Consumer({name, children}: FormConsumerProps) {
+export const Consumer = observer(function Consumer({ name, children }: FormConsumerProps) {
     const form = useForm();
     const resolved = name ? useContentName(name) : '';
     // Read inside the observer so Formily tracks the leaves we touch — a

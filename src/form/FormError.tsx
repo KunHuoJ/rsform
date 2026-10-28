@@ -1,7 +1,7 @@
-import * as React from 'react';
-import {useForm} from '@formily/react';
-import {observer} from '@formily/reactive-react';
-import {prefixCls} from '../shared/prefixCls';
+import { useForm } from '@formily/react';
+import { observer } from '@formily/reactive-react';
+import type * as React from 'react';
+import { prefixCls } from '../shared/prefixCls';
 
 export interface FormErrorProps extends React.HTMLAttributes<HTMLDivElement> {
     /** Render only errors (default), or include warnings too. */
@@ -23,9 +23,7 @@ export const FormError = observer(function FormError({
     ...rest
 }: FormErrorProps): React.ReactElement | null {
     const form = useForm();
-    const feedback = includeWarnings
-        ? [...form.errors, ...form.warnings]
-        : form.errors;
+    const feedback = includeWarnings ? [...form.errors, ...form.warnings] : form.errors;
     const messages: string[] = [];
     for (const f of feedback) {
         if (!f) continue;
@@ -39,9 +37,13 @@ export const FormError = observer(function FormError({
     if (messages.length === 0) {
         return null;
     }
-    const body = render ? render(messages) : (
+    const body = render ? (
+        render(messages)
+    ) : (
         <ul className={`${prefixCls}-form-error-list`}>
-            {messages.map((m, i) => <li key={i}>{m}</li>)}
+            {messages.map((m, i) => (
+                <li key={i}>{m}</li>
+            ))}
         </ul>
     );
     return (

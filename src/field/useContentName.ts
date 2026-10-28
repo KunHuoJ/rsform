@@ -1,5 +1,5 @@
-import {useFieldContext} from '../shared/FieldContext';
-import {resolvePath} from '../shared/paths';
+import { useFieldContext } from '../shared/FieldContext';
+import { resolvePath } from '../shared/paths';
 
 /**
  * Resolve a (possibly relative) field name against the parent FieldContext.
@@ -11,6 +11,6 @@ import {resolvePath} from '../shared/paths';
  * Returns the full resolved dot path usable as a Formily field name.
  */
 export function useContentName(name: string): string {
-    const {preName} = useFieldContext();
+    const { preName } = useFieldContext();
     return resolvePath(preName, name);
 }

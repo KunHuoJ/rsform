@@ -1,20 +1,18 @@
+import { useField, useForm } from '@formily/react';
+import { autorun, untracked } from '@formily/reactive';
 import * as React from 'react';
-import {Button as AntdButton} from 'antd';
-import {useForm, useField} from '@formily/react';
-import {autorun, untracked} from '@formily/reactive';
-import {useLatestRef} from '../shared/useLatestRef';
-import {CellBridge, resolveAbsoluteIndex} from './CellBridge';
-import type {BuiltColumns, RsfTableProps} from './types';
+import { useLatestRef } from '../shared/useLatestRef';
+import { CellBridge, resolveAbsoluteIndex } from './CellBridge';
+import type { BuiltColumns, RsfTableProps } from './types';
 
 /**
  * Build the antd `columns` array for the high-perf Table.
  *
  * Perf contract: the returned `columns` reference is stable across value edits
- * — its `useMemo` deps are `[columns, name, current, pageSize, removeButton,
- * disableRemove, removeButtonProps]`, deliberately EXCLUDING the array value
- * / length. Each column's `render` reads the latest row value via a ref
- * (`useLatestRef`) so a stable closure always sees fresh data without being
- * rebuilt.
+ * — its `useMemo` deps are `[columns, name, current, pageSize,
+ * itemDefaultValue]`, deliberately EXCLUDING the array value / length. Each
+ * column's `render` reads the latest row value via a ref (`useLatestRef`) so a
+ * stable closure always sees fresh data without being rebuilt.
  *
  * Reactivity strategy (avoids re-rendering all N×M cells on one edit):
  *  - The Table body reads the array via `untracked` (NOT subscribed to edits),
@@ -33,14 +31,7 @@ export function useTable<RecordType extends Record<string, any>>(
     dataSource: RecordType[];
     columns: BuiltColumns<RecordType>;
 } {
-    const {
-        name,
-        columns: propColumns,
-        pagination,
-        removeButton,
-        disableRemove,
-        removeButtonProps,
-    } = props;
+    const { name, columns: propColumns, pagination } = props;
 
     const form: any = useForm();
     const field: any = useField();
@@ -53,8 +44,8 @@ export function useTable<RecordType extends Record<string, any>>(
     const dataSource: RecordType[] = Array.isArray(rawValue)
         ? rawValue
         : Array.isArray(form?.values?.[name])
-            ? form.values[name]
-            : [];
+          ? form.values[name]
+          : [];
 
     // Re-render the body only when the array LENGTH changes (add/remove). The
     // autorun re-fires on every array value change, but `setLenTick` bails
@@ -81,11 +72,32 @@ export function useTable<RecordType extends Record<string, any>>(
     const currentRef = useLatestRef(current);
     const pageSizeRef = useLatestRef(pageSize);
 
-    const removeText = removeButtonProps?.text ?? '删除';
     const idField = typeof props.rowKey === 'string' ? props.rowKey : undefined;
 
     const columns = React.useMemo<BuiltColumns<RecordType>>(() => {
-        const built: BuiltColumns<RecordType> = propColumns.map(col => {
+        // Build the row-mutation actions handed to a custom column `render`.
+        // `field` is the stable Formily ArrayField model — its mutators are
+        // stable references, safe to capture in the memoised columns closure.
+        // `add`/`insert` default to the Table's `itemDefaultValue` so a custom
+        // action column (add button, etc.) doesn't need to know the default.
+        const itemDefault = props.itemDefaultValue;
+        // Row-mutation actions handed to a column `render`. `add`/`insert`
+        // default to the Table's `itemDefaultValue`. `field` is the stable
+        // Formily ArrayField model — its mutators are stable references, safe
+        // to capture in the memoised columns closure.
+        const actions = () => ({
+            add: (value?: RecordType) => field?.push?.(value ?? itemDefault),
+            insert: (index: number, value?: RecordType) =>
+                field?.insert?.(index, value ?? itemDefault),
+            remove: (index: number) => field?.remove?.(index),
+            move: (from: number, to: number) => field?.move?.(from, to),
+            moveUp: (index: number) => field?.moveUp?.(index),
+            moveDown: (index: number) => field?.moveDown?.(index),
+            form,
+            field,
+        });
+
+        const built: BuiltColumns<RecordType> = propColumns.map((col) => {
             return {
                 title: col.title ?? col.dataIndex,
                 dataIndex: col.dataIndex,
@@ -100,6 +112,16 @@ export function useTable<RecordType extends Record<string, any>>(
                         pageSizeRef.current,
                         idField,
                     );
+                    // A custom `render` overrides the CellBridge entirely —
+                    // pass it the cell value, the row record, the absolute
+                    // index, and row-mutation actions (add/insert/remove/…).
+                    // This is how users build action columns (delete/move/…):
+                    // no built-in remove column; put a delete button in your
+                    // own render via `actions.remove(index)`.
+                    if (typeof col.render === 'function') {
+                        const cellValue = record?.[col.dataIndex];
+                        return col.render(cellValue, record, abs, actions());
+                    }
                     return (
                         <CellBridge
                             rowIndex={abs}
@@ -115,60 +137,11 @@ export function useTable<RecordType extends Record<string, any>>(
             } as any;
         });
 
-        if (removeButton) {
-            built.push({
-                title: removeButtonProps?.title ?? '操作',
-                key: '__rsf_remove',
-                width: removeButtonProps?.width ?? 80,
-                fixed: removeButtonProps?.fixed ?? 'right',
-                render: (_value: any, _record: any, index: number) => {
-                    const abs = resolveAbsoluteIndex(
-                        index,
-                        _record,
-                        currentRef.current,
-                        pageSizeRef.current,
-                        idField,
-                    );
-                    const onRemove = () => {
-                        field?.remove?.(abs);
-                    };
-                    // Custom render wins — hand the caller the absolute index,
-                    // the record, and an onRemove callback.
-                    if (typeof removeButtonProps?.render === 'function') {
-                        return removeButtonProps.render(abs, _record, onRemove);
-                    }
-                    // Default: antd link-style Button — link look out of the
-                    // box (no need to import rsform/styles), `danger` tints the
-                    // remove button red. `className` lets consumers override.
-                    return (
-                        <AntdButton
-                            type="link"
-                            danger
-                            size="small"
-                            disabled={!!disableRemove}
-                            onClick={onRemove}
-                            className={removeButtonProps?.className}
-                        >
-                            {removeText}
-                        </AntdButton>
-                    );
-                },
-            } as any);
-        }
-
         return built;
         // Deliberately EXCLUDE dataSource/value/length: columns must stay
         // referentially stable across edits. Fresh values are read via refs.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-        propColumns,
-        name,
-        current,
-        pageSize,
-        removeButton,
-        disableRemove,
-        removeButtonProps,
-    ]);
+    }, [propColumns, name, current, pageSize, props.itemDefaultValue]);
 
-    return {dataSource, columns};
+    return { dataSource, columns };
 }

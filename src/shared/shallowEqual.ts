@@ -20,11 +20,8 @@ export function shallowEqual<T>(a: T, b: T): boolean {
     }
     for (const key of aKeys) {
         if (
-            !Object.prototype.hasOwnProperty.call(b, key)
-            || !Object.is(
-                (a as Record<string, unknown>)[key],
-                (b as Record<string, unknown>)[key],
-            )
+            !Object.prototype.hasOwnProperty.call(b, key) ||
+            !Object.is((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])
         ) {
             return false;
         }

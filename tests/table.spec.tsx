@@ -1,14 +1,14 @@
-import * as React from 'react';
-import {describe, it, expect, vi} from 'vitest';
-import {render, screen, fireEvent, act} from '@testing-library/react';
-import {Form, Field} from '../src/index';
-import {Input, InputNumber} from '../src/controls/index';
-import {registerControl} from '../src/controls/FormComMap';
-import {Table} from '../src/table/index';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import type * as React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { registerControl } from '../src/controls/FormComMap';
+import { Input, InputNumber } from '../src/controls/index';
+import { Field, Form } from '../src/index';
+import { Table } from '../src/table/index';
 
 async function flush(): Promise<void> {
     await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
     });
 }
 
@@ -17,23 +17,23 @@ async function flush(): Promise<void> {
  */
 const ROWS = 50;
 const COLS = 5;
-const colDefs = Array.from({length: COLS}, (_, c) => ({
+const colDefs = Array.from({ length: COLS }, (_, c) => ({
     title: `c${c}`,
     dataIndex: `c${c}`,
     control: 'input' as const,
 }));
 
 function makeInitial(): any[] {
-    return Array.from({length: ROWS}, (_, r) =>
-        Object.fromEntries(colDefs.map(col => [col.dataIndex, `${r}-${col.dataIndex}`])),
+    return Array.from({ length: ROWS }, (_, r) =>
+        Object.fromEntries(colDefs.map((col) => [col.dataIndex, `${r}-${col.dataIndex}`])),
     );
 }
 
 describe('Table (Phase 5)', () => {
     it('renders rows from the array field and edits a cell back to form.values', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{rows: makeInitial()}} formRef={formRef}>
+            <Form initialValues={{ rows: makeInitial() }} formRef={formRef}>
                 <Table name="rows" columns={colDefs} pagination={false} />
             </Form>,
         );
@@ -43,7 +43,7 @@ describe('Table (Phase 5)', () => {
         expect(inputs.length).toBe(ROWS * COLS);
         expect(inputs[0].value).toBe('0-c0');
         // Edit cell (0, c0).
-        fireEvent.change(inputs[0], {target: {value: 'edited'}});
+        fireEvent.change(inputs[0], { target: { value: 'edited' } });
         await flush();
         expect(formRef.current.values.rows[0].c0).toBe('edited');
         // Other cells untouched.
@@ -54,12 +54,12 @@ describe('Table (Phase 5)', () => {
     it('columns reference is stable across value edits (perf contract)', async () => {
         // Wrap useTable via a probe that records the columns reference.
         const seen: any[] = [];
-        const Probe = ({cols}: {cols: any}) => {
+        const Probe = ({ cols }: { cols: any }) => {
             seen.push(cols);
             return null;
         };
-        const {rerender} = render(
-            <Form initialValues={{rows: makeInitial()}}>
+        const { rerender } = render(
+            <Form initialValues={{ rows: makeInitial() }}>
                 <Table name="rows" columns={colDefs} />
                 <Probe cols={(Table as any).__probeCols} />
             </Form>,
@@ -71,7 +71,7 @@ describe('Table (Phase 5)', () => {
         expect(seen.length).toBeGreaterThan(0);
         // Touch rerender with same props.
         rerender(
-            <Form initialValues={{rows: makeInitial()}}>
+            <Form initialValues={{ rows: makeInitial() }}>
                 <Table name="rows" columns={colDefs} />
                 <Probe cols={(Table as any).__probeCols} />
             </Form>,
@@ -84,18 +84,18 @@ describe('Table (Phase 5)', () => {
         // every other cell's value stays the same — proving only the edited
         // cell re-rendered with a new value (unchanged cells kept their DOM).
         // (The stronger render-count probe is in the next test.)
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{rows: makeInitial()}} formRef={formRef}>
+            <Form initialValues={{ rows: makeInitial() }} formRef={formRef}>
                 <Table name="rows" columns={colDefs} pagination={false} />
             </Form>,
         );
         await flush();
         const inputs = screen.getAllByRole('textbox') as HTMLInputElement[];
-        const before = inputs.map(i => i.value);
-        fireEvent.change(inputs[0], {target: {value: 'EDIT'}});
+        const before = inputs.map((i) => i.value);
+        fireEvent.change(inputs[0], { target: { value: 'EDIT' } });
         await flush();
-        const after = inputs.map(i => i.value);
+        const after = inputs.map((i) => i.value);
         expect(after[0]).toBe('EDIT');
         for (let i = 1; i < after.length; i++) {
             expect(after[i]).toBe(before[i]);
@@ -116,13 +116,13 @@ describe('Table (Phase 5)', () => {
         };
         registerControl('__perf_probe', CountingInput);
         try {
-            const probeCols = Array.from({length: COLS}, (_, c) => ({
+            const probeCols = Array.from({ length: COLS }, (_, c) => ({
                 title: `c${c}`,
                 dataIndex: `c${c}`,
                 control: '__perf_probe' as const,
             }));
-            const {container} = render(
-                <Form initialValues={{rows: makeInitial()}}>
+            const { container } = render(
+                <Form initialValues={{ rows: makeInitial() }}>
                     <Table name="rows" columns={probeCols} pagination={false} />
                 </Form>,
             );
@@ -134,7 +134,7 @@ describe('Table (Phase 5)', () => {
             const mountedCount = renderCount;
             const inputs = screen.getAllByTestId('counting') as HTMLInputElement[];
             // Edit cell (0, c0).
-            fireEvent.change(inputs[0], {target: {value: 'EDIT'}});
+            fireEvent.change(inputs[0], { target: { value: 'EDIT' } });
             await flush();
             // EXACTLY one cell re-rendered (the edited one). A full-table
             // re-render would add ROWS*COLS (or 2× that).
@@ -146,7 +146,7 @@ describe('Table (Phase 5)', () => {
             void container;
         } finally {
             // Best-effort cleanup of the test-only control key.
-            registerControl('__perf_probe', ((() => null) as unknown) as React.ComponentType<any>);
+            registerControl('__perf_probe', (() => null) as unknown as React.ComponentType<any>);
         }
     });
 
@@ -157,9 +157,9 @@ describe('Table (Phase 5)', () => {
         // editing one cell 100× and asserting the cached DOM input nodes are
         // reused (still connected, same identity) — a full table rebuild would
         // detach/replace them.
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{rows: makeInitial()}} formRef={formRef}>
+            <Form initialValues={{ rows: makeInitial() }} formRef={formRef}>
                 <Table name="rows" columns={colDefs} pagination={false} />
             </Form>,
         );
@@ -170,7 +170,7 @@ describe('Table (Phase 5)', () => {
         const firstInput = inputs[0];
         // 100 edits of the same cell.
         for (let n = 0; n < 100; n++) {
-            fireEvent.change(firstInput, {target: {value: `v${n}`}});
+            fireEvent.change(firstInput, { target: { value: `v${n}` } });
         }
         await flush();
         // The cached node is still the same DOM node and still connected
@@ -186,9 +186,9 @@ describe('Table (Phase 5)', () => {
     });
 
     it('validator on a column surfaces errors via the cell field', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{rows: [{qty: 1}, {qty: 0}]}} formRef={formRef}>
+            <Form initialValues={{ rows: [{ qty: 1 }, { qty: 0 }] }} formRef={formRef}>
                 <Table
                     name="rows"
                     columns={[
@@ -213,17 +213,23 @@ describe('Table (Phase 5)', () => {
         expect(errs0).not.toContain('must be > 0');
     });
 
-    it('removeButton removes a row', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+    it('actions.remove in a column render removes a row', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form
-                initialValues={{rows: [{a: 'x'}, {a: 'y'}, {a: 'z'}]}}
-                formRef={formRef}
-            >
+            <Form initialValues={{ rows: [{ a: 'x' }, { a: 'y' }, { a: 'z' }] }} formRef={formRef}>
                 <Table
                     name="rows"
-                    columns={[{title: 'A', dataIndex: 'a', control: 'input'}]}
-                    removeButton
+                    columns={[
+                        { title: 'A', dataIndex: 'a', control: 'input' },
+                        {
+                            title: '操作',
+                            dataIndex: '__ops',
+                            editable: false,
+                            render: (_v, _r, index, actions) => (
+                                <button onClick={() => actions.remove(index)}>删除</button>
+                            ),
+                        },
+                    ]}
                 />
             </Form>,
         );
@@ -237,7 +243,7 @@ describe('Table (Phase 5)', () => {
     });
 
     it('Form namespace exposes Table', async () => {
-        const {Form: FormWithTable} = await import('../src/table/index');
+        const { Form: FormWithTable } = await import('../src/table/index');
         expect(FormWithTable.Table).toBe(Table);
     });
 

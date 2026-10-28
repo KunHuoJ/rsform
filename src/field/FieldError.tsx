@@ -1,5 +1,5 @@
-import * as React from 'react';
-import {prefixCls} from '../shared/prefixCls';
+import type * as React from 'react';
+import { prefixCls } from '../shared/prefixCls';
 
 export interface FieldErrorProps {
     error?: React.ReactNode;
@@ -8,7 +8,7 @@ export interface FieldErrorProps {
 /** Class name applied to the error message node, used for scroll-to-error. */
 export const errorClassName = `${prefixCls}-field-error-message`;
 
-export function FieldError({error}: FieldErrorProps): React.ReactElement | null {
+export function FieldError({ error }: FieldErrorProps): React.ReactElement | null {
     if (!error) {
         return null;
     }

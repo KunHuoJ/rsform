@@ -9,17 +9,19 @@ import * as React from 'react';
  * `remove`, `shift`, `unshift`, `move`, `moveUp`, `moveDown`. rsform's
  * ArrayItems wraps these with `min`/`max`/`validateBeforeAdd` gating.
  */
-export function useArrayField<T = any>(): (T & {
-    push: (...items: any[]) => Promise<void>;
-    pop: () => Promise<void>;
-    insert: (index: number, ...items: any[]) => Promise<void>;
-    remove: (index: number) => Promise<void>;
-    shift: () => Promise<void>;
-    unshift: (...items: any[]) => Promise<void>;
-    move: (from: number, to: number) => Promise<void>;
-    moveUp: (index: number) => Promise<void>;
-    moveDown: (index: number) => Promise<void>;
-}) | null {
+export function useArrayField<T = any>():
+    | (T & {
+          push: (...items: any[]) => Promise<void>;
+          pop: () => Promise<void>;
+          insert: (index: number, ...items: any[]) => Promise<void>;
+          remove: (index: number) => Promise<void>;
+          shift: () => Promise<void>;
+          unshift: (...items: any[]) => Promise<void>;
+          move: (from: number, to: number) => Promise<void>;
+          moveUp: (index: number) => Promise<void>;
+          moveDown: (index: number) => Promise<void>;
+      })
+    | null {
     return React.useContext(ArrayFieldContext);
 }
 

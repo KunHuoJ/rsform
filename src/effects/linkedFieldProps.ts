@@ -1,5 +1,5 @@
-import {onFieldValueChange} from '@formily/core';
-import type {Form as FormilyForm, GeneralField} from '@formily/core';
+import type { Form as FormilyForm, GeneralField } from '@formily/core';
+import { onFieldValueChange } from '@formily/core';
 
 /**
  * The compute function receives the current dep values keyed by dep name and
@@ -41,10 +41,26 @@ export function linkedFieldProps(
     // Formily top-level field state keys that `linkedFieldProps` sets directly
     // on `state`. Anything else goes into `state.componentProps` for the control.
     const STATE_KEYS = new Set([
-        'visible', 'display', 'hidden', 'editable', 'readEmpty', 'selfEditable',
-        'required', 'title', 'description', 'value', 'defaultValue',
-        'dataSource', 'loading', 'validateStatus', 'rules', 'validator',
-        'decorator', 'component', 'reactions', 'content',
+        'visible',
+        'display',
+        'hidden',
+        'editable',
+        'readEmpty',
+        'selfEditable',
+        'required',
+        'title',
+        'description',
+        'value',
+        'defaultValue',
+        'dataSource',
+        'loading',
+        'validateStatus',
+        'rules',
+        'validator',
+        'decorator',
+        'component',
+        'reactions',
+        'content',
     ]);
 
     const run = (): void => {
@@ -54,7 +70,7 @@ export function linkedFieldProps(
             values[dep] = form.getValuesIn(dep);
         }
         const targetField = form.query(target).take();
-        Promise.resolve(compute(values, targetField)).then(result => {
+        Promise.resolve(compute(values, targetField)).then((result) => {
             // Stale guard: a newer run has superseded this one, or the result
             // was empty/no-op.
             if (myToken !== token || !result) {

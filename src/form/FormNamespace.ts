@@ -1,8 +1,8 @@
 import * as FormilyReact from '@formily/react';
-import {Form as FormComponent} from './Form';
-import {Field} from '../field/Field';
-import {FormError} from './FormError';
-import {Consumer} from './Consumer';
+import { Field } from '../field/Field';
+import { Consumer } from './Consumer';
+import { Form as FormComponent } from './Form';
+import { FormError } from './FormError';
 
 /**
  * rsform.Form is the Form component with sub-components attached as static
@@ -25,5 +25,5 @@ export const Form = Object.assign(FormComponent, {
     Formily: typeof FormilyReact;
 };
 
-export type {FormProps} from './Form';
-export type {FormConsumerProps} from './Consumer';
+export type { FormConsumerProps } from './Consumer';
+export type { FormProps } from './Form';

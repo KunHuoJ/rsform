@@ -146,10 +146,7 @@ import {Form} from 'rsform/table';
 | `columns` | `RsfTableColumn[]` | — | 列定义（见下） |
 | `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key |
 | `pagination` | `false \| object` | `false` | antd 分页；默认不分页 |
-| `removeButton` | `boolean` | — | 显示删除列（每行一个删除按钮） |
-| `removeButtonProps` | `object` | — | 删除按钮 props（title/text 等） |
-| `disableRemove` | `boolean` | — | 禁用删除按钮（如到 min 行数） |
-| `itemDefaultValue` | `any` | — | 删除列自带的新增行的默认值 |
+| `itemDefaultValue` | `any` | `{}` | `actions.add`/`actions.insert` 不传 value 时的默认行值 |
 | `className` | `string` | — | 表格包装类名 |
 
 #### RsfTableColumn
@@ -165,7 +162,9 @@ import {Form} from 'rsform/table';
 | `controlProps` | `object` | — | 控件额外 props（options/placeholder 等） |
 | `align` | `'left' \| 'center' \| 'right'` | — | 对齐 |
 | `fixed` | `'left' \| 'right' \| boolean` | — | 固定列 |
-| `render` | `(value, record, index) => Node` | — | 完全自定义渲染（覆盖 CellBridge，只读） |
+| `render` | `(value, record, index, actions) => Node` | — | 完全自定义渲染（覆盖 CellBridge）。`actions` 提供 `add`/`insert`/`remove`/`move`/`moveUp`/`moveDown`/`form`/`field`，可在任意列放操作按钮 |
+
+> `render` 的 `actions`（`RsfTableColumnActions`）：`add(value?)`、`insert(index, value?)`、`remove(index)`、`move(from, to)`、`moveUp(index)`、`moveDown(index)`、`form`、`field`。`add`/`insert` 默认用 `itemDefaultValue`。
 
 ---
 

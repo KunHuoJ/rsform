@@ -1,6 +1,6 @@
-import {onFieldValueChange, onFieldMount} from '@formily/core';
-import type {Form as FormilyForm, GeneralField, DataField} from '@formily/core';
-import {parseRowIndex} from '../shared/paths';
+import type { DataField, Form as FormilyForm, GeneralField } from '@formily/core';
+import { onFieldMount, onFieldValueChange } from '@formily/core';
+import { parseRowIndex } from '../shared/paths';
 
 /**
  * Per-row single-key reactive effect. Watches `pre.*.key`; whenever a row's
@@ -27,12 +27,7 @@ export interface EachRowCtx {
 
 export type EachRowCb = (ctx: EachRowCtx) => void;
 
-export function onEachRowChange(
-    form: FormilyForm,
-    pre: string,
-    key: string,
-    cb: EachRowCb,
-): void {
+export function onEachRowChange(form: FormilyForm, pre: string, key: string, cb: EachRowCb): void {
     const pattern = `${pre}.*.${key}`;
     // `onFieldValueChange` yields a `DataField`; `onFieldMount` yields a
     // `GeneralField`. A `GeneralField`-accepting handler is assignable to both
@@ -67,7 +62,7 @@ export function applyRowState(
     if (Object.prototype.hasOwnProperty.call(state, 'value')) {
         form.setValuesIn(path, state.value);
     }
-    const rest: Record<string, any> = {...state};
+    const rest: Record<string, any> = { ...state };
     delete rest.value;
     if (Object.keys(rest).length > 0) {
         form.setFieldState(path, (s: any) => {
@@ -75,4 +70,3 @@ export function applyRowState(
         });
     }
 }
-

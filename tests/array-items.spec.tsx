@@ -1,13 +1,13 @@
-import * as React from 'react';
-import {describe, it, expect, vi} from 'vitest';
-import {render, screen, fireEvent, act} from '@testing-library/react';
-import {Form, Field} from '../src/index';
-import {Input} from '../src/controls/index';
-import {ArrayItems, arrayUnion} from '../src/array-items/index';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import type * as React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { ArrayItems, arrayUnion } from '../src/array-items/index';
+import { Input } from '../src/controls/index';
+import { Field, Form } from '../src/index';
 
 async function flush(): Promise<void> {
     await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
     });
 }
 
@@ -30,13 +30,10 @@ function clickUp(index: number): void {
 
 describe('ArrayItems (Phase 4)', () => {
     it('renders rows from initialValues and adds a row with itemDefaultValue', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form
-                initialValues={{tags: [{label: 'a'}, {label: 'b'}]}}
-                formRef={formRef}
-            >
-                <ArrayItems name="tags" itemDefaultValue={{label: ''}}>
+            <Form initialValues={{ tags: [{ label: 'a' }, { label: 'b' }] }} formRef={formRef}>
+                <ArrayItems name="tags" itemDefaultValue={{ label: '' }}>
                     {() => (
                         <Field name="label">
                             <Input data-testid="label" />
@@ -52,14 +49,14 @@ describe('ArrayItems (Phase 4)', () => {
         clickAdd();
         await flush();
         expect(formRef.current.values.tags).toHaveLength(3);
-        expect(formRef.current.values.tags[2]).toEqual({label: ''});
+        expect(formRef.current.values.tags[2]).toEqual({ label: '' });
     });
 
     it('removes a row and keeps indices contiguous', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
             <Form
-                initialValues={{tags: [{label: 'a'}, {label: 'b'}, {label: 'c'}]}}
+                initialValues={{ tags: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] }}
                 formRef={formRef}
             >
                 <ArrayItems name="tags">
@@ -81,7 +78,7 @@ describe('ArrayItems (Phase 4)', () => {
 
     it('min disables the remove button at or below min', async () => {
         render(
-            <Form initialValues={{tags: [{label: 'a'}]}}>
+            <Form initialValues={{ tags: [{ label: 'a' }] }}>
                 <ArrayItems name="tags" min={1}>
                     {() => (
                         <Field name="label">
@@ -97,9 +94,9 @@ describe('ArrayItems (Phase 4)', () => {
     });
 
     it('max disables the add button at or above max', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{tags: [{label: 'a'}]}} formRef={formRef}>
+            <Form initialValues={{ tags: [{ label: 'a' }] }} formRef={formRef}>
                 <ArrayItems name="tags" max={1}>
                     {() => (
                         <Field name="label">
@@ -117,12 +114,12 @@ describe('ArrayItems (Phase 4)', () => {
     });
 
     it('validateBeforeAdd=false blocks the add; string surfaces as a field error', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{tags: []}} formRef={formRef}>
+            <Form initialValues={{ tags: [] }} formRef={formRef}>
                 <ArrayItems
                     name="tags"
-                    itemDefaultValue={{label: ''}}
+                    itemDefaultValue={{ label: '' }}
                     validateBeforeAdd={() => 'no more'}
                 >
                     {() => (
@@ -144,10 +141,10 @@ describe('ArrayItems (Phase 4)', () => {
     });
 
     it('up/down buttons move rows', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
             <Form
-                initialValues={{tags: [{label: 'a'}, {label: 'b'}, {label: 'c'}]}}
+                initialValues={{ tags: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] }}
                 formRef={formRef}
             >
                 <ArrayItems name="tags">
@@ -163,20 +160,13 @@ describe('ArrayItems (Phase 4)', () => {
         // Move the last row up.
         clickUp(2);
         await flush();
-        expect(formRef.current.values.tags.map((r: any) => r.label)).toEqual([
-            'a',
-            'c',
-            'b',
-        ]);
+        expect(formRef.current.values.tags.map((r: any) => r.label)).toEqual(['a', 'c', 'b']);
     });
 
     it('arrayUnion rejects a duplicate value across rows', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form
-                initialValues={{tags: [{label: 'dup'}, {label: ''}]}}
-                formRef={formRef}
-            >
+            <Form initialValues={{ tags: [{ label: 'dup' }, { label: '' }] }} formRef={formRef}>
                 <ArrayItems name="tags">
                     {() => (
                         <Field name="label" validator={arrayUnion('label', '重复了')}>
@@ -196,7 +186,7 @@ describe('ArrayItems (Phase 4)', () => {
     });
 
     it('Form namespace exposes ArrayItems', async () => {
-        const {Form: FormWithArray} = await import('../src/array-items/index');
+        const { Form: FormWithArray } = await import('../src/array-items/index');
         expect(FormWithArray.ArrayItems).toBe(ArrayItems);
     });
 

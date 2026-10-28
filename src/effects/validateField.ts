@@ -1,9 +1,5 @@
-import {
-    onFieldValueChange,
-    onFieldMount,
-    onFieldUnmount,
-} from '@formily/core';
-import type {Form as FormilyForm, GeneralField} from '@formily/core';
+import type { Form as FormilyForm, GeneralField } from '@formily/core';
+import { onFieldMount, onFieldUnmount, onFieldValueChange } from '@formily/core';
 
 /**
  * Cross-field reactive validator. `cb` receives the current trigger values
@@ -22,12 +18,7 @@ import type {Form as FormilyForm, GeneralField} from '@formily/core';
 export type ValidateFieldCb = (
     values: Record<string, any>,
     targetField: GeneralField | undefined,
-) =>
-    | string
-    | string[]
-    | null
-    | undefined
-    | Promise<string | string[] | null | undefined>;
+) => string | string[] | null | undefined | Promise<string | string[] | null | undefined>;
 
 export interface ValidateFieldHandle {
     clearEffect: () => void;
@@ -39,9 +30,7 @@ export function validateField(
     triggers: string[] | ValidateFieldCb,
     cb?: ValidateFieldCb,
 ): ValidateFieldHandle {
-    const triggerList: string[] = Array.isArray(triggers)
-        ? triggers
-        : [name];
+    const triggerList: string[] = Array.isArray(triggers) ? triggers : [name];
     const callback: ValidateFieldCb = Array.isArray(triggers)
         ? (cb as ValidateFieldCb)
         : (triggers as ValidateFieldCb);
@@ -68,7 +57,7 @@ export function validateField(
             values[trigger] = form.getValuesIn(trigger);
         }
         const targetField = form.query(name).take();
-        Promise.resolve(callback(values, targetField)).then(result => {
+        Promise.resolve(callback(values, targetField)).then((result) => {
             if (!alive) return;
             if (result == null || result === '') {
                 apply(null);

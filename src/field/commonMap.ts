@@ -22,7 +22,7 @@ export interface CommonMapResult {
 }
 
 export function commonMap(field: any, opts: CommonMapOptions = {}): CommonMapResult {
-    const {format, parse} = opts;
+    const { format, parse } = opts;
     const value = format ? format(field.value) : field.value;
     const onChange = (input: any) => {
         const parsed = parse ? parse(input) : input;
@@ -35,7 +35,7 @@ export function commonMap(field: any, opts: CommonMapOptions = {}): CommonMapRes
     const onFocus = () => {
         // Placeholder for future focus reactions; intentionally a no-op.
     };
-    const result: CommonMapResult = {value, onChange, onBlur, onFocus};
+    const result: CommonMapResult = { value, onChange, onBlur, onFocus };
     if (opts.isOptionControl) {
         result.checked = !!value;
     }

@@ -6,16 +6,17 @@
  * ergonomic access. Also exports the control registry (FormComMap) used by
  * the high-perf Table.
  */
-import * as React from 'react';
-import {Button as AntdButton} from 'antd';
-import {Form as BaseForm} from '../form/FormNamespace';
-import {Submit} from '../form/Submit';
-import {Input, TextArea} from './Input';
-import {InputNumber} from './InputNumber';
-import {Select} from './Select';
-import {RadioGroup} from './RadioGroup';
-import {Switch} from './Switch';
-import {prefixCls} from '../shared/prefixCls';
+
+import { Button as AntdButton } from 'antd';
+import type * as React from 'react';
+import { Form as BaseForm } from '../form/FormNamespace';
+import { Submit } from '../form/Submit';
+import { prefixCls } from '../shared/prefixCls';
+import { Input, TextArea } from './Input';
+import { InputNumber } from './InputNumber';
+import { RadioGroup } from './RadioGroup';
+import { Select } from './Select';
+import { Switch } from './Switch';
 
 /**
  * The rsform.Form namespace as exposed by the `rsform/antd` subpath: the bare
@@ -54,20 +55,19 @@ export const Form: ControlsForm = Object.assign(BaseForm, {
     Button: AntdButton,
 }) as ControlsForm;
 
-export {Input, TextArea};
-export {InputNumber} from './InputNumber';
-export {Select} from './Select';
-export {RadioGroup} from './RadioGroup';
-export type {RadioGroupProps} from './RadioGroup';
-export {Switch} from './Switch';
-export {Submit} from '../form/Submit';
-export type {SubmitProps} from '../form/Submit';
 /** antd `Button` re-export (also `Form.Button`). Use for custom action buttons. */
-export {Button as AntdButton} from 'antd';
+export { Button as AntdButton } from 'antd';
+export type { SubmitProps } from '../form/Submit';
+export { Submit } from '../form/Submit';
+export type { ControlComponent, ControlKey } from './FormComMap';
 export {
     getControl,
-    registerControl,
     getControls,
+    registerControl,
 } from './FormComMap';
-export type {ControlKey, ControlComponent} from './FormComMap';
-export {prefixCls};
+export { InputNumber } from './InputNumber';
+export type { RadioGroupProps } from './RadioGroup';
+export { RadioGroup } from './RadioGroup';
+export { Select } from './Select';
+export { Switch } from './Switch';
+export { Input, prefixCls, TextArea };

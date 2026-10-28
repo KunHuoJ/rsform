@@ -1,10 +1,8 @@
-import {
-    onFormSubmit,
-    onFormSubmitValidateFailed,
-} from '@formily/core';
-import type {Form as FormilyForm} from '@formily/core';
+import type { Form as FormilyForm } from '@formily/core';
+import { onFormSubmit, onFormSubmitValidateFailed } from '@formily/core';
+import { toJS } from '@formily/reactive';
 import type * as React from 'react';
-import {createEffects, type EffectHelpers} from './helpers';
+import { createEffects, type EffectHelpers } from './helpers';
 
 /**
  * A single effect callback. It receives the `$` helpers bundle (which carries
@@ -20,7 +18,7 @@ export interface MergeEffectsOptions {
     onSubmitRef: {
         current: ((values: any) => void | Promise<void>) | undefined;
     };
-    onResetRef: {current: (() => void) | undefined};
+    onResetRef: { current: (() => void) | undefined };
     /** Invoked when `validateFailed === 'scroll'` to scroll the first error into view. */
     scrollToFirstError?: () => void;
     /** Holds the in-flight onSubmit promise so Submit can await it for loading. */
@@ -48,11 +46,14 @@ export function mergeEffects(
     // promise into submitPromiseRef so Submit can await it for its loading
     // state (form.submit() fires onSubmit through this lifecycle but does not
     // await it).
-    fns.push($ => {
+    fns.push(($) => {
         onFormSubmit(() => {
             const cb = opts.onSubmitRef.current;
             if (cb) {
-                const p = Promise.resolve(cb($.form.values));
+                // `form.values` is a deeply-observable Proxy; convert to a plain
+                // JS object so the consumer's onSubmit never receives a Proxy
+                // (which would break JSON.stringify of nested arrays/objects).
+                const p = Promise.resolve(cb(toJS($.form.values)));
                 if (opts.submitPromiseRef) {
                     opts.submitPromiseRef.current = p;
                 }
@@ -69,14 +70,12 @@ export function mergeEffects(
     void opts.onResetRef;
 
     if (opts.validateFailed) {
-        fns.push($ => {
+        fns.push(($) => {
             onFormSubmitValidateFailed(() => {
                 if (opts.validateFailed === 'scroll') {
                     opts.scrollToFirstError?.();
                 } else {
-                    const first = $.form
-                        .query('*')
-                        .take((field: any) => field?.errors?.length > 0);
+                    const first = $.form.query('*').take((field: any) => field?.errors?.length > 0);
                     (opts.validateFailed as (first: any) => void)(first);
                 }
             });
@@ -85,6 +84,6 @@ export function mergeEffects(
 
     return (form: FormilyForm) => {
         const $ = createEffects(form);
-        fns.forEach(fn => fn($));
+        fns.forEach((fn) => fn($));
     };
 }

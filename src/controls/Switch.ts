@@ -1,5 +1,5 @@
-import {Switch as AntdSwitch} from 'antd';
-import {OPTION_CONTROL_MARKER} from '../field/isOptionControl';
+import { Switch as AntdSwitch } from 'antd';
+import { OPTION_CONTROL_MARKER } from '../field/isOptionControl';
 
 /**
  * antd Switch re-export, tagged as an rsform option-control so the Field

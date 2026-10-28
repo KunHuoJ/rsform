@@ -4,12 +4,15 @@
  * validateBeforeAdd gating. Also exports `arrayUnion` for cross-row
  * uniqueness validation.
  */
-import {Form as BaseForm} from '../form/FormNamespace';
-import {ArrayItems} from './ArrayItems';
-export type {ArrayItemsProps} from './ArrayItems';
-import {useArrayField, ArrayFieldContext} from './useArrayItems';
-import {arrayUnion} from './arrayUnion';
-export type {ArrayUnionValidator} from './arrayUnion';
+import { Form as BaseForm } from '../form/FormNamespace';
+import { ArrayItems } from './ArrayItems';
+
+export type { ArrayItemsProps } from './ArrayItems';
+
+import { arrayUnion } from './arrayUnion';
+import { ArrayFieldContext, useArrayField } from './useArrayItems';
+
+export type { ArrayUnionValidator } from './arrayUnion';
 
 /**
  * The rsform.Form namespace as exposed by the `rsform/array-items` subpath:
@@ -25,6 +28,4 @@ export const Form: ArrayItemsForm = Object.assign(BaseForm, {
     ArrayItems,
 }) as ArrayItemsForm;
 
-export {ArrayItems};
-export {arrayUnion};
-export {useArrayField, ArrayFieldContext};
+export { ArrayFieldContext, ArrayItems, arrayUnion, useArrayField };

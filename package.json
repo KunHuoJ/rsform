@@ -59,6 +59,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "lint": "biome lint",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "check": "biome check --write",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build && changeset publish"
@@ -80,6 +84,7 @@
     "immer": "^11.2.9"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.6.3",
     "@changesets/cli": "^3.0.3",
     "@formily/core": "^2.3.7",
     "@formily/react": "^2.3.7",

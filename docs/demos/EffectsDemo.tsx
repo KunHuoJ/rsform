@@ -1,5 +1,5 @@
-import * as React from 'react';
-import {Form} from 'rsform/antd';
+import type * as React from 'react';
+import { Form } from 'rsform/antd';
 
 /**
  * 跨字段校验演示：在 effects 里用 $.validateField 声明式地做响应式联动校验，
@@ -8,13 +8,10 @@ import {Form} from 'rsform/antd';
 export function EffectsDemo(): React.ReactElement {
     return (
         <Form
-            initialValues={{password: '', confirm: ''}}
-            effects={$ =>
-                $.validateField(
-                    'confirm',
-                    ['password', 'confirm'],
-                    ({password, confirm}) =>
-                        password === confirm ? '' : '两次密码不一致',
+            initialValues={{ password: '', confirm: '' }}
+            effects={($) =>
+                $.validateField('confirm', ['password', 'confirm'], ({ password, confirm }) =>
+                    password === confirm ? '' : '两次密码不一致',
                 )
             }
         >

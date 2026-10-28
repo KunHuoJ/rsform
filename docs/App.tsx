@@ -1,58 +1,56 @@
 import * as React from 'react';
-import {useTheme} from './useTheme';
+import { useTheme } from './useTheme';
 
 // 把 content/*.mdx 全部以组件形式静态导入，用于 hash 路由渲染。
 // Vite + @mdx-js/rollup 会把每个 .mdx 编译成 React 组件。
-const pages = import.meta.glob('./content/*.mdx', {eager: true}) as Record<
+const pages = import.meta.glob('./content/*.mdx', { eager: true }) as Record<
     string,
-    {default: React.ComponentType}
+    { default: React.ComponentType }
 >;
 
-const NAV_GROUPS: {title: string; items: {id: string; label: string}[]}[] = [
+const NAV_GROUPS: { title: string; items: { id: string; label: string }[] }[] = [
     {
         title: '入门',
         items: [
-            {id: 'intro', label: '介绍'},
-            {id: 'quickstart', label: '快速上手'},
+            { id: 'intro', label: '介绍' },
+            { id: 'quickstart', label: '快速上手' },
         ],
     },
     {
         title: '组件',
         items: [
-            {id: 'basic', label: '基础表单'},
-            {id: 'effects', label: 'Effects 联动'},
-            {id: 'consumer', label: 'Consumer 订阅'},
-            {id: 'array-items', label: 'ArrayItems 列表'},
-            {id: 'table', label: '可编辑表格'},
+            { id: 'basic', label: '基础表单' },
+            { id: 'effects', label: 'Effects 联动' },
+            { id: 'consumer', label: 'Consumer 订阅' },
+            { id: 'array-items', label: 'ArrayItems 列表' },
+            { id: 'table', label: '可编辑表格' },
         ],
     },
     {
         title: '深入',
         items: [
-            {id: 'effects-detail', label: 'Effects 详解'},
-            {id: 'api', label: 'API 参考'},
+            { id: 'effects-detail', label: 'Effects 详解' },
+            { id: 'api', label: 'API 参考' },
         ],
     },
     {
         title: '主题',
-        items: [{id: 'tokens', label: '主题变量'}],
+        items: [{ id: 'tokens', label: '主题变量' }],
     },
 ];
 
 function pageComponent(id: string): React.ComponentType | null {
-    const key = Object.keys(pages).find(k => k.endsWith(`/${id}.mdx`));
+    const key = Object.keys(pages).find((k) => k.endsWith(`/${id}.mdx`));
     return key ? pages[key].default : null;
 }
 
 function useHashId(): string {
-    const [hash, setHash] = React.useState(
-        () => window.location.hash.replace(/^#/, '') || 'intro',
-    );
+    const [hash, setHash] = React.useState(() => window.location.hash.replace(/^#/, '') || 'intro');
     React.useEffect(() => {
         const onHash = () => {
             const next = window.location.hash.replace(/^#/, '') || 'intro';
             setHash(next);
-            window.scrollTo({top: 0});
+            window.scrollTo({ top: 0 });
         };
         window.addEventListener('hashchange', onHash);
         return () => window.removeEventListener('hashchange', onHash);
@@ -62,7 +60,16 @@ function useHashId(): string {
 
 function SunIcon() {
     return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
             <circle cx="12" cy="12" r="4" />
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
         </svg>
@@ -70,7 +77,16 @@ function SunIcon() {
 }
 function MoonIcon() {
     return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>
     );
@@ -94,9 +110,7 @@ export function App(): React.ReactElement {
                 <a href="#intro" className="rsfd-topbar-brand">
                     <span className="rsfd-logo">r</span>
                     rsform
-                    <span className="rsfd-topbar-tagline">
-                        Formily v2 · antd 5 · 高性能表单
-                    </span>
+                    <span className="rsfd-topbar-tagline">Formily v2 · antd 5 · 高性能表单</span>
                 </a>
                 <div className="rsfd-topbar-actions">
                     <button
@@ -122,11 +136,11 @@ export function App(): React.ReactElement {
 
             <div className="rsfd-layout">
                 <aside className="rsfd-sidebar">
-                    {NAV_GROUPS.map(group => (
+                    {NAV_GROUPS.map((group) => (
                         <div key={group.title} className="rsfd-nav-group">
                             <div className="rsfd-nav-group-title">{group.title}</div>
                             <ul className="rsfd-nav">
-                                {group.items.map(s => (
+                                {group.items.map((s) => (
                                     <li key={s.id}>
                                         <a
                                             href={`#${s.id}`}

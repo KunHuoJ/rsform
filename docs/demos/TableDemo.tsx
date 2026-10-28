@@ -1,7 +1,8 @@
-import * as React from 'react';
-import {useForm} from '@formily/react';
-import {Button} from 'antd';
-import {Form} from 'rsform/table';
+import { useForm } from '@formily/react';
+import { Button } from 'antd';
+import React from 'react';
+import { Form as AForm } from 'rsform/antd';
+import { Form } from 'rsform/table';
 
 interface Row {
     name: string;
@@ -11,18 +12,18 @@ interface Row {
 }
 
 const STATUS = [
-    {label: '待入库', value: 'pending'},
-    {label: '已入库', value: 'done'},
-    {label: '已退回', value: 'rejected'},
+    { label: '待入库', value: 'pending' },
+    { label: '已入库', value: 'done' },
+    { label: '已退回', value: 'rejected' },
 ];
 
-const DEFAULT_ROW: Row = {name: '', qty: 1, price: 0, status: 'pending'};
+const DEFAULT_ROW: Row = { name: '', qty: 1, price: 0, status: 'pending' };
 
 const INITIAL_ROWS: Row[] = [
-    {name: '组件 A', qty: 2, price: 9.5, status: 'done'},
-    {name: '组件 B', qty: 1, price: 19.0, status: 'pending'},
-    {name: '组件 C', qty: 5, price: 4.25, status: 'done'},
-    {name: '组件 D', qty: 3, price: 7.75, status: 'rejected'},
+    { name: '组件 A', qty: 2, price: 9.5, status: 'done' },
+    { name: '组件 B', qty: 1, price: 19.0, status: 'pending' },
+    { name: '组件 C', qty: 5, price: 4.25, status: 'done' },
+    { name: '组件 D', qty: 3, price: 7.75, status: 'rejected' },
 ];
 
 /**
@@ -31,14 +32,14 @@ const INITIAL_ROWS: Row[] = [
  * 不波及已编辑的单元格值，单元格各自订阅自己的叶子）。
  * 用 antd `Button type="link"` 与删除按钮统一 link 样式（不依赖 rsform/styles）。
  */
-function AddRowButton({arrayName, defaultRow}: {arrayName: string; defaultRow: Row}) {
+function AddRowButton({ arrayName, defaultRow }: { arrayName: string; defaultRow: Row }) {
     const form: any = useForm();
     return (
         <Button
             type="link"
             onClick={() => {
                 const arr = form?.values?.[arrayName] ?? [];
-                form.setValuesIn(arrayName, [...arr, {...defaultRow}]);
+                form.setValuesIn(arrayName, [...arr, { ...defaultRow }]);
             }}
         >
             + 添加一行
@@ -53,7 +54,7 @@ function AddRowButton({arrayName, defaultRow}: {arrayName: string; defaultRow: R
 function Summary() {
     return (
         <Form.Consumer>
-            {(values: {rows?: Row[]}) => {
+            {(values: { rows?: Row[] }) => {
                 const rows = values.rows ?? [];
                 const total = rows.reduce(
                     (sum, r) => sum + (Number(r.qty) || 0) * (Number(r.price) || 0),
@@ -61,8 +62,12 @@ function Summary() {
                 );
                 return (
                     <div className="rsfd-table-summary">
-                        <span>共 <strong>{rows.length}</strong> 行</span>
-                        <span>合计金额：<strong>{total.toFixed(2)}</strong></span>
+                        <span>
+                            共 <strong>{rows.length}</strong> 行
+                        </span>
+                        <span>
+                            合计金额：<strong>{total.toFixed(2)}</strong>
+                        </span>
                     </div>
                 );
             }}
@@ -76,13 +81,17 @@ function Summary() {
  * 过程中保持稳定。底部合计用 Form.Consumer 订阅 rows 实时派生。
  */
 export function TableDemo(): React.ReactElement {
+    const [result, setResult] = React.useState<string>('');
     return (
-        <Form initialValues={{rows: INITIAL_ROWS}}>
+        <Form
+            initialValues={{ rows: INITIAL_ROWS }}
+            onSubmit={(values) => {
+                setResult(JSON.stringify(values, null, 2));
+            }}
+        >
             <Form.Table<Row>
                 name="rows"
                 pagination={false}
-                removeButton
-                removeButtonProps={{title: '操作', width: 80}}
                 itemDefaultValue={DEFAULT_ROW}
                 columns={[
                     {
@@ -110,7 +119,7 @@ export function TableDemo(): React.ReactElement {
                         dataIndex: 'status',
                         control: 'select',
                         width: 120,
-                        controlProps: {options: STATUS},
+                        controlProps: { options: STATUS },
                     },
                     {
                         title: '小计',
@@ -118,15 +127,56 @@ export function TableDemo(): React.ReactElement {
                         width: 100,
                         editable: false,
                         render: (_v: any, record: Row) => {
-                            const sub =
-                                (Number(record.qty) || 0) * (Number(record.price) || 0);
+                            const sub = (Number(record.qty) || 0) * (Number(record.price) || 0);
                             return <span>{sub.toFixed(2)}</span>;
                         },
+                    },
+                    {
+                        // 操作列：用 render 的 actions 自定义——上移/下方插入/删除
+                        title: '操作',
+                        dataIndex: '__ops',
+                        width: 160,
+                        editable: false,
+                        render: (_v: any, _record: Row, index: number, actions: any) => (
+                            <span style={{ display: 'inline-flex', gap: 4 }}>
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    disabled={index === 0}
+                                    onClick={() => actions.moveUp(index)}
+                                >
+                                    上移
+                                </Button>
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    onClick={() => actions.insert(index + 1)}
+                                >
+                                    下方插入
+                                </Button>
+                                <Button
+                                    type="link"
+                                    danger
+                                    size="small"
+                                    onClick={() => actions.remove(index)}
+                                >
+                                    删除
+                                </Button>
+                            </span>
+                        ),
                     },
                 ]}
             />
             <AddRowButton arrayName="rows" defaultRow={DEFAULT_ROW} />
             <Summary />
+            <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+                <AForm.Submit>提交</AForm.Submit>
+            </div>
+            {result && (
+                <pre className="rsfd-output" style={{ marginTop: 12 }}>
+                    {result}
+                </pre>
+            )}
         </Form>
     );
 }

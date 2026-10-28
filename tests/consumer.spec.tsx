@@ -1,8 +1,8 @@
-import * as React from 'react';
-import {describe, it, expect} from 'vitest';
-import {render, screen, fireEvent, act} from '@testing-library/react';
-import {Form, Field} from '../src/index';
-import {Input} from '../src/controls/index';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import type * as React from 'react';
+import { describe, expect, it } from 'vitest';
+import { Input } from '../src/controls/index';
+import { Field, Form } from '../src/index';
 
 /**
  * Form.Consumer — render-prop subscriber over reactive form state.
@@ -16,10 +16,12 @@ import {Input} from '../src/controls/index';
  */
 describe('Form.Consumer', () => {
     it('renders the whole form.values when no name is given', () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{name: 'a', age: 1}} formRef={formRef}>
-                <Form.Consumer>{values => <span data-testid="out">{`${values.name}-${values.age}`}</span>}</Form.Consumer>
+            <Form initialValues={{ name: 'a', age: 1 }} formRef={formRef}>
+                <Form.Consumer>
+                    {(values) => <span data-testid="out">{`${values.name}-${values.age}`}</span>}
+                </Form.Consumer>
             </Form>,
         );
         expect(screen.getByTestId('out').textContent).toBe('a-1');
@@ -31,11 +33,13 @@ describe('Form.Consumer', () => {
     });
 
     it('subscribes to a single named field and updates only on that leaf', () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
 
         render(
-            <Form initialValues={{name: '', other: ''}} formRef={formRef}>
-                <Form.Consumer name="name">{v => <span data-testid="out">{String(v)}</span>}</Form.Consumer>
+            <Form initialValues={{ name: '', other: '' }} formRef={formRef}>
+                <Form.Consumer name="name">
+                    {(v) => <span data-testid="out">{String(v)}</span>}
+                </Form.Consumer>
             </Form>,
         );
         const before = screen.getByTestId('out').textContent;
@@ -54,12 +58,14 @@ describe('Form.Consumer', () => {
     });
 
     it('resolves names against the nearest FieldContext (child of a Field)', () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{rows: [{qty: 5, price: 2}]}} formRef={formRef}>
+            <Form initialValues={{ rows: [{ qty: 5, price: 2 }] }} formRef={formRef}>
                 <Field name="rows.0">
                     {/* No leading dot: appended to preName → resolves to rows.0.qty */}
-                    <Form.Consumer name="qty">{qty => <span data-testid="out">{String(qty)}</span>}</Form.Consumer>
+                    <Form.Consumer name="qty">
+                        {(qty) => <span data-testid="out">{String(qty)}</span>}
+                    </Form.Consumer>
                 </Field>
             </Form>,
         );
@@ -73,15 +79,17 @@ describe('Form.Consumer', () => {
 
     it('reflects real input edits flowing through Field', () => {
         render(
-            <Form initialValues={{name: ''}}>
+            <Form initialValues={{ name: '' }}>
                 <Field name="name">
                     <Input data-testid="name-input" />
                 </Field>
-                <Form.Consumer name="name">{v => <span data-testid="mirror">{String(v)}</span>}</Form.Consumer>
+                <Form.Consumer name="name">
+                    {(v) => <span data-testid="mirror">{String(v)}</span>}
+                </Form.Consumer>
             </Form>,
         );
         const input = screen.getByTestId('name-input') as HTMLInputElement;
-        fireEvent.change(input, {target: {value: 'hello'}});
+        fireEvent.change(input, { target: { value: 'hello' } });
         expect(screen.getByTestId('mirror').textContent).toBe('hello');
     });
 });

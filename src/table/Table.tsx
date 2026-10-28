@@ -1,12 +1,12 @@
+import { ArrayField as FormilyArrayField } from '@formily/react';
+import { observer } from '@formily/reactive-react';
+import { Table as AntdTable } from 'antd';
 import * as React from 'react';
-import {Table as AntdTable} from 'antd';
-import {ArrayField as FormilyArrayField} from '@formily/react';
-import {observer} from '@formily/reactive-react';
-import {prefixCls} from '../shared/prefixCls';
-import {useContentName} from '../field/useContentName';
-import {useTable} from './useTable';
-import {FieldContext} from '../shared/FieldContext';
-import type {RsfTableProps} from './types';
+import { useContentName } from '../field/useContentName';
+import { FieldContext } from '../shared/FieldContext';
+import { prefixCls } from '../shared/prefixCls';
+import type { RsfTableProps } from './types';
+import { useTable } from './useTable';
 
 /**
  * rsform Table: a high-performance editable table backed by a Formily
@@ -32,8 +32,8 @@ import type {RsfTableProps} from './types';
 const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<string, any>>(
     props: RsfTableProps<RecordType>,
 ): React.ReactElement {
-    const {dataSource, columns} = useTable(props);
-    const {pagination, rowKey, className} = props;
+    const { dataSource, columns } = useTable(props);
+    const { pagination, rowKey, className } = props;
 
     // Default row key: the absolute index. antd passes a page-relative index
     // to rowKey(record, index); attach a synthetic __rsfIdx (absolute) to each
@@ -69,7 +69,9 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
             pagination={pagination as any}
         />
     );
-}) as <RecordType extends Record<string, any>>(props: RsfTableProps<RecordType>) => React.ReactElement;
+}) as <RecordType extends Record<string, any>>(
+    props: RsfTableProps<RecordType>,
+) => React.ReactElement;
 
 /**
  * rsform Table wrapper: scopes the body inside a Formily `<ArrayField>` (so
@@ -80,12 +82,12 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
 export function Table<RecordType extends Record<string, any>>(
     props: RsfTableProps<RecordType>,
 ): React.ReactElement {
-    const {name, ...rest} = props;
+    const { name, ...rest } = props;
     const resolvedName = useContentName(name);
     return (
         <FormilyArrayField name={resolvedName} basePath="">
             <FieldContext.Provider
-                value={{preName: resolvedName, name: resolvedName, state: null}}
+                value={{ preName: resolvedName, name: resolvedName, state: null }}
             >
                 <RsfTableBody {...rest} name={resolvedName} />
             </FieldContext.Provider>

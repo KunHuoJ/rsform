@@ -1,17 +1,10 @@
+import { createForm, type Form as FormilyForm } from '@formily/core';
+import { FormProvider } from '@formily/react';
 import * as React from 'react';
-import {createForm, type Form as FormilyForm} from '@formily/core';
-import {FormProvider} from '@formily/react';
-import {FieldContext} from '../shared/FieldContext';
-import {scrollToFirstError} from './validateFailedScroll';
-import {
-    mergeEffects,
-    type EffectsProp,
-    type MergeEffectsOptions,
-} from '../effects/mergeEffects';
-import {
-    RsfFormInternalsContext,
-    type RsfFormInternals,
-} from './RsfFormInternals';
+import { type EffectsProp, type MergeEffectsOptions, mergeEffects } from '../effects/mergeEffects';
+import { FieldContext } from '../shared/FieldContext';
+import { type RsfFormInternals, RsfFormInternalsContext } from './RsfFormInternals';
+import { scrollToFirstError } from './validateFailedScroll';
 
 export interface FormProps {
     /** External form instance; rsform creates one if omitted. */
@@ -48,7 +41,7 @@ function buildMergeEffects(
         onSubmitRef: onSubmitRef as {
             current: ((values: any) => void | Promise<void>) | undefined;
         },
-        onResetRef: onResetRef as {current: (() => void) | undefined},
+        onResetRef: onResetRef as { current: (() => void) | undefined },
         scrollToFirstError: validateFailed === 'scroll' ? scrollToFirstError : undefined,
         submitPromiseRef,
     };
@@ -84,17 +77,14 @@ export function Form(props: FormProps): React.ReactElement {
     // alive for the real onSubmit duration (form.submit() fires onSubmit through
     // the onFormSubmit lifecycle but does not await it).
     const submitPromiseRef = React.useRef<Promise<any> | undefined>(undefined);
-    const internals: RsfFormInternals = React.useMemo(
-        () => ({submitPromiseRef}),
-        [],
-    );
+    const internals: RsfFormInternals = React.useMemo(() => ({ submitPromiseRef }), []);
 
     React.useEffect(() => {
         if (!asyncInitialValues) {
             return;
         }
         let cancelled = false;
-        asyncInitialValues().then(values => {
+        asyncInitialValues().then((values) => {
             if (!cancelled) {
                 setAsyncValues(values ?? {});
             }
@@ -109,10 +99,17 @@ export function Form(props: FormProps): React.ReactElement {
             return formProp;
         }
         return createForm({
-            initialValues: asyncValues && Object.keys(asyncValues).length
-                ? {...asyncValues, ...(initialValues ?? {})}
-                : initialValues,
-            effects: buildMergeEffects(effects, validateFailed, onSubmitRef, onResetRef, submitPromiseRef),
+            initialValues:
+                asyncValues && Object.keys(asyncValues).length
+                    ? { ...asyncValues, ...(initialValues ?? {}) }
+                    : initialValues,
+            effects: buildMergeEffects(
+                effects,
+                validateFailed,
+                onSubmitRef,
+                onResetRef,
+                submitPromiseRef,
+            ),
             validateFirst,
         });
         // Re-create the form only when the async values first land or when an
@@ -142,7 +139,7 @@ export function Form(props: FormProps): React.ReactElement {
     return (
         <FormProvider form={form}>
             <RsfFormInternalsContext.Provider value={internals}>
-                <FieldContext.Provider value={{preName: '', name: '', state: null}}>
+                <FieldContext.Provider value={{ preName: '', name: '', state: null }}>
                     {children}
                 </FieldContext.Provider>
             </RsfFormInternalsContext.Provider>

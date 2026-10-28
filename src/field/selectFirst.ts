@@ -14,7 +14,7 @@ export interface UseSelectFirstOptions {
  * "No value yet" means null/undefined/'' — an empty string is treated as
  * unset so a field initialised to `''` still picks the first option.
  */
-export function useSelectFirst({field, selectFirst, children}: UseSelectFirstOptions): void {
+export function useSelectFirst({ field, selectFirst, children }: UseSelectFirstOptions): void {
     const optionsRef = React.useRef<any>(null);
     React.useEffect(() => {
         const isEmpty = field == null || field.value == null || field.value === '';
@@ -38,9 +38,12 @@ export function useSelectFirst({field, selectFirst, children}: UseSelectFirstOpt
             if (typeof opt === 'string' || typeof opt === 'number') return true;
             return opt.disabled !== true;
         });
-        const firstValue = first == null
-            ? undefined
-            : (typeof first === 'string' || typeof first === 'number' ? first : first.value);
+        const firstValue =
+            first == null
+                ? undefined
+                : typeof first === 'string' || typeof first === 'number'
+                  ? first
+                  : first.value;
         if (firstValue != null) {
             field.setValue(firstValue);
         }

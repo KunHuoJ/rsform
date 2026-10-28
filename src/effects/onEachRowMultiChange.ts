@@ -1,7 +1,7 @@
-import {onFieldValueChange, onFieldMount} from '@formily/core';
-import type {Form as FormilyForm, GeneralField, DataField} from '@formily/core';
-import {parseRowIndex} from '../shared/paths';
-import {applyRowState} from './onEachRowChange';
+import type { DataField, Form as FormilyForm, GeneralField } from '@formily/core';
+import { onFieldMount, onFieldValueChange } from '@formily/core';
+import { parseRowIndex } from '../shared/paths';
+import { applyRowState } from './onEachRowChange';
 
 /**
  * Per-row multi-key reactive effect. Watches every `pre.*.k` for `k` in

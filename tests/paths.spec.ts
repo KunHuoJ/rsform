@@ -1,5 +1,5 @@
-import {describe, it, expect} from 'vitest';
-import {resolvePath, parseRowIndex, isRelative, relativeDepth} from '../src/shared/paths';
+import { describe, expect, it } from 'vitest';
+import { isRelative, parseRowIndex, relativeDepth, resolvePath } from '../src/shared/paths';
 
 describe('shared/paths', () => {
     it('resolves absolute names by appending to preName', () => {

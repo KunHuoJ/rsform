@@ -7,13 +7,14 @@
  * length changes. The `columns` array is referentially stable across value
  * edits, so editing one cell re-renders exactly that cell.
  */
-import {Form as BaseForm} from '../form/FormNamespace';
-import {Table} from './Table';
-export {Table};
-export type {RsfTableProps, RsfTableColumn, BuiltColumns} from './types';
-export {CellBridge} from './CellBridge';
-export type {CellBridgeProps} from './CellBridge';
-export {useTable} from './useTable';
+import { Form as BaseForm } from '../form/FormNamespace';
+import { Table } from './Table';
+
+export type { CellBridgeProps } from './CellBridge';
+export { CellBridge } from './CellBridge';
+export type { BuiltColumns, RsfTableColumn, RsfTableColumnActions, RsfTableProps } from './types';
+export { useTable } from './useTable';
+export { Table };
 
 /**
  * The rsform.Form namespace as exposed by the `rsform/table` subpath: the bare

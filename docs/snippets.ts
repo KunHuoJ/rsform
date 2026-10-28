@@ -90,7 +90,8 @@ export const CONSUMER_CODE = `import { Form } from 'rsform/antd';
   <Form.Consumer name="name">{name => <span>{name}</span>}</Form.Consumer>
 </Form>`;
 
-export const TABLE_CODE = `import { Form } from 'rsform/table';
+export const TABLE_CODE = `import { Button } from 'antd';
+import { Form } from 'rsform/table';
 
 interface Row { name: string; qty: number; price: number; status: string }
 
@@ -104,12 +105,15 @@ const INITIAL_ROWS: Row[] = [
   { name: '组件 B', qty: 1, price: 19.0, status: 'pending' },
 ];
 
-<Form initialValues={{ rows: INITIAL_ROWS }}>
+<Form initialValues={{ rows: INITIAL_ROWS }}
+  onSubmit={values => {
+    // values 已是普通对象（库内用 toJS 转过），可直接 JSON.stringify
+    console.log(values);
+  }}
+>
   <Form.Table<Row>
     name="rows"
     pagination={false}
-    removeButton
-    removeButtonProps={{ title: '操作', width: 80 }}
     itemDefaultValue={{ name: '', qty: 1, price: 0, status: 'pending' }}
     columns={[
       { title: '名称', dataIndex: 'name', control: 'input', width: 160 },
@@ -121,15 +125,28 @@ const INITIAL_ROWS: Row[] = [
         controlProps: { options: STATUS } },
       { title: '小计', dataIndex: 'subtotal', width: 100, editable: false,
         render: (_v, r) => <span>{(Number(r.qty) * Number(r.price)).toFixed(2)}</span> },
+      // 操作列：用 render 的 actions 自定义——上移/下方插入/删除
+      { title: '操作', dataIndex: '__ops', width: 160, editable: false,
+        render: (_v, _r, index, actions) => (
+          <span>
+            <Button type="link" size="small" disabled={index === 0}
+              onClick={() => actions.moveUp(index)}>上移</Button>
+            <Button type="link" size="small"
+              onClick={() => actions.insert(index + 1)}>下方插入</Button>
+            <Button type="link" danger size="small"
+              onClick={() => actions.remove(index)}>删除</Button>
+          </span>
+        ) },
     ]}
   />
+  <AForm.Submit>提交</AForm.Submit>
 </Form>`;
 
 export const TABLE_SUMMARY_CODE = `import { useForm } from '@formily/react';
 import { Button } from 'antd';
 import { Form } from 'rsform/table';
 
-// 添加行：antd link 按钮（与删除按钮统一 link 样式，不依赖 rsform/styles）
+// 添加行：antd link 按钮（link 样式，不依赖 rsform/styles）
 function AddRowButton({ arrayName, defaultRow }) {
   const form = useForm();
   return (
@@ -158,23 +175,30 @@ function Summary() {
   );
 }`;
 
-export const TABLE_CUSTOM_REMOVE_CODE = `import { Button } from 'antd';
+export const TABLE_COLUMN_ACTIONS_CODE = `import { Button } from 'antd';
 import { Form } from 'rsform/table';
 
 <Form.Table<Row>
   name="rows"
-  removeButton
-  removeButtonProps={{
-    title: '操作',
-    width: 100,
-    // 自定义删除按钮：render(index, record, onRemove)
-    // 用 antd Button type="link" 自定义，也可换任意元素
-    render: (index, record, onRemove) => (
-      <Button type="link" danger size="small" onClick={onRemove}>
-        删除
-      </Button>
-    ),
-  }}
-  columns={[/* ... */]}
+  itemDefaultValue={{ name: '', qty: 1, price: 0, status: 'pending' }}
+  columns={[
+    { title: '名称', dataIndex: 'name', control: 'input' },
+    { title: '数量', dataIndex: 'qty', control: 'inputNumber' },
+    // 自定义操作列：render 的第 4 个参数 actions 提供增删移
+    {
+      title: '操作',
+      dataIndex: '__ops',
+      editable: false,
+      render: (_v, record, index, actions) => (
+        <span>
+          <Button type="link" size="small" disabled={index === 0}
+            onClick={() => actions.moveUp(index)}>上移</Button>
+          <Button type="link" size="small"
+            onClick={() => actions.insert(index + 1)}>下方插入</Button>
+          <Button type="link" danger size="small"
+            onClick={() => actions.remove(index)}>删除</Button>
+        </span>
+      ),
+    },
+  ]}
 />`;
-

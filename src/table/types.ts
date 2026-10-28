@@ -1,5 +1,30 @@
+import type { ColumnsType } from 'antd/es/table';
 import type * as React from 'react';
-import type {ColumnsType} from 'antd/es/table';
+
+/**
+ * Row actions handed to a column's `render` so a custom cell can mutate the
+ * array: add/insert/remove/move rows. All operate on absolute row indices
+ * (page-corrected). `add`/`insert` default to the Table's `itemDefaultValue`
+ * when no value is passed.
+ */
+export interface RsfTableColumnActions<RecordType = any> {
+    /** Append a row (defaults to the Table's `itemDefaultValue`). */
+    add: (value?: RecordType) => void;
+    /** Insert a row at `index` (defaults to `itemDefaultValue`). */
+    insert: (index: number, value?: RecordType) => void;
+    /** Remove the row at `index`. */
+    remove: (index: number) => void;
+    /** Move a row from `from` to `to`. */
+    move: (from: number, to: number) => void;
+    /** Move the row at `index` up one. */
+    moveUp: (index: number) => void;
+    /** Move the row at `index` down one. */
+    moveDown: (index: number) => void;
+    /** The Formily form instance (read `form.values`, call `form.submit()`, …). */
+    form: any;
+    /** The underlying Formily ArrayField model (its mutators, `field.value`). */
+    field: any;
+}
 
 /**
  * Column definition for the high-performance editable Table. Mirrors antd's
@@ -34,8 +59,18 @@ export interface RsfTableColumn<RecordType = any> {
     align?: 'left' | 'center' | 'right';
     /** Fixed column; passed through to antd. */
     fixed?: 'left' | 'right' | boolean;
-    /** Custom render that fully overrides the CellBridge (read-only display). */
-    render?: (value: any, record: RecordType, index: number) => React.ReactNode;
+    /**
+     * Custom render that fully overrides the CellBridge (read-only display).
+     * Receives the cell value, the row record, the absolute row index, and an
+     * `actions` object whose `add`/`insert`/`remove`/`move`/`moveUp`/`moveDown`
+     * mutate the array — so a custom column can host add/remove/sort buttons.
+     */
+    render?: (
+        value: any,
+        record: RecordType,
+        index: number,
+        actions: RsfTableColumnActions<RecordType>,
+    ) => React.ReactNode;
 }
 
 export interface RsfTableProps<RecordType = any> {
@@ -47,32 +82,11 @@ export interface RsfTableProps<RecordType = any> {
     rowKey?: string | ((record: RecordType, index: number) => React.Key);
     /** antd pagination; defaults to no pagination (all rows). */
     pagination?: false | Record<string, any>;
-    /** Show a remove column with a per-row delete button. */
-    removeButton?: boolean;
     /**
-     * Props for the remove column/button (title, width, text, …).
-     *  - `render?: (index, record, onRemove) => ReactNode` — fully custom
-     *    remove control (your own button/element); `onRemove` removes the row.
-     *    Omit to render the default link-style remove button.
-     *  - `text?: ReactNode` — label of the default remove button (default '删除').
-     *  - `className?: string` — extra class on the default remove button.
-     *  - `title?` / `width?` / `fixed?` — antd column config.
+     * Default value used by row-mutation actions (`actions.add` /
+     * `actions.insert` in a column `render`) when no value is passed. Lets a
+     * custom action column add rows without knowing the row shape.
      */
-    removeButtonProps?: {
-        title?: React.ReactNode;
-        width?: number | string;
-        fixed?: 'left' | 'right' | boolean;
-        text?: React.ReactNode;
-        className?: string;
-        render?: (
-            index: number,
-            record: RecordType,
-            onRemove: () => void,
-        ) => React.ReactNode;
-    };
-    /** Disable the remove button (e.g. at min rows). */
-    disableRemove?: boolean;
-    /** Default value pushed when adding a row via the remove column's add. */
     itemDefaultValue?: any;
     /** ClassName for the table wrapper. */
     className?: string;

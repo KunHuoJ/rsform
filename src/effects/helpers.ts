@@ -1,17 +1,10 @@
-import {onFieldValueChange} from '@formily/core';
-import type {Form as FormilyForm} from '@formily/core';
-import {setRefState, getRefState} from './refState';
-import {
-    linkedFieldProps,
-    type LinkedFieldPropsCompute,
-} from './linkedFieldProps';
-import {
-    validateField,
-    type ValidateFieldCb,
-    type ValidateFieldHandle,
-} from './validateField';
-import {onEachRowChange, type EachRowCb} from './onEachRowChange';
-import {onEachRowMultiChange, type EachRowMultiCb} from './onEachRowMultiChange';
+import type { Form as FormilyForm } from '@formily/core';
+import { onFieldValueChange } from '@formily/core';
+import { type LinkedFieldPropsCompute, linkedFieldProps } from './linkedFieldProps';
+import { type EachRowCb, onEachRowChange } from './onEachRowChange';
+import { type EachRowMultiCb, onEachRowMultiChange } from './onEachRowMultiChange';
+import { getRefState, setRefState } from './refState';
+import { type ValidateFieldCb, type ValidateFieldHandle, validateField } from './validateField';
 
 /**
  * The `$` helpers bundle handed to every `effects` callback. It exposes the
@@ -27,11 +20,7 @@ export interface EffectHelpers {
     setRefState: (key: string, value: any) => void;
     getRefState: <T = any>(key: string) => T | undefined;
     onFieldValueChange: typeof onFieldValueChange;
-    linkedFieldProps: (
-        target: string,
-        deps: string[],
-        compute: LinkedFieldPropsCompute,
-    ) => void;
+    linkedFieldProps: (target: string, deps: string[], compute: LinkedFieldPropsCompute) => void;
     validateField: (
         name: string,
         triggers: string[] | ValidateFieldCb,
@@ -49,14 +38,11 @@ export function createEffects(form: FormilyForm): EffectHelpers {
     return {
         form,
         setRefState: (key, value) => setRefState(form, key, value),
-        getRefState: <T,>(key: string) => getRefState<T>(form, key),
+        getRefState: <T>(key: string) => getRefState<T>(form, key),
         onFieldValueChange,
-        linkedFieldProps: (target, deps, compute) =>
-            linkedFieldProps(form, target, deps, compute),
-        validateField: (name, triggers, cb) =>
-            validateField(form, name, triggers, cb),
+        linkedFieldProps: (target, deps, compute) => linkedFieldProps(form, target, deps, compute),
+        validateField: (name, triggers, cb) => validateField(form, name, triggers, cb),
         onEachRowChange: (pre, key, cb) => onEachRowChange(form, pre, key, cb),
-        onEachRowMultiChange: (pre, keys, cb) =>
-            onEachRowMultiChange(form, pre, keys, cb),
+        onEachRowMultiChange: (pre, keys, cb) => onEachRowMultiChange(form, pre, keys, cb),
     };
 }

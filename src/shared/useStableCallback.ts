@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useLatestRef} from './useLatestRef';
+import { useLatestRef } from './useLatestRef';
 
 /**
  * Returns a stable function reference whose body always sees the latest `fn`.

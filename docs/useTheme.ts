@@ -6,9 +6,7 @@ function resolveInitial(): Theme {
     if (typeof window === 'undefined') return 'light';
     const saved = window.localStorage.getItem('rsf-theme');
     if (saved === 'dark' || saved === 'light') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 /**
@@ -24,7 +22,7 @@ export function useTheme(): [Theme, () => void] {
     }, [theme]);
 
     const toggle = React.useCallback(() => {
-        setTheme(t => (t === 'dark' ? 'light' : 'dark'));
+        setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
     }, []);
 
     return [theme, toggle];

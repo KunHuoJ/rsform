@@ -1,25 +1,25 @@
-import * as React from 'react';
-import {ArrayField as FormilyArrayField, useField} from '@formily/react';
-import {observer} from '@formily/reactive-react';
 import {
-    DndContext,
-    PointerSensor,
-    KeyboardSensor,
     closestCenter,
+    DndContext,
+    type DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
     useSensor,
     useSensors,
-    type DragEndEvent,
 } from '@dnd-kit/core';
 import {
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {prefixCls} from '../shared/prefixCls';
-import {FieldContext} from '../shared/FieldContext';
-import {useContentName} from '../field/useContentName';
-import {ArrayFieldContext} from './useArrayItems';
-import {ArrayRow, SortableItem} from './SortableItem';
+import { ArrayField as FormilyArrayField, useField } from '@formily/react';
+import { observer } from '@formily/reactive-react';
+import type * as React from 'react';
+import { useContentName } from '../field/useContentName';
+import { FieldContext } from '../shared/FieldContext';
+import { prefixCls } from '../shared/prefixCls';
+import { ArrayRow, SortableItem } from './SortableItem';
+import { ArrayFieldContext } from './useArrayItems';
 
 export interface ArrayItemsProps {
     /** Array field name; may be relative (`.foo`, `..foo`) against the parent context. */
@@ -80,19 +80,19 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
     addDisabled,
     dragable,
     children,
-}: Omit<ArrayItemsProps, 'name'> & {name: string}): React.ReactElement {
+}: Omit<ArrayItemsProps, 'name'> & { name: string }): React.ReactElement {
     const field: any = useField();
     const values: any[] = Array.isArray(field?.value) ? field.value : [];
 
     const sensors = useSensors(
-        useSensor(PointerSensor, {activationConstraint: {distance: 4}}),
-        useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
+        useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
     );
 
     const ids = values.map((_, i) => rowId(name, i));
 
     const handleDragEnd = (e: DragEndEvent) => {
-        const {active, over} = e;
+        const { active, over } = e;
         if (!over || active.id === over.id) return;
         const from = parseRowId(name, String(active.id));
         const to = parseRowId(name, String(over.id));
@@ -107,7 +107,7 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
             const result = validateBeforeAdd(values, itemDefaultValue);
             if (result === false) return;
             if (typeof result === 'string') {
-                field?.setFeedback({type: 'error', messages: [result]});
+                field?.setFeedback({ type: 'error', messages: [result] });
                 return;
             }
         }
@@ -136,7 +136,7 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
         return (
             <FieldContext.Provider
                 key={rowId(name, index)}
-                value={{preName: rowPath, name: rowPath, state: null}}
+                value={{ preName: rowPath, name: rowPath, state: null }}
             >
                 {dragable ? (
                     <SortableItem id={rowId(name, index)} {...rowProps} />
@@ -186,7 +186,7 @@ const ArrayItemsBody = observer(function ArrayItemsBody({
  * row's path, so relative-name Fields (`.foo`) resolve to `name.index.foo`.
  */
 export function ArrayItems(props: ArrayItemsProps): React.ReactElement {
-    const {name, ...rest} = props;
+    const { name, ...rest } = props;
     const resolvedName = useContentName(name);
     return (
         <FormilyArrayField name={resolvedName} basePath="">

@@ -1,10 +1,12 @@
+import { useForm } from '@formily/react';
+import { toJS } from '@formily/reactive';
+import { observer } from '@formily/reactive-react';
+import { Button } from 'antd';
 import * as React from 'react';
-import {Button} from 'antd';
-import {useForm} from '@formily/react';
-import {observer} from '@formily/reactive-react';
-import {useFormInternals} from './RsfFormInternals';
+import { useFormInternals } from './RsfFormInternals';
 
-export interface SubmitProps extends Omit<React.ComponentProps<typeof Button>, 'onClick' | 'htmlType' | 'loading'> {
+export interface SubmitProps
+    extends Omit<React.ComponentProps<typeof Button>, 'onClick' | 'htmlType' | 'loading'> {
     /** Override the form's onSubmit for this submit only (defaults to the Form onSubmit prop). */
     onSubmit?: (values: any) => void | Promise<void>;
     /** Children of the button. */
@@ -36,8 +38,9 @@ export const Submit = observer(function Submit({
         try {
             setSubmitting(true);
             if (onSubmit) {
-                // Explicit onSubmit: pass to form.submit so Formily awaits it.
-                await form.submit(onSubmit);
+                // Explicit onSubmit: wrap so Formily's Proxy form.values is
+                // converted to a plain JS object before reaching the callback.
+                await form.submit((values: any) => onSubmit(toJS(values)));
             } else {
                 // form.submit() fires the form's onSubmit via the lifecycle
                 // (not awaited by Formily); await the captured promise too.

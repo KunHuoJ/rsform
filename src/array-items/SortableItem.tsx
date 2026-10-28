@@ -1,12 +1,14 @@
-import * as React from 'react';
-import {useSortable} from '@dnd-kit/sortable';
-import {prefixCls} from '../shared/prefixCls';
+import { useSortable } from '@dnd-kit/sortable';
+import type * as React from 'react';
+import { prefixCls } from '../shared/prefixCls';
 
 /**
  * Convert a @dnd-kit transform ({x,y,scaleX,scaleY}) to a CSS transform string
  * without depending on @dnd-kit/utilities (which isn't a direct dep).
  */
-function transformStyle(transform: {x: number; y: number; scaleX: number; scaleY: number} | null): string | undefined {
+function transformStyle(
+    transform: { x: number; y: number; scaleX: number; scaleY: number } | null,
+): string | undefined {
     if (!transform) return undefined;
     return `translate3d(${transform.x}px, ${transform.y}px, 0)`;
 }
@@ -95,9 +97,10 @@ export interface SortableItemProps extends Omit<ArrayRowProps, 'handle'> {
 }
 
 /** A draggable array row wrapping `ArrayRow` with @dnd-kit's `useSortable`. */
-export function SortableItem({id, ...rest}: SortableItemProps): React.ReactElement {
-    const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
-        useSortable({id});
+export function SortableItem({ id, ...rest }: SortableItemProps): React.ReactElement {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id,
+    });
     const style: React.CSSProperties = {
         transform: transformStyle(transform ?? null),
         transition,

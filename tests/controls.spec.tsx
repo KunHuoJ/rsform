@@ -1,30 +1,30 @@
-import * as React from 'react';
-import {describe, it, expect, vi} from 'vitest';
-import {render, screen, fireEvent, act} from '@testing-library/react';
-import {Form, Field, FormError} from '../src/index';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import type * as React from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import {
-    Input,
-    InputNumber,
-    Select,
-    RadioGroup,
-    Switch,
-    Submit,
+    Form as FormWithControls,
     getControl,
     getControls,
-    Form as FormWithControls,
+    Input,
+    InputNumber,
+    RadioGroup,
+    Select,
+    Submit,
+    Switch,
 } from '../src/controls/index';
+import { Field, Form, FormError } from '../src/index';
 
 async function flush(): Promise<void> {
     await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
     });
 }
 
 describe('controls (Phase 3)', () => {
     it('InputNumber injects numeric value and writes back numbers', () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
-        const {container} = render(
-            <Form initialValues={{age: 1}} formRef={formRef}>
+        const formRef: React.MutableRefObject<any> = { current: null };
+        const { container } = render(
+            <Form initialValues={{ age: 1 }} formRef={formRef}>
                 <Field name="age">
                     <InputNumber data-testid="age" />
                 </Field>
@@ -32,21 +32,21 @@ describe('controls (Phase 3)', () => {
         );
         const input = container.querySelector('input') as HTMLInputElement;
         expect(input.value).toBe('1');
-        fireEvent.change(input, {target: {value: '42'}});
+        fireEvent.change(input, { target: { value: '42' } });
         // antd InputNumber parses the input to a number; rsform writes it through.
         expect(Number(formRef.current.values.age)).toBe(42);
     });
 
     it('Select with selectFirst auto-selects the first option', () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{color: ''}} formRef={formRef}>
+            <Form initialValues={{ color: '' }} formRef={formRef}>
                 <Field name="color" selectFirst>
                     <Select
                         data-testid="color"
                         options={[
-                            {label: 'Red', value: 'red'},
-                            {label: 'Blue', value: 'blue'},
+                            { label: 'Red', value: 'red' },
+                            { label: 'Blue', value: 'blue' },
                         ]}
                     />
                 </Field>
@@ -56,15 +56,15 @@ describe('controls (Phase 3)', () => {
     });
 
     it('RadioGroup defaults to optionType=button and writes the chosen value', () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{size: ''}} formRef={formRef}>
+            <Form initialValues={{ size: '' }} formRef={formRef}>
                 <Field name="size">
                     <RadioGroup
                         data-testid="size"
                         options={[
-                            {label: 'S', value: 's'},
-                            {label: 'M', value: 'm'},
+                            { label: 'S', value: 's' },
+                            { label: 'M', value: 'm' },
                         ]}
                     />
                 </Field>
@@ -77,9 +77,9 @@ describe('controls (Phase 3)', () => {
     });
 
     it('Switch is an option-control: injects checked (boolean)', () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{enabled: false}} formRef={formRef}>
+            <Form initialValues={{ enabled: false }} formRef={formRef}>
                 <Field name="enabled">
                     <Switch data-testid="enabled" />
                 </Field>
@@ -98,12 +98,12 @@ describe('controls (Phase 3)', () => {
         let resolveSubmit!: () => void;
         const submitted = vi.fn();
         const onSubmit = () =>
-            new Promise<void>(resolve => {
+            new Promise<void>((resolve) => {
                 resolveSubmit = resolve;
                 submitted();
             });
         render(
-            <Form initialValues={{x: ''}} onSubmit={onSubmit}>
+            <Form initialValues={{ x: '' }} onSubmit={onSubmit}>
                 <Field name="x">
                     <Input data-testid="x" />
                 </Field>
@@ -125,9 +125,9 @@ describe('controls (Phase 3)', () => {
     });
 
     it('FormError aggregates errors from multiple fields', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
         render(
-            <Form initialValues={{a: '', b: ''}} formRef={formRef}>
+            <Form initialValues={{ a: '', b: '' }} formRef={formRef}>
                 <Field name="a" required validator={() => 'err-a'}>
                     <Input data-testid="a" />
                 </Field>
@@ -146,7 +146,7 @@ describe('controls (Phase 3)', () => {
 
     it('FormError renders nothing when there are no errors', () => {
         render(
-            <Form initialValues={{a: ''}}>
+            <Form initialValues={{ a: '' }}>
                 <Field name="a">
                     <Input />
                 </Field>

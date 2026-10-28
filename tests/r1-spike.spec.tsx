@@ -1,8 +1,8 @@
+import { render } from '@testing-library/react';
 import * as React from 'react';
-import {describe, it, expect} from 'vitest';
-import {render} from '@testing-library/react';
-import {Form, Field} from '../src/index';
-import {Input} from '../src/controls/index';
+import { describe, expect, it } from 'vitest';
+import { Input } from '../src/controls/index';
+import { Field, Form } from '../src/index';
 
 /**
  * R1 spike: verify form.createField({name, validator}) registers a field for
@@ -12,7 +12,7 @@ import {Input} from '../src/controls/index';
  */
 describe('R1 spike — form.createField without rendering <Field>', () => {
     it('runs a validator on a programmatically created field', async () => {
-        const formRef: React.MutableRefObject<any> = {current: null};
+        const formRef: React.MutableRefObject<any> = { current: null };
 
         function Harness() {
             const form = formRef;

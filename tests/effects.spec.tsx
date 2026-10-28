@@ -1,24 +1,21 @@
-import * as React from 'react';
-import {describe, it, expect} from 'vitest';
-import {render, screen, fireEvent, act} from '@testing-library/react';
-import {Form, Field} from '../src/index';
-import {Input} from '../src/controls/index';
-import {
-    getRefState,
-    type EffectHelpers,
-} from '../src/effects';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import type * as React from 'react';
+import { describe, expect, it } from 'vitest';
+import { Input } from '../src/controls/index';
+import { type EffectHelpers, getRefState } from '../src/effects';
+import { Field, Form } from '../src/index';
 
 /**
  * Helpers to read a field's state from the rendered form via its formRef.
  */
 function useFormRef(): React.MutableRefObject<any> {
-    const ref: React.MutableRefObject<any> = {current: null};
+    const ref: React.MutableRefObject<any> = { current: null };
     return ref;
 }
 
 async function flush(): Promise<void> {
     await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
     });
 }
 
@@ -28,8 +25,8 @@ describe('effects: $ bundle + sugar helpers', () => {
         let received: EffectHelpers | undefined;
         render(
             <Form
-                initialValues={{a: 1}}
-                effects={$ => {
+                initialValues={{ a: 1 }}
+                effects={($) => {
                     received = $;
                 }}
                 formRef={formRef}
@@ -48,8 +45,8 @@ describe('effects: $ bundle + sugar helpers', () => {
         const seen: any[] = [];
         render(
             <Form
-                initialValues={{a: '', b: ''}}
-                effects={$ => {
+                initialValues={{ a: '', b: '' }}
+                effects={($) => {
                     $.onFieldValueChange('a', (field: any) => {
                         seen.push(field.value);
                     });
@@ -61,7 +58,7 @@ describe('effects: $ bundle + sugar helpers', () => {
                 </Field>
             </Form>,
         );
-        fireEvent.change(screen.getByTestId('a'), {target: {value: 'x'}});
+        fireEvent.change(screen.getByTestId('a'), { target: { value: 'x' } });
         expect(seen).toContain('x');
     });
 
@@ -69,9 +66,9 @@ describe('effects: $ bundle + sugar helpers', () => {
         const formRef = useFormRef();
         render(
             <Form
-                initialValues={{country: 'US', city: ''}}
-                effects={$ => {
-                    $.linkedFieldProps('city', ['country'], ({country}) => ({
+                initialValues={{ country: 'US', city: '' }}
+                effects={($) => {
+                    $.linkedFieldProps('city', ['country'], ({ country }) => ({
                         visible: country === 'CN',
                     }));
                 }}
@@ -89,7 +86,7 @@ describe('effects: $ bundle + sugar helpers', () => {
         // country === 'US' → city hidden.
         expect(formRef.current.getFieldState('city', (s: any) => s.visible)).toBe(false);
 
-        fireEvent.change(screen.getByTestId('country'), {target: {value: 'CN'}});
+        fireEvent.change(screen.getByTestId('country'), { target: { value: 'CN' } });
         await flush();
         expect(formRef.current.getFieldState('city', (s: any) => s.visible)).toBe(true);
     });
@@ -99,16 +96,16 @@ describe('effects: $ bundle + sugar helpers', () => {
         let resolveFirst: ((v: string) => void) | undefined;
         render(
             <Form
-                initialValues={{q: '', target: ''}}
-                effects={$ => {
-                    $.linkedFieldProps('target', ['q'], ({q}) =>
-                        new Promise<string>(resolve => {
+                initialValues={{ q: '', target: '' }}
+                effects={($) => {
+                    $.linkedFieldProps('target', ['q'], ({ q }) =>
+                        new Promise<string>((resolve) => {
                             if (q === 'slow') {
                                 resolveFirst = (v: string) => resolve(v as any);
                             } else {
                                 resolve(`fast:${q}`);
                             }
-                        }).then(() => ({title: q === 'slow' ? 'SLOW' : 'FAST'})),
+                        }).then(() => ({ title: q === 'slow' ? 'SLOW' : 'FAST' })),
                     );
                 }}
                 formRef={formRef}
@@ -122,10 +119,10 @@ describe('effects: $ bundle + sugar helpers', () => {
             </Form>,
         );
         // Fire a slow request first.
-        fireEvent.change(screen.getByTestId('q'), {target: {value: 'slow'}});
+        fireEvent.change(screen.getByTestId('q'), { target: { value: 'slow' } });
         await flush();
         // Then a fast one that should resolve first and set FAST.
-        fireEvent.change(screen.getByTestId('q'), {target: {value: 'fast'}});
+        fireEvent.change(screen.getByTestId('q'), { target: { value: 'fast' } });
         await flush();
         expect(formRef.current.getFieldState('target', (s: any) => s.title)).toBe('FAST');
         // Now resolve the stale slow request; it must NOT overwrite FAST.
@@ -138,12 +135,10 @@ describe('effects: $ bundle + sugar helpers', () => {
         const formRef = useFormRef();
         render(
             <Form
-                initialValues={{password: '', confirm: ''}}
-                effects={$ => {
-                    $.validateField('confirm', ['password', 'confirm'], ({password, confirm}) =>
-                        password && confirm && password !== confirm
-                            ? 'passwords do not match'
-                            : '',
+                initialValues={{ password: '', confirm: '' }}
+                effects={($) => {
+                    $.validateField('confirm', ['password', 'confirm'], ({ password, confirm }) =>
+                        password && confirm && password !== confirm ? 'passwords do not match' : '',
                     );
                 }}
                 formRef={formRef}
@@ -157,14 +152,14 @@ describe('effects: $ bundle + sugar helpers', () => {
             </Form>,
         );
         await flush();
-        fireEvent.change(screen.getByTestId('password'), {target: {value: 'abc'}});
-        fireEvent.change(screen.getByTestId('confirm'), {target: {value: 'xyz'}});
+        fireEvent.change(screen.getByTestId('password'), { target: { value: 'abc' } });
+        fireEvent.change(screen.getByTestId('confirm'), { target: { value: 'xyz' } });
         await flush();
         expect(formRef.current.query('confirm').take().selfErrors).toContain(
             'passwords do not match',
         );
         // Fix confirm → error clears.
-        fireEvent.change(screen.getByTestId('confirm'), {target: {value: 'abc'}});
+        fireEvent.change(screen.getByTestId('confirm'), { target: { value: 'abc' } });
         await flush();
         expect(formRef.current.query('confirm').take().selfErrors).toHaveLength(0);
     });
@@ -173,8 +168,8 @@ describe('effects: $ bundle + sugar helpers', () => {
         const formRef = useFormRef();
         render(
             <Form
-                initialValues={{a: 0}}
-                effects={$ => {
+                initialValues={{ a: 0 }}
+                effects={($) => {
                     $.setRefState('counter', 1);
                     $.setRefState('counter', (c: number) => c + 10);
                 }}
@@ -195,13 +190,13 @@ describe('effects: $ bundle + sugar helpers', () => {
         render(
             <Form
                 initialValues={{
-                    rows: [{price: 10}, {price: 5}],
+                    rows: [{ price: 10 }, { price: 5 }],
                 }}
-                effects={$ => {
-                    $.onEachRowChange('rows', 'price', ({index, field, setFieldState}) => {
+                effects={($) => {
+                    $.onEachRowChange('rows', 'price', ({ index, field, setFieldState }) => {
                         calls.push(index);
                         // Mirror the changed price into a sibling key of the SAME row.
-                        setFieldState('mirror', {value: field.value});
+                        setFieldState('mirror', { value: field.value });
                     });
                 }}
                 formRef={formRef}
@@ -219,7 +214,7 @@ describe('effects: $ bundle + sugar helpers', () => {
         expect(formRef.current.getValuesIn('rows.0.mirror')).toBe(10);
         expect(formRef.current.getValuesIn('rows.1.mirror')).toBe(5);
         const callsBeforeChange = calls.length;
-        fireEvent.change(screen.getByTestId('p1'), {target: {value: '99'}});
+        fireEvent.change(screen.getByTestId('p1'), { target: { value: '99' } });
         await flush();
         // The change fired for row 1 (not row 0).
         expect(calls[calls.length - 1]).toBe(1);
@@ -234,17 +229,16 @@ describe('effects: $ bundle + sugar helpers', () => {
         render(
             <Form
                 initialValues={{
-                    rows: [{price: 10, qty: 2, discount: 1, total: 0}],
+                    rows: [{ price: 10, qty: 2, discount: 1, total: 0 }],
                 }}
-                effects={$ => {
+                effects={($) => {
                     $.onEachRowMultiChange(
                         'rows',
                         ['price', 'qty', 'discount'],
-                        ({values, setFieldState}) => {
+                        ({ values, setFieldState }) => {
                             const total =
-                                Number(values.price) * Number(values.qty) -
-                                Number(values.discount);
-                            setFieldState('total', {value: total});
+                                Number(values.price) * Number(values.qty) - Number(values.discount);
+                            setFieldState('total', { value: total });
                         },
                     );
                 }}
@@ -261,7 +255,7 @@ describe('effects: $ bundle + sugar helpers', () => {
         await flush();
         // initial: 10 * 2 - 1 = 19
         expect(formRef.current.getValuesIn('rows.0.total')).toBe(19);
-        fireEvent.change(screen.getByTestId('qty'), {target: {value: '5'}});
+        fireEvent.change(screen.getByTestId('qty'), { target: { value: '5' } });
         await flush();
         // 10 * 5 - 1 = 49
         expect(formRef.current.getValuesIn('rows.0.total')).toBe(49);
@@ -271,11 +265,8 @@ describe('effects: $ bundle + sugar helpers', () => {
         const order: string[] = [];
         render(
             <Form
-                initialValues={{a: ''}}
-                effects={[
-                    () => order.push('first'),
-                    () => order.push('second'),
-                ]}
+                initialValues={{ a: '' }}
+                effects={[() => order.push('first'), () => order.push('second')]}
             >
                 <Field name="a">
                     <Input data-testid="a" />
@@ -287,12 +278,12 @@ describe('effects: $ bundle + sugar helpers', () => {
 
     it('validateField clearEffect stops further reactions', async () => {
         const formRef = useFormRef();
-        let handle: {clearEffect: () => void} | undefined;
+        let handle: { clearEffect: () => void } | undefined;
         render(
             <Form
-                initialValues={{a: '', b: ''}}
-                effects={$ => {
-                    handle = $.validateField('b', ['a'], ({a}) => (a ? 'err' : ''));
+                initialValues={{ a: '', b: '' }}
+                effects={($) => {
+                    handle = $.validateField('b', ['a'], ({ a }) => (a ? 'err' : ''));
                 }}
                 formRef={formRef}
             >
@@ -305,12 +296,12 @@ describe('effects: $ bundle + sugar helpers', () => {
             </Form>,
         );
         await flush();
-        fireEvent.change(screen.getByTestId('a'), {target: {value: 'x'}});
+        fireEvent.change(screen.getByTestId('a'), { target: { value: 'x' } });
         await flush();
         expect(formRef.current.query('b').take().selfErrors).toContain('err');
         // Tear down; subsequent changes must not re-trigger.
         handle!.clearEffect();
-        fireEvent.change(screen.getByTestId('a'), {target: {value: 'y'}});
+        fireEvent.change(screen.getByTestId('a'), { target: { value: 'y' } });
         await flush();
         // Error stays as last applied ('err'); clearEffect is a liveness flag,
         // so it doesn't actively clear — it just stops new reactions.

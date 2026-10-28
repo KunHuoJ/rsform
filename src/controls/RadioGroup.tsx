@@ -1,7 +1,8 @@
-import * as React from 'react';
-import {Radio} from 'antd';
+import { Radio } from 'antd';
+import type * as React from 'react';
 
-export interface RadioGroupProps extends Omit<React.ComponentProps<typeof Radio.Group>, 'optionType'> {
+export interface RadioGroupProps
+    extends Omit<React.ComponentProps<typeof Radio.Group>, 'optionType'> {
     /**
      * How options render. Defaults to `'button'` (rsform convention) so a
      * basic `<Field name="x"><RadioGroup options=[…]/></Field>` reads as a
@@ -16,6 +17,9 @@ export interface RadioGroupProps extends Omit<React.ComponentProps<typeof Radio.
  * `onChange` — the selected option's value, not a boolean, so RadioGroup is
  * NOT tagged as an option-control (no `checked` swap).
  */
-export function RadioGroup({optionType = 'button', ...rest}: RadioGroupProps): React.ReactElement {
+export function RadioGroup({
+    optionType = 'button',
+    ...rest
+}: RadioGroupProps): React.ReactElement {
     return <Radio.Group optionType={optionType} {...rest} />;
 }

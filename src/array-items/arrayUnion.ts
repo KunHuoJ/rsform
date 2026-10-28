@@ -15,7 +15,7 @@
 export type ArrayUnionValidator = (
     value: any,
     rule: any,
-    ctx: {field: any; form: any} | any,
+    ctx: { field: any; form: any } | any,
 ) => string | null | undefined | Promise<string | null | undefined>;
 
 export function arrayUnion(key: string, message = '该值已存在'): ArrayUnionValidator {

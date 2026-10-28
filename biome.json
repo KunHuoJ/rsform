@@ -1,0 +1,83 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true
+    },
+    "files": {
+        "ignoreUnknown": true,
+        "includes": [
+            "src/**",
+            "tests/**",
+            "docs/**",
+            "!**/node_modules/**",
+            "!**/dist/**",
+            "!**/docs/dist/**",
+            "!**/*.md",
+            "!**/*.mdx",
+            "!**/*.json",
+            "!**/*.css"
+        ]
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 100,
+        "lineEnding": "lf"
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "single",
+            "jsxQuoteStyle": "double",
+            "semicolons": "always",
+            "trailingCommas": "all",
+            "bracketSpacing": true,
+            "bracketSameLine": false
+        }
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "preset": "recommended",
+            "correctness": {
+                "noUnusedVariables": "off",
+                "useExhaustiveDependencies": "off",
+                "noComponentHookFactories": "off",
+                "useHookAtTopLevel": "off"
+            },
+            "suspicious": {
+                "noPrototypeBuiltins": "off",
+                "noExplicitAny": "off",
+                "noArrayIndexKey": "off",
+                "useIterableCallbackReturn": "off",
+                "noConfusingVoidType": "off"
+            },
+            "a11y": {
+                "useButtonType": "off",
+                "useKeyWithClickEvents": "off",
+                "useAnchorContent": "off",
+                "noSvgWithoutTitle": "off",
+                "noNoninteractiveTabindex": "off",
+                "noLabelWithoutControl": "off"
+            },
+            "complexity": {
+                "noUselessFragments": "off",
+                "noBannedTypes": "off",
+                "useOptionalChain": "off"
+            },
+            "style": {
+                "noNonNullAssertion": "off",
+                "useNamingConvention": "off"
+            }
+        }
+    },
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    }
+}

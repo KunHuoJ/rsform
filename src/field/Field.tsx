@@ -1,14 +1,14 @@
+import { Field as FormilyField, useField } from '@formily/react';
+import { observer } from '@formily/reactive-react';
 import * as React from 'react';
-import {Field as FormilyField, useField} from '@formily/react';
-import {observer} from '@formily/reactive-react';
-import {FieldContext} from '../shared/FieldContext';
-import {prefixCls} from '../shared/prefixCls';
-import {commonMap} from './commonMap';
-import {FieldUi} from './FieldUi';
-import {NonEditable} from './NonEditable';
-import {isOptionControl} from './isOptionControl';
-import {useContentName} from './useContentName';
-import {useSelectFirst} from './selectFirst';
+import { FieldContext } from '../shared/FieldContext';
+import { prefixCls } from '../shared/prefixCls';
+import { commonMap } from './commonMap';
+import { FieldUi } from './FieldUi';
+import { isOptionControl } from './isOptionControl';
+import { NonEditable } from './NonEditable';
+import { useSelectFirst } from './selectFirst';
+import { useContentName } from './useContentName';
 
 export interface FieldRenderApi {
     value: any;
@@ -66,11 +66,18 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
         return null;
     }
     const {
-        title, required, editable, format, parse,
-        selectFirst, hideUi, requiredOnlyUi, content: children,
+        title,
+        required,
+        editable,
+        format,
+        parse,
+        selectFirst,
+        hideUi,
+        requiredOnlyUi,
+        content: children,
     } = props;
 
-    useSelectFirst({field, selectFirst, children});
+    useSelectFirst({ field, selectFirst, children });
 
     const isNonEditable = editable === false || field.editable === false;
 
@@ -86,7 +93,7 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
     } else if (React.isValidElement(children)) {
         const childEl = children as React.ReactElement<any>;
         const optionCtrl = isOptionControl(childEl);
-        const inject = commonMap(field, {format, parse, isOptionControl: optionCtrl});
+        const inject = commonMap(field, { format, parse, isOptionControl: optionCtrl });
         const injectProps: Record<string, any> = {
             onChange: inject.onChange,
             onBlur: inject.onBlur,
@@ -131,7 +138,14 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
     }
 
     return (
-        <FieldContext.Provider value={{preName: props.resolvedName, name: props.resolvedName, state: field, mutators: field?.mutators}}>
+        <FieldContext.Provider
+            value={{
+                preName: props.resolvedName,
+                name: props.resolvedName,
+                state: field,
+                mutators: field?.mutators,
+            }}
+        >
             {node}
         </FieldContext.Provider>
     );
@@ -154,8 +168,19 @@ const FieldBody = observer(FieldBodyImpl);
  */
 export function Field(props: FieldProps): React.ReactElement {
     const {
-        name, title, required, editable, format, parse,
-        selectFirst, hideUi, requiredOnlyUi, validator, reactions, basePath, children,
+        name,
+        title,
+        required,
+        editable,
+        format,
+        parse,
+        selectFirst,
+        hideUi,
+        requiredOnlyUi,
+        validator,
+        reactions,
+        basePath,
+        children,
     } = props;
 
     const resolvedName = useContentName(name);

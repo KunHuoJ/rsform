@@ -1,9 +1,9 @@
-import * as React from 'react';
-import {InputNumber} from './InputNumber';
-import {Select} from './Select';
-import {RadioGroup} from './RadioGroup';
-import {Switch} from './Switch';
-import {Input} from './Input';
+import type * as React from 'react';
+import { Input } from './Input';
+import { InputNumber } from './InputNumber';
+import { RadioGroup } from './RadioGroup';
+import { Select } from './Select';
+import { Switch } from './Switch';
 
 /**
  * rsform control registry. Maps a short string key to a control component,
@@ -14,12 +14,7 @@ import {Input} from './Input';
  * Keys are stable rsform conventions; consumers may register their own keys
  * via `registerControl(key, component)` to extend the Table without forking.
  */
-export type ControlKey =
-    | 'input'
-    | 'inputNumber'
-    | 'select'
-    | 'radioGroup'
-    | 'switch';
+export type ControlKey = 'input' | 'inputNumber' | 'select' | 'radioGroup' | 'switch';
 
 export type ControlComponent = React.ComponentType<any>;
 
@@ -43,5 +38,5 @@ export function registerControl(key: string, component: ControlComponent): void 
 
 /** The full control registry (a defensive copy). */
 export function getControls(): Record<string, ControlComponent> {
-    return {...registry};
+    return { ...registry };
 }

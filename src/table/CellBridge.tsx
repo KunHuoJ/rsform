@@ -1,8 +1,8 @@
+import { useForm } from '@formily/react';
+import { observer } from '@formily/reactive-react';
 import * as React from 'react';
-import {useForm} from '@formily/react';
-import {observer} from '@formily/reactive-react';
-import {getControl} from '../controls/FormComMap';
-import {prefixCls} from '../shared/prefixCls';
+import { getControl } from '../controls/FormComMap';
+import { prefixCls } from '../shared/prefixCls';
 
 export interface CellBridgeProps {
     /** Absolute row index (page-corrected). */
@@ -85,8 +85,7 @@ export const CellBridge = observer(function CellBridge({
     // Display value: read ONLY this leaf of the deeply-observable form.values
     // tree. Editing this cell notifies just this observer; editing any other
     // cell notifies a different leaf, so this cell never re-renders for it.
-    const value =
-        form?.values?.[arrayName]?.[rowIndex]?.[dataIndex];
+    const value = form?.values?.[arrayName]?.[rowIndex]?.[dataIndex];
 
     // Read this cell's errors reactively (observer layer). This is the only
     // other reactive read inside a cell, and it changes rarely.
@@ -146,9 +145,7 @@ export const CellBridge = observer(function CellBridge({
     return (
         <div className={`${prefixCls}-table-cell`}>
             {content}
-            {error && (
-                <div className={`${prefixCls}-field-error-message`}>{error}</div>
-            )}
+            {error && <div className={`${prefixCls}-field-error-message`}>{error}</div>}
         </div>
     );
 });

@@ -1,4 +1,4 @@
-import {prefixCls} from '../shared/prefixCls';
+import { prefixCls } from '../shared/prefixCls';
 
 /**
  * Scroll the first visible field error message into view (centered).
@@ -10,6 +10,6 @@ export function scrollToFirstError(): void {
     }
     const node = document.querySelector(`.${prefixCls}-field-error-message`);
     if (node) {
-        node.scrollIntoView({block: 'center', behavior: 'smooth'});
+        node.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
 }
