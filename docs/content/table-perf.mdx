@@ -1,5 +1,6 @@
 import {Demo} from '../Demo';
 import {TablePerfDemo} from '../demos/TablePerfDemo';
+import {TABLE_PERF_CODE} from '../snippets';
 
 ## 性能压测表格
 
@@ -7,7 +8,7 @@ import {TablePerfDemo} from '../demos/TablePerfDemo';
 
 编辑任意一格：只该格重渲染，表体不遍历整棵 1000 格的单元格树，FPS 不掉。对比「每格做成 Formily `<Field>`」的实现，编辑一格的响应式重算量从 O(N×M) = O(1000) 降到 O(1)。
 
-<Demo code="" title="50×20 混合控件性能表格">
+<Demo code={TABLE_PERF_CODE} title="50×20 混合控件性能表格">
   <TablePerfDemo />
 </Demo>
 

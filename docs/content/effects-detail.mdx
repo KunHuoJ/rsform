@@ -50,6 +50,8 @@ $.validateField(
 ): { clearEffect(): void }   // 返回句柄，可手动拆卸
 ```
 
+> 也支持简写 `$.validateField(name, cb)`——`triggers` 默认 `[name]`，只在该字段自身变化时重跑。
+
 ### 触发时机
 
 `triggers` 里**任意一个**字段值变化，`cb` 就重跑；`name` 字段也会在自身变化时

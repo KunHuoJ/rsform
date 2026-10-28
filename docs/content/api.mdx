@@ -15,18 +15,18 @@ import {Form} from 'rsform';
 |---|---|---|---|
 | `form` | `FormilyForm` | 内部创建 | 外部表单实例；省略则 rsform 创建 |
 | `initialValues` | `Record<string, any>` | — | 初始值 |
-| `asyncInitialValues` | `() => Promise<Record>` | — | 异步初始值；表单等其 resolve 后挂载 |
+| `asyncInitialValues` | `() => Promise<Record>` | — | 异步初始值；表单等其 resolve 后挂载。loading 期间渲染 `<div className="rsf-form-loading">loading…</div>`，不可定制 |
 | `effects` | `EffectFn \| EffectFn[]` | — | effect 回调，注入 `$` helper 包；数组按序扇出 |
 | `onSubmit` | `(values) => void \| Promise` | — | 提交回调。**校验通过后才执行**——校验失败时 onSubmit 不跑，表单不会提交脏数据 |
-| `onReset` | `() => void` | — | 重置回调 |
+| `onReset` | `() => void` | — | ⚠️ **暂未生效**（占位 API，保留以稳定签名）。重置走 `formRef.current.reset()` |
 | `validateFirst` | `boolean` | — | 遇到第一个校验错误即停止 |
-| `validateFailed` | `'scroll' \| (field) => void` | `'scroll'` | 校验失败处理：滚到首个错误或自定义 |
+| `validateFailed` | `'scroll' \| (field) => void` | — | 校验失败处理：`'scroll'` 滚到首个错误，或传自定义回调。**不传则不处理** |
 | `formRef` | `MutableRefObject` | — | 拿到 form 实例的 ref |
 | `children` | `ReactNode` | — | 表单内容 |
 
-`Form` 命名空间挂载：`Form.Field` / `Form.Consumer` / `Form.FormError` / `Form.Formily`（核心）+
+`Form` 命名空间挂载：`Form.Field` / `Form.Consumer` / `Form.Formily`（核心）+
 `Form.Input` / `Form.TextArea` / `Form.InputNumber` / `Form.Select` / `Form.RadioGroup` /
-`Form.Switch` / `Form.Submit` / `Form.Button`（antd 控件）+ `Form.Table` / `Form.ArrayItems`。
+`Form.Switch` / `Form.DatePicker` / `Form.Submit` / `Form.Button`（antd 控件）+ `Form.Table` / `Form.ArrayItems`。
 全部从单入口 `import { Form } from 'rsform'` 拿到，无需多 import + 起别名。
 
 ---
@@ -62,7 +62,7 @@ import {Form} from 'rsform';
 
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
-| `onSubmit` | `(values) => void \| Promise` | Form 的 onSubmit | 仅本次提交覆盖 |
+| `onSubmit` | `(values) => void \| Promise` | Form 的 onSubmit | **覆盖** Form 的 onSubmit（仅本次点击）：传了它，`<Form onSubmit>` 就**不会**触发；不传则走 Form 的。校验失败时两者都不跑 |
 | `children` | `ReactNode` | — | 按钮文字 |
 | 其余 | — | — | 透传 antd `Button` 的所有 props（除 `onClick`/`htmlType`/`loading`） |
 
@@ -89,15 +89,6 @@ render-prop 订阅表单值。底层 `observer` + `form.values`/`form.getValuesI
 
 ---
 
-### Form.FormError
-
-
-表单级错误聚合。读取 form 的 `form.errors`（非字段级），渲染为 antd `Alert`。
-
-无 props，直接 `<Form.FormError />` 放在表单内。
-
----
-
 ### 控件
 
 薄 antd 5 控件 re-export，加静态 `__rsfOptionControl` 标记供 Table 控件注册识别。
@@ -110,6 +101,8 @@ render-prop 订阅表单值。底层 `observer` + `form.values`/`form.getValuesI
 | `Form.Select` | `Select` | 下拉选择；支持 `options`/`mode` 等 antd props |
 | `Form.RadioGroup` | `Radio.Group` | 单选组；默认 `optionType='button'` |
 | `Form.Switch` | `Switch` | 开关；自动把 `value` 互换成 `checked` |
+| `Form.DatePicker` | `DatePicker` | 日期选择；传给 `Form.Field` 时需用 `format`/`parse` 做 string↔Dayjs 转换（表格列用 `'date'` 已内置 `DateCell`） |
+| `Form.Button` | `Button` | antd Button re-export，方便自定义操作按钮 |
 
 控件可直接 import：`import {Select} from 'rsform'`，或走 `Form.Select` 命名空间。
 
@@ -125,6 +118,8 @@ import {registerControl} from 'rsform';
 registerControl('companyPicker', CompanyPicker);
 // 之后列里可用 control: 'companyPicker'
 ```
+
+`getControl(key)` 查单个、`getControls()` 查全部（返回防御性拷贝）。
 
 2. **组件类型**（`control: CompanyPicker`）：直接传组件类型，配合 `controlProps` 最自然，无需注册。
 
@@ -154,7 +149,7 @@ import {Form} from 'rsform';
 | `name` | `string` | — | 数组字段名 |
 | `columns` | `RsfTableColumn[]` | — | 列定义（见下） |
 | `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key |
-| `pagination` | `false \| object` | `false` | antd 分页；默认不分页 |
+| `pagination` | `false \| object` | `false` | antd 分页；默认不分页。⚠️ 用分页时必须**受控**传 `current`/`pageSize`——非受控分页下 `useTable` 拿不到当前页，跨页单元格路径会错位 |
 | `scroll` | `object` | 见说明 | antd `scroll`。省略时 rsform 按列 `width` 求和算 `scroll.x`（让每列 `width` 严格生效，固定布局）；无列声明 width 时回退 `'max-content'`。传自定义则覆盖 |
 | `itemDefaultValue` | `any` | `{}` | `actions.add`/`actions.insert` 不传 value 时的默认行值 |
 | `className` | `string` | — | 表格包装类名 |
@@ -166,7 +161,7 @@ import {Form} from 'rsform';
 | `title` | `ReactNode` | — | 列标题 |
 | `dataIndex` | `string` | — | 行对象里对应此列的 key |
 | `width` | `number \| string` | — | 列宽 |
-| `control` | `string \| ComponentType \| ReactElement` | — | 控件：字符串 key（`'input'`/`'inputNumber'`/`'select'`/...）、组件类型（`control: MyInput`）、或 React 元素；省略=只读文本。三种写法见上方[自定义控件注册](#自定义控件注册table) |
+| `control` | `ControlKey \| ComponentType \| ReactElement` | — | 控件：字符串 key（`'input'`/`'inputNumber'`/`'select'`/`'radioGroup'`/`'switch'`/`'date'`，IDE 自动补全）、组件类型（`control: MyInput`）、或 React 元素；省略=只读文本。三种写法见上方[自定义控件注册](#自定义控件注册table) |
 | `editable` | `boolean` | `true`（有 control 时） | 单元格是否可编辑 |
 | `required` | `boolean` | `false` | 是否必填（列级）。`true` 时空值校验失败，提交被拦截、错误显示在单元格下方。**不是 `controlProps.required`**（那只设 HTML 属性） |
 | `requiredMessage` | `string` | `'必填'` | `required` 校验失败时的错误信息 |
@@ -215,3 +210,15 @@ import {Form} from 'rsform';
 
 每行行末提供上移/下移/删除按钮。上移/下移走 Formily `moveUp`/`moveDown`，
 删除走 `remove`——都是 Formily 原生 mutator，零额外依赖。`min` 到限时删除禁用。
+
+#### 跨行唯一校验 `arrayUnion`
+
+`arrayUnion(key, message?)` 返回一个 validator，挂在行内 `<Field validator={arrayUnion('email')}>` 上，自动读取最近数组祖先，若该 `key` 在其他行已出现则报错。
+
+```tsx
+import { arrayUnion, Form } from 'rsform';
+
+<Form.Field name="email" validator={arrayUnion('email', '该邮箱已存在')}>
+  <Form.Input />
+</Form.Field>
+```

@@ -2,8 +2,8 @@ import * as React from 'react';
 import { Form } from 'rsform';
 
 /**
- * 基础表单演示：Form + Form.Field 自动注入 value/onChange，Form.Submit 等校验，
- * Form.FormError 聚合表单级错误。外层 demo 容器由 App 统一提供。
+ * 基础表单演示：Form + Form.Field 自动注入 value/onChange，Form.Submit 等校验。
+ * 外层 demo 容器由 App 统一提供。
  */
 export function BasicFormDemo(): React.ReactElement {
     const [submitted, setSubmitted] = React.useState<null | Record<string, any>>(null);
@@ -25,12 +25,11 @@ export function BasicFormDemo(): React.ReactElement {
                     required
                     validator={(v: number) => (v >= 0 ? '' : '必须 ≥ 0')}
                 >
-                    <Form.InputNumber  style={{ width: 120 }} />
+                    <Form.InputNumber style={{ width: 120 }} />
                 </Form.Field>
                 <Form.Field name="bio" title="简介">
                     <Form.TextArea rows={2} placeholder="选填" />
                 </Form.Field>
-                <Form.FormError />
                 <div style={{ marginTop: 12 }}>
                     <Form.Submit>提交</Form.Submit>
                 </div>

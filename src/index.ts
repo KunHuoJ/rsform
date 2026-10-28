@@ -11,7 +11,6 @@ import { Switch } from './controls/Switch';
 import { Field } from './field';
 import { Consumer } from './form/Consumer';
 import { Form as FormComponent } from './form/Form';
-import { FormError } from './form/FormError';
 import { Submit } from './form/Submit';
 import { Table } from './table/Table';
 
@@ -107,7 +106,6 @@ export {
 // Form pieces.
 export { Consumer as FormConsumer } from './form/Consumer';
 export type { FormProps } from './form/Form';
-export { FormError } from './form/FormError';
 export type { FormConsumerProps } from './form/FormNamespace';
 export type { SubmitProps } from './form/Submit';
 export { Submit } from './form/Submit';
@@ -124,10 +122,10 @@ export type {
 export { useTable } from './table/useTable';
 
 /**
- * The unified `Form` namespace: the bare `Form` (Field / Consumer / FormError /
- * Formily) plus the antd controls, `Submit`, `Table`, and `ArrayItems` — all
- * attached as static properties so `Form.Field` / `Form.Input` / `Form.Table`
- * / `Form.ArrayItems` / `Form.Submit` work from a single `rsform` import.
+ * The unified `Form` namespace: the bare `Form` (Field / Consumer / Formily)
+ * plus the antd controls, `Submit`, `Table`, and `ArrayItems` — all attached as
+ * static properties so `Form.Field` / `Form.Input` / `Form.Table` /
+ * `Form.ArrayItems` / `Form.Submit` work from a single `rsform` import.
  *
  * `Object.assign` attaches the static properties onto the shared `Form`
  * component in place.
@@ -135,7 +133,6 @@ export { useTable } from './table/useTable';
 export type RsfForm = typeof FormComponent & {
     Field: typeof Field;
     Consumer: typeof Consumer;
-    FormError: typeof FormError;
     Formily: typeof FormilyReact;
     Input: typeof Input;
     TextArea: typeof TextArea;
@@ -154,7 +151,6 @@ export type RsfForm = typeof FormComponent & {
 export const Form: RsfForm = Object.assign(FormComponent, {
     Field,
     Consumer,
-    FormError,
     Formily: FormilyReact,
     Input,
     TextArea,

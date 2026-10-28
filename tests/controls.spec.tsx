@@ -12,7 +12,7 @@ import {
     Submit,
     Switch,
 } from '../src/controls/index';
-import { Field, Form, FormError } from '../src/index';
+import { Field, Form } from '../src/index';
 
 async function flush(): Promise<void> {
     await act(async () => {
@@ -124,38 +124,6 @@ describe('controls (Phase 3)', () => {
         expect(btn.disabled).toBe(false);
     });
 
-    it('FormError aggregates errors from multiple fields', async () => {
-        const formRef: React.MutableRefObject<any> = { current: null };
-        render(
-            <Form initialValues={{ a: '', b: '' }} formRef={formRef}>
-                <Field name="a" required validator={() => 'err-a'}>
-                    <Input data-testid="a" />
-                </Field>
-                <Field name="b" required validator={() => 'err-b'}>
-                    <Input data-testid="b" />
-                </Field>
-                <FormError data-testid="formerror" />
-            </Form>,
-        );
-        await formRef.current.validate().catch(() => {});
-        await flush();
-        const fe = screen.getByTestId('formerror');
-        expect(fe.textContent).toContain('err-a');
-        expect(fe.textContent).toContain('err-b');
-    });
-
-    it('FormError renders nothing when there are no errors', () => {
-        render(
-            <Form initialValues={{ a: '' }}>
-                <Field name="a">
-                    <Input />
-                </Field>
-                <FormError data-testid="formerror" />
-            </Form>,
-        );
-        expect(screen.queryByTestId('formerror')).toBeNull();
-    });
-
     it('FormComMap registry resolves known control keys', () => {
         const controls = getControls();
         expect(controls.input).toBe(Input);
@@ -174,7 +142,5 @@ describe('controls (Phase 3)', () => {
         expect(FormWithControls.RadioGroup).toBe(RadioGroup);
         expect(FormWithControls.Switch).toBe(Switch);
         expect(FormWithControls.Submit).toBe(Submit);
-        // FormError is antd-free, attached on the bare Form namespace.
-        expect(FormWithControls.FormError).toBe(FormError);
     });
 });

@@ -2,12 +2,11 @@ import * as FormilyReact from '@formily/react';
 import { Field } from '../field/Field';
 import { Consumer } from './Consumer';
 import { Form as FormComponent } from './Form';
-import { FormError } from './FormError';
 
 /**
  * rsform.Form is the Form component with sub-components attached as static
- * properties: Form.Field, Form.Consumer, Form.FormError, Form.Formily (full
- * @formily/react namespace).
+ * properties: Form.Field, Form.Consumer, Form.Formily (full @formily/react
+ * namespace).
  *
  * The antd controls (Form.Input, Form.Select, …), Form.Submit, Form.Button,
  * Form.Table and Form.ArrayItems are attached in `src/index.ts` (the single
@@ -18,12 +17,10 @@ import { FormError } from './FormError';
 export const Form = Object.assign(FormComponent, {
     Field,
     Consumer,
-    FormError,
     Formily: FormilyReact,
 }) as typeof FormComponent & {
     Field: typeof Field;
     Consumer: typeof Consumer;
-    FormError: typeof FormError;
     Formily: typeof FormilyReact;
 };
 

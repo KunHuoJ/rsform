@@ -98,6 +98,48 @@ export const CONSUMER_CODE = `import { Form } from 'rsform';
   <Form.Consumer name="name">{name => <span>{name}</span>}</Form.Consumer>
 </Form>`;
 
+export const TABLE_PERF_CODE = `import * as React from 'react';
+import { Form, type RsfTableColumn } from 'rsform';
+
+interface Row {
+  name: string; qty: number; price: number; status: string;
+  // ...共 20 个字段
+}
+
+const ROWS = 50;
+const DEFAULT_ROW: Row = { name: '', qty: 0, price: 0, status: 'pending', /* ... */ };
+
+function makeInitial(): Row[] {
+  return Array.from({ length: ROWS }, (_, i) => ({
+    name: \`行\${i + 1}\`, qty: i + 1, price: (i + 1) * 1.5,
+    status: 'pending', /* ...其余字段 */
+  }));
+}
+
+const columns: RsfTableColumn<Row>[] = [
+  { title: '名称', dataIndex: 'name', control: 'input', width: 120, required: true },
+  { title: '数量', dataIndex: 'qty', control: 'inputNumber', width: 80 },
+  { title: '单价', dataIndex: 'price', control: 'inputNumber', width: 90 },
+  { title: '状态', dataIndex: 'status', control: 'select', width: 100,
+    controlProps: { options: STATUS_OPTS } },
+  { title: '入库日期', dataIndex: 'inDate', control: 'date', width: 180 },
+  { title: '启用', dataIndex: 'active', control: 'switch', width: 70 },
+  // ...共 20 列
+];
+
+export function TablePerfDemo() {
+  const [result, setResult] = React.useState('');
+  return (
+    <Form initialValues={{ rows: makeInitial() }} validateFailed="scroll"
+          onSubmit={(values) => setResult(JSON.stringify(values, null, 2))}>
+      <Form.Table<Row> name="rows" pagination={false}
+        itemDefaultValue={DEFAULT_ROW} columns={columns} />
+      <Form.Submit>提交</Form.Submit>
+      {result && <pre>{result}</pre>}
+    </Form>
+  );
+}`;
+
 export const TABLE_CODE = `import { Button } from 'antd';
 import { Form } from 'rsform';
 

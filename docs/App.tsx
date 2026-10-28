@@ -25,12 +25,14 @@ const NAV_GROUPS: { title: string; items: { id: string; label: string }[] }[] = 
             { id: 'array-items', label: 'ArrayItems 列表' },
             { id: 'table', label: '可编辑表格' },
             { id: 'table-perf', label: '性能压测表格' },
+            { id: 'playground', label: 'Playground' },
         ],
     },
     {
         title: '深入',
         items: [
             { id: 'effects-detail', label: 'Effects 详解' },
+            { id: 'migration', label: '从 @formily/antd 迁移' },
             { id: 'api', label: 'API 参考' },
         ],
     },
