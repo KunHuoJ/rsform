@@ -1,5 +1,6 @@
 import type * as React from 'react';
 import type { ColumnsType } from 'antd/es/table';
+import type { ControlKey } from '../controls/FormComMap';
 
 /**
  * Row actions handed to a column's `render` so a custom cell can mutate the
@@ -51,8 +52,13 @@ export interface RsfTableColumn<RecordType = any> {
      *    control with props — no need to register a key or wrap in an element.
      *  - a React element (`control: <MyInput />`) → cloned with value/onChange
      *    + controlProps injected (like Field).
+     *
+     * The union includes the built-in `ControlKey` literals (so the IDE
+     * autocompletes 'input' | 'inputNumber' | 'select' | 'radioGroup' |
+     * 'switch' | 'date'), a component type, a React element, plus a widened
+     * `string` for controls registered at runtime via `registerControl`.
      */
-    control?: string | React.ComponentType<any> | React.ReactElement;
+    control?: ControlKey | React.ComponentType<any> | React.ReactElement | (string & {});
     /** Whether this cell is editable. Defaults to true when `control` is set. */
     editable?: boolean;
     /**

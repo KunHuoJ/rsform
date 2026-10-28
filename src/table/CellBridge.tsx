@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useForm } from '@formily/react';
 import { toJS } from '@formily/reactive';
 import { observer } from '@formily/reactive-react';
-import { getControl } from '../controls/FormComMap';
+import { type ControlKey, getControl } from '../controls/FormComMap';
 import { prefixCls } from '../shared/prefixCls';
 
 export interface CellBridgeProps {
@@ -13,7 +13,7 @@ export interface CellBridgeProps {
     /** The array field name (e.g. 'rows'). */
     arrayName: string;
     /** Control: a FormComMap key string, a component type, or a React element. */
-    control?: string | React.ComponentType<any> | React.ReactElement;
+    control?: ControlKey | React.ComponentType<any> | React.ReactElement | (string & {});
     /** Extra props merged into the control (options, placeholder, …). */
     controlProps?: Record<string, any>;
     /** Formily validator attached to the cell's registered field. */
@@ -214,20 +214,15 @@ export const CellBridge = observer(function CellBridge({
 /**
  * Resolve the absolute row index. antd5 Table's `render(value, record, index)`
  * passes a PAGE-RELATIVE index (R3 spike). We correct it to absolute via the
- * current page + pageSize, falling back to the record's stable id field when
- * available (the most robust signal).
+ * current page + pageSize. The row's stable id (`rowKey`) is NOT used here —
+ * a stable identity is not the array index, and conflating them sends cell
+ * reads/writes/effects to the wrong leaf path (`rows.${businessId}.x`).
  */
 export function resolveAbsoluteIndex(
     relativeIndex: number,
-    record: any,
     current?: number,
     pageSize?: number,
-    idField?: string,
 ): number {
-    if (idField != null && record != null && record[idField] != null) {
-        const n = Number(record[idField]);
-        if (Number.isFinite(n)) return n;
-    }
     const page = current && current > 0 ? current : 1;
     const size = pageSize && pageSize > 0 ? pageSize : 0;
     return size > 0 ? (page - 1) * size + relativeIndex : relativeIndex;

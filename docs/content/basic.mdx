@@ -14,6 +14,7 @@ import {BASIC_CODE} from '../snippets';
 ### 字段属性
 
 - `name`：字段路径，支持相对路径（`.foo` 在 ArrayItems 行内）。
-- `title`：label 文本；`required` 显示红星（仅展示，校验逻辑写在 `validator`）。
+- `title`：label 文本。
+- `required`：显示红星 **且** 触发 Formily 内置非空校验（submit 空值会被拦截）。需要额外自定义规则时再配 `validator`，两者叠加都进 `selfErrors`。
 - `validator`：同步/异步校验，返回空串或 `''` 表示通过，非空串为错误信息。
 - `editable={false}`：字段只读，渲染为 `NonEditable` 文本态。

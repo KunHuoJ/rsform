@@ -77,7 +77,10 @@ export function Form(props: FormProps): React.ReactElement {
     // alive for the real onSubmit duration (form.submit() fires onSubmit through
     // the onFormSubmit lifecycle but does not await it).
     const submitPromiseRef = React.useRef<Promise<any> | undefined>(undefined);
-    const internals: RsfFormInternals = React.useMemo(() => ({ submitPromiseRef }), []);
+    const internals: RsfFormInternals = React.useMemo(
+        () => ({ submitPromiseRef, onSubmitRef }),
+        [],
+    );
 
     React.useEffect(() => {
         if (!asyncInitialValues) {

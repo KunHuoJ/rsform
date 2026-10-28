@@ -106,57 +106,64 @@ function makeInitial(): Row[] {
     }));
 }
 
-const COLUMNS = [
-    { title: '名称', dataIndex: 'name', control: 'input' as const, width: 120 ,controlProps: {required: true, allowClear: true} },
-    { title: '编码', dataIndex: 'code', control: 'input' as const, width: 100 },
-    { title: '描述', dataIndex: 'desc', control: 'input' as const, width: 160 },
-    { title: '数量', dataIndex: 'qty', control: 'inputNumber' as const, width: 80 },
-    { title: '单价', dataIndex: 'price', control: 'inputNumber' as const, width: 90 },
-    { title: '重量', dataIndex: 'weight', control: 'inputNumber' as const, width: 80 },
-    { title: '库存', dataIndex: 'stock', control: 'inputNumber' as const, width: 80 },
+const columns = [
+    {
+        title: '名称',
+        dataIndex: 'name',
+        control: 'input',
+        width: 120,
+        controlProps: { allowClear: true },
+        required: true,
+    },
+    { title: '编码', dataIndex: 'code', control: 'input', width: 100 },
+    { title: '描述', dataIndex: 'desc', control: 'input', width: 160 },
+    { title: '数量', dataIndex: 'qty', control: 'inputNumber', width: 80 },
+    { title: '单价', dataIndex: 'price', control: 'inputNumber', width: 90 },
+    { title: '重量', dataIndex: 'weight', control: 'inputNumber', width: 80 },
+    { title: '库存', dataIndex: 'stock', control: 'inputNumber', width: 80 },
     {
         title: '状态',
         dataIndex: 'status',
-        control: 'select' as const,
+        control: 'select',
         width: 100,
         controlProps: { options: STATUS_OPTS },
     },
     {
         title: '分类',
         dataIndex: 'category',
-        control: 'select' as const,
+        control: 'select',
         width: 100,
         controlProps: { options: CATEGORY_OPTS },
     },
     {
         title: '仓库',
         dataIndex: 'warehouse',
-        control: 'select' as const,
+        control: 'select',
         width: 100,
         controlProps: { options: WAREHOUSE_OPTS },
     },
-    { title: '供应商', dataIndex: 'supplier', control: 'input' as const, width: 100 },
-    { title: '负责人', dataIndex: 'owner', control: 'input' as const, width: 90 },
-    { title: '批次', dataIndex: 'batch', control: 'input' as const, width: 110 },
-    { title: '入库日期', dataIndex: 'inDate', control: 'date' as const, width: 180 },
-    { title: '到期日期', dataIndex: 'expireDate', control: 'date' as const, width: 180 },
-    { title: '启用', dataIndex: 'active', control: 'switch' as const, width: 70 },
+    { title: '供应商', dataIndex: 'supplier', control: 'input', width: 100 },
+    { title: '负责人', dataIndex: 'owner', control: 'input', width: 90 },
+    { title: '批次', dataIndex: 'batch', control: 'input', width: 110 },
+    { title: '入库日期', dataIndex: 'inDate', control: 'date', width: 180 },
+    { title: '到期日期', dataIndex: 'expireDate', control: 'date', width: 180 },
+    { title: '启用', dataIndex: 'active', control: 'switch', width: 70 },
     {
         title: '优先级',
         dataIndex: 'priority',
-        control: 'select' as const,
+        control: 'select',
         width: 90,
         controlProps: { options: PRIORITY_OPTS },
     },
     {
         title: '单位',
         dataIndex: 'unit',
-        control: 'select' as const,
+        control: 'select',
         width: 90,
         controlProps: { options: UNIT_OPTS },
     },
-    { title: '备注', dataIndex: 'remark', control: 'input' as const, width: 90 },
-    { title: '条码', dataIndex: 'barcode', control: 'input' as const, width: 140 },
+    { title: '备注', dataIndex: 'remark', control: 'input', width: 90 },
+    { title: '条码', dataIndex: 'barcode', control: 'input', width: 140 },
 ];
 
 /**
@@ -166,25 +173,37 @@ const COLUMNS = [
  * 对比「每格 Formily Field」实现，编辑一格的渲染量从 O(N×M)=O(1000) 降到 O(1)。
  */
 export function TablePerfDemo(): React.ReactElement {
+    const [result, setResult] = React.useState<string>('');
     return (
         <Form
             initialValues={{ rows: makeInitial() }}
+            validateFailed="scroll"
             onSubmit={(values) => {
-                console.log(values)
+                console.log(values);
+                setResult(JSON.stringify(values, null, 2));
             }}
         >
             <Form.Table<Row>
                 name="rows"
                 pagination={false}
                 itemDefaultValue={DEFAULT_ROW}
-                columns={COLUMNS}
+                columns={columns}
             />
             <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
                 <Form.Submit>提交</Form.Submit>
                 <span style={{ color: '#888', fontSize: 12 }}>
-                    {ROWS} 行 × {COLUMNS.length} 列 = {ROWS * COLUMNS.length} 个可编辑单元格
+                    {ROWS} 行 × {columns.length} 列 = {ROWS * columns.length} 个可编辑单元格
                 </span>
             </div>
+            <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>
+                名称列已设 <code>required</code>
+                。清空任一行的名称再提交，会被校验拦截（不会出现提交结果），并滚到首个错误格。
+            </p>
+            {result && (
+                <pre className="rsfd-output" style={{ marginTop: 12 }}>
+                    {result}
+                </pre>
+            )}
         </Form>
     );
 }

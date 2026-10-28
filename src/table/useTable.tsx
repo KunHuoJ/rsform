@@ -72,8 +72,6 @@ export function useTable<RecordType extends Record<string, any>>(
     const currentRef = useLatestRef(current);
     const pageSizeRef = useLatestRef(pageSize);
 
-    const idField = typeof props.rowKey === 'string' ? props.rowKey : undefined;
-
     const columns = React.useMemo<BuiltColumns<RecordType>>(() => {
         // Row-mutation actions handed to a column `render`. All structural
         // mutations go through `form.setValuesIn(name, nextArray)` — an
@@ -132,10 +130,8 @@ export function useTable<RecordType extends Record<string, any>>(
                 render: (_value: any, record: any, index: number) => {
                     const abs = resolveAbsoluteIndex(
                         index,
-                        record,
                         currentRef.current,
                         pageSizeRef.current,
-                        idField,
                     );
                     // A custom `render` overrides the CellBridge entirely —
                     // pass it the cell value, the row record, the absolute

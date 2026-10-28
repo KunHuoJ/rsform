@@ -40,7 +40,7 @@ import {Form} from 'rsform';
 |---|---|---|---|
 | `name` | `string` | — | 字段路径；支持相对路径 `.foo` / `..foo`（在 ArrayItems 行内） |
 | `title` | `ReactNode` | — | label 文本 |
-| `required` | `boolean` | — | 显示红星（仅展示，校验写 `validator`） |
+| `required` | `boolean` | — | 显示红星 **且** 触发 Formily 内置非空校验（submit 空值被拦截）。自定义规则另配 `validator`，两者叠加 |
 | `editable` | `boolean` | `true` | `false` 渲染为 `NonEditable` 文本态 |
 | `format` | `(value) => any` | — | 写入控件前变换值 |
 | `parse` | `(value) => any` | — | 控件 onChange 后写入表单前变换值 |

@@ -1,7 +1,8 @@
 import type * as React from 'react';
 import { useForm } from '@formily/react';
 import { observer } from '@formily/reactive-react';
-import { useContentName } from '../field/useContentName';
+import { useFieldContext } from '../shared/FieldContext';
+import { resolvePath } from '../shared/paths';
 
 export interface FormConsumerProps {
     /**
@@ -22,7 +23,11 @@ export interface FormConsumerProps {
 
 export const Consumer = observer(function Consumer({ name, children }: FormConsumerProps) {
     const form = useForm();
-    const resolved = name ? useContentName(name) : '';
+    // Read the field context unconditionally (Rules of Hooks): `useContentName`
+    // would call useContext inside a conditional on `name`, which breaks when
+    // `name` toggles between undefined and a string across renders.
+    const { preName } = useFieldContext();
+    const resolved = name ? resolvePath(preName, name) : '';
     // Read inside the observer so Formily tracks the leaves we touch — a
     // whole-values subscribe tracks everything; a named subscribe tracks the
     // single leaf, so only its change re-renders this component.

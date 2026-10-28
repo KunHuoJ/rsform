@@ -81,4 +81,35 @@ describe('Form.Consumer', () => {
         fireEvent.change(input, { target: { value: 'hello' } });
         expect(screen.getByTestId('mirror').textContent).toBe('hello');
     });
+
+    it('does not break when the name prop toggles between undefined and a string', () => {
+        // Regression: useContentName was called conditionally on `name`,
+        // violating the Rules of Hooks when `name` toggles across renders.
+        const formRef: React.MutableRefObject<any> = { current: null };
+
+        function Harness({ named }: { named: boolean }): React.ReactElement {
+            return (
+                <Form initialValues={{ name: 'x', age: 7 }} formRef={formRef}>
+                    <Form.Consumer name={named ? 'name' : undefined}>
+                        {(data: any) => (
+                            <span data-testid="out">
+                                {named ? String(data) : `${data.name}-${data.age}`}
+                            </span>
+                        )}
+                    </Form.Consumer>
+                </Form>
+            );
+        }
+
+        const { rerender } = render(<Harness named={false} />);
+        expect(screen.getByTestId('out').textContent).toBe('x-7');
+
+        // Toggle to named subscription — must not throw "rendered fewer hooks".
+        rerender(<Harness named={true} />);
+        expect(screen.getByTestId('out').textContent).toBe('x');
+
+        // Toggle back to whole-values subscription.
+        rerender(<Harness named={false} />);
+        expect(screen.getByTestId('out').textContent).toBe('x-7');
+    });
 });

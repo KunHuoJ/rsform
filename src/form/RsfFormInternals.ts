@@ -14,6 +14,13 @@ import * as React from 'react';
  */
 export interface RsfFormInternals {
     submitPromiseRef: React.MutableRefObject<Promise<any> | undefined>;
+    /**
+     * The form's `onSubmit` callback (held in a ref so the form, created once,
+     * always invokes the freshest). `Submit` temporarily swaps this ref to its
+     * own `onSubmit` prop for the duration of a click so the prop overrides —
+     * not adds to — the form-level callback, then restores it.
+     */
+    onSubmitRef: React.MutableRefObject<((values: any) => void | Promise<void>) | undefined>;
 }
 
 export const RsfFormInternalsContext = React.createContext<RsfFormInternals | null>(null);

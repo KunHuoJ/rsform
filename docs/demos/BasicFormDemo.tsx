@@ -23,9 +23,9 @@ export function BasicFormDemo(): React.ReactElement {
                     name="age"
                     title="年龄"
                     required
-                    validator={(v) => (v >= 0 ? '' : '必须 ≥ 0')}
+                    validator={(v: number) => (v >= 0 ? '' : '必须 ≥ 0')}
                 >
-                    <Form.InputNumber min={0} style={{ width: 120 }} />
+                    <Form.InputNumber  style={{ width: 120 }} />
                 </Form.Field>
                 <Form.Field name="bio" title="简介">
                     <Form.TextArea rows={2} placeholder="选填" />
