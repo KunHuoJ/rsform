@@ -35,16 +35,18 @@ import {TABLE_CODE, TABLE_SUMMARY_CODE} from '../snippets';
 |---|---|---|---|
 | `dataIndex` | `string` | — | 行对象里的字段键 |
 | `title` | `ReactNode` | `dataIndex` | 列标题 |
-| `control` | `'input' \| 'inputNumber' \| 'select' \| 'radioGroup' \| 'switch' \| ReactElement` | — | 控件：字符串从控件注册表查（见下），或传一个 React 元素（像 Field 一样被 clone 注入 value/onChange） |
+| `control` | `string \| ComponentType \| ReactElement` | — | 控件：字符串从控件注册表查（见下），或传一个组件类型 `control: MyInput`，或传一个 React 元素（像 Field 一样被 clone 注入 value/onChange）。三种写法见[自定义控件](#自定义控件) |
 | `editable` | `boolean` | `control` 存在时 `true` | 是否可编辑；`false` 渲染为只读文本 |
-| `validator` | `(value) => string \| Promise<string>` | — | 单元格校验，返回空串通过、非空串为错误信息，错误显示在单元格下方 |
-| `controlProps` | `Record<string, any>` | — | 合并进控件的额外 props（如 Select 的 `options`、`placeholder`） |
+| `required` | `boolean` | `false` | 是否必填。`true` 时空值校验失败，提交被拦截、错误显示在单元格下方（**列级属性，不是 `controlProps.required`**） |
+| `requiredMessage` | `string` | `'必填'` | `required` 校验失败时的错误信息 |
+| `validator` | `(value) => string \| Promise<string>` | — | 单元格校验，返回空串通过、非空串为错误信息，错误显示在单元格下方。`required` 规则组合在 `validator` 前：空值先报必填错、非空才跑 `validator` |
+| `controlProps` | `Record<string, any>` | — | 合并进控件的额外 props（如 Select 的 `options`、`placeholder`）。注意：`controlProps.required` 只设 antd 控件的 HTML 属性、不进 Formily 校验——要表单级必填用列级 `required` |
 | `width` / `align` / `fixed` | — | — | 透传 antd 列 |
 | `render` | `(value, record, index, actions) => Node` | — | 完全自定义渲染（覆盖 CellBridge）。`actions` 提供行增删移方法，操作列就是用它写的（见下） |
 
 #### 列 `render` 与行操作 `actions`
 
-参考 icloud-ui 的做法：**没有内置删除列**。需要删除/上移/插入等操作时，自己在 `columns` 里加一列，给该列写 `render`，第 4 个参数 `actions` 就是行增删移方法集——你想放什么按钮、什么样式都自己定（推荐用 antd `Button type="link"`，装库即有 link 样式）。
+**没有内置删除列**。需要删除/上移/插入等操作时，自己在 `columns` 里加一列，给该列写 `render`，第 4 个参数 `actions` 就是行增删移方法集——你想放什么按钮、什么样式都自己定（推荐用 antd `Button type="link"`，装库即有 link 样式）。
 
 | 方法 | 签名 | 说明 |
 |---|---|---|
@@ -88,15 +90,100 @@ import { Form } from 'rsform';
 >
 > 上面的「小计」列也是用 `render` 做的只读派生：`render: (_v, r) => <span>{r.qty * r.price}</span>`。`render` 一律覆盖 CellBridge，只读展示用。
 
-#### 控件注册表
+#### 自定义控件
 
-`control` 写字符串时，`CellBridge` 从 `FormComMap` 注册表查控件。内置 `input`/`inputNumber`/`select`/`radioGroup`/`switch`。需要扩展时：
+`control` 有三种写法，按场景选最顺手的即可。**三种都共享同一份性能契约**——CellBridge 照样注入 `value` / `onChange`、照样只订阅叶子、照样支持 `validator` 与 `onFieldValueChange` effects。自定义控件**无需感知 Formily/rsform**，只要是个接收 `value` / `onChange` 的普通受控组件即可。
+
+**1. 传组件类型**（最符合 React 习惯，配合 `controlProps` 最自然）
+
+直接把组件类型给 `control`，CellBridge 渲染 `<MyInput value onChange {...controlProps} />`。适合「控件 + 配置 props」的场景，复用时不必注册：
+
+```tsx
+import { CompanyPicker } from './CompanyPicker';
+
+const columns = [
+  {
+    title: '供应商', dataIndex: 'supplier', width: 120,
+    control: CompanyPicker,
+    controlProps: { companies: COMPANY_LIST, multiple: false },
+  },
+];
+```
+
+**2. 注册字符串 key**（跨多个表格复用、声明式）
+
+和内置 `'input'` / `'select'` 一样，注册一次到处用，列定义里只写字符串最干净：
 
 ```ts
 import { registerControl } from 'rsform';
-registerControl('cascader', MyCascader);
-// 之后列里就能写 control: 'cascader'
+import { CompanyPicker } from './CompanyPicker';
+
+registerControl('companyPicker', CompanyPicker);
+
+// 之后任意表格都能用
+const columns = [
+  { title: '供应商', dataIndex: 'supplier', width: 120, control: 'companyPicker', controlProps: { companies: COMPANY_LIST } },
+];
 ```
+
+内置 key：`'input'` / `'inputNumber'` / `'select'` / `'radioGroup'` / `'switch'` / `'date'`（`'date'` 是存 ISO 字符串、边界转 Dayjs 的 `DateCell`，避免 dayjs 被 Formily 响应式序列化）。
+
+**3. 传元素**（一次性、能直接带已有 props）
+
+适合「这个控件只用在这一个表格、不想单独抽组件」的临时场景。CellBridge 用 `cloneElement` 注入 `value` / `onChange`，`controlProps` 也会展开进去（同名 prop 以 `controlProps` 为准）：
+
+```tsx
+const columns = [
+  { title: '供应商', dataIndex: 'supplier', width: 120, control: <CompanyPicker companies={COMPANY_LIST} /> },
+];
+```
+
+##### 自定义控件只需遵守一个约定
+
+接收 `value`（当前值，读到的就是单元格这一格的值）与 `onChange`（写回新值）。`onChange` 传**裸值**或 **event**（`e.target.value`）都行，CellBridge 内部已处理。下面是一个完整的「点文本 → 弹窗选 → 确定 → 回写」示例，弹窗内部状态与性能契约不冲突——`onChange` 只更新这一格的叶子，不波及其余 N×M−1 格：
+
+```tsx
+import * as React from 'react';
+import { Modal, Radio } from 'antd';
+
+const COMPANIES = [
+  { label: '阿里巴巴', value: 'ali' },
+  { label: '字节跳动', value: 'bytedance' },
+  { label: '小红书', value: 'xhs' },
+];
+
+export function CompanyPicker({ value, onChange, companies = COMPANIES }: any) {
+  const [open, setOpen] = React.useState(false);
+  const [picked, setPicked] = React.useState(value);
+  React.useEffect(() => { if (open) setPicked(value); }, [open, value]);
+
+  const label = companies.find((c) => c.value === value)?.label ?? value ?? '请选择';
+
+  return (
+    <>
+      <a onClick={() => setOpen(true)} style={{ display: 'block', width: '100%' }}>{label}</a>
+      <Modal
+        title="选择供应商"
+        open={open}
+        onCancel={() => setOpen(false)}
+        onOk={() => { onChange(picked); setOpen(false); }}  // 回写——只更新这一格
+      >
+        <Radio.Group
+          value={picked}
+          onChange={(e) => setPicked(e.target.value)}
+          style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 0' }}
+        >
+          {companies.map((c) => (
+            <Radio key={c.value} value={c.value}>{c.label}</Radio>
+          ))}
+        </Radio.Group>
+      </Modal>
+    </>
+  );
+}
+```
+
+> 注意「在控件边界做值类型转换」这条铁律：若你的控件内部用的是**类实例**（如 dayjs、moment、moment-range），不要让实例进 `form.values`——Formily 的响应式 Proxy 会把类实例序列化成字符串。仿照内置 `DateCell` 的做法：存原始值（ISO 字符串、number、boolean、普通对象/数组都安全），在控件边界做 `string ↔ 实例` 转换。原始值（string/number/boolean/数组/普通对象）不受影响，可放心存。
 
 ### Table props
 
@@ -110,7 +197,23 @@ registerControl('cascader', MyCascader);
 
 ### 校验
 
-每列 `validator` 同步或异步，返回错误信息。错误通过单元格订阅的 `selfErrors` 实时显示在单元格下方（红色），不波及其它格。提交时走 Formily 整表校验，失败可配 `Form` 的 `validateFailed="scroll"` 滚到首个错误格。
+表格校验有两种写法，都通过单元格注册的 Formily 字段生效：
+
+- **`required` / `requiredMessage`**（列级）：必填校验。`required: true` 时空值失败，提交被拦截。
+- **`validator`**（列级）：自定义校验，返回空串通过、非空串为错误信息。
+
+`required` 规则组合在 `validator` **之前**：空值先报必填错，非空才跑 `validator`，所以一个列可以同时必填 + 自定义校验。错误通过单元格订阅的 `selfErrors` 实时显示在单元格下方（红色），不波及其它格。
+
+```tsx
+columns={[
+  { title: '名称', dataIndex: 'name', control: 'input', required: true, requiredMessage: '必填名称' },
+  { title: '数量', dataIndex: 'qty', control: 'inputNumber', required: true, validator: (v) => v > 0 ? '' : '必须大于 0' },
+]}
+```
+
+> ⚠️ **`controlProps: { required: true }` 不做表单校验**——`controlProps` 是展开进 antd 控件的，`required` 只设 HTML 属性、不进 Formily 校验链。表单级必填必须用**列级 `required`**。
+
+提交时走 Formily 整表校验。**校验失败会拦截 `onSubmit`**——rsform 把 `onSubmit` 挂在 `onFormSubmitSuccess` 上（只在校验通过后执行），所以必填列空值时点提交，`onSubmit` 不执行、单元格显示错误，表单不会提交脏数据。失败可配 `Form` 的 `validateFailed="scroll"` 滚到首个错误格。
 
 ### 派生展示与添加行
 
@@ -123,6 +226,3 @@ registerControl('cascader', MyCascader);
 - **添加行**：`useForm` 拿 form，`form.setValuesIn(name, [...arr, defaultRow])` 替换整个数组——长度变化触发 `lenTick` 重渲染表体（单元格各订阅自己的叶子，已编辑的值不丢）。按钮用 antd `Button type="link"`。也可以直接在列 `render` 里用 `actions.add()` 加一行。
 - **合计**：`Form.Consumer` 订阅整个 `rows`，实时 `reduce` 出行数与合计金额。任一单元格编辑 → `rows` 变化 → 合计重算。这就是 [Consumer 订阅](#consumer) 在表格场景的应用。
 
-### 性能自测
-
-50×5 表格，Chrome Performance 录制单格输入：仅目标格重渲染，FPS 不掉；`columns` 引用 100 次按键后 `Object.is` 仍 `true`。对比「每格 Formily Field」实现，编辑一格的渲染量从 O(N×M) 降到 O(1)。测试见 `tests/table.perf.spec.tsx`。

@@ -538,7 +538,10 @@ a:hover {
 }
 
 /* —— 表格 demo 单元格 —— */
-.rsfd-table-cell input {
+/* 库样式 `rsform/styles` 已让 `.rsf-table-cell` 内控件撑满列宽；此处仅保留
+   demo 专用的旧前缀兼容（历史 demo 容器可能用到 `rsfd-` 前缀）。 */
+.rsfd-table-cell input,
+.rsf-table-cell input {
     width: 100%;
 }
 

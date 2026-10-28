@@ -46,11 +46,23 @@ export interface RsfTableColumn<RecordType = any> {
      * How the cell renders. If omitted, the cell is read-only text.
      *  - a FormComMap key string ('input' | 'inputNumber' | 'select' | …)
      *    → the control is looked up from the registry.
-     *  - a React element → cloned with value/onChange injected (like Field).
+     *  - a React component type (`control: MyInput`) → rendered fresh with
+     *    value/onChange + controlProps. The most ergonomic form for a custom
+     *    control with props — no need to register a key or wrap in an element.
+     *  - a React element (`control: <MyInput />`) → cloned with value/onChange
+     *    + controlProps injected (like Field).
      */
-    control?: string | React.ReactElement;
+    control?: string | React.ComponentType<any> | React.ReactElement;
     /** Whether this cell is editable. Defaults to true when `control` is set. */
     editable?: boolean;
+    /**
+     * Whether this cell is required. When true, an empty value fails validation
+     * (submit is blocked, the error shows under the cell). Composed ahead of
+     * `validator` so a cell can be both required and have a custom validator.
+     */
+    required?: boolean;
+    /** Error message shown when a `required` cell is empty. Default: '必填'. */
+    requiredMessage?: string;
     /** Formily validator attached to the cell's registered field. */
     validator?: any;
     /** Extra props merged into the control (options, placeholder, …). */
@@ -82,6 +94,13 @@ export interface RsfTableProps<RecordType = any> {
     rowKey?: string | ((record: RecordType, index: number) => React.Key);
     /** antd pagination; defaults to no pagination (all rows). */
     pagination?: false | Record<string, any>;
+    /**
+     * antd `scroll`. If omitted, rsform computes `scroll.x` from the sum of the
+     * declared column `width`s (so each column's `width` is strictly honoured
+     * via fixed table layout; 'max-content' when no column declares a width).
+     * Pass your own to override.
+     */
+    scroll?: Record<string, any>;
     /**
      * Default value used by row-mutation actions (`actions.add` /
      * `actions.insert` in a column `render`) when no value is passed. Lets a

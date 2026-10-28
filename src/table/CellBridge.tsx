@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useForm } from '@formily/react';
+import { toJS } from '@formily/reactive';
 import { observer } from '@formily/reactive-react';
 import { getControl } from '../controls/FormComMap';
 import { prefixCls } from '../shared/prefixCls';
@@ -11,18 +12,54 @@ export interface CellBridgeProps {
     dataIndex: string;
     /** The array field name (e.g. 'rows'). */
     arrayName: string;
-    /** Control: a FormComMap key string, or a React element to clone. */
-    control?: string | React.ReactElement;
+    /** Control: a FormComMap key string, a component type, or a React element. */
+    control?: string | React.ComponentType<any> | React.ReactElement;
     /** Extra props merged into the control (options, placeholder, …). */
     controlProps?: Record<string, any>;
     /** Formily validator attached to the cell's registered field. */
     validator?: any;
+    /** Whether this cell is required (empty value fails validation). */
+    required?: boolean;
+    /** Error message shown when a `required` cell is empty. Default '必填'. */
+    requiredMessage?: string;
     /** Whether the cell is editable; false → read-only text. */
     editable?: boolean;
 }
 
 const cellPath = (arrayName: string, rowIndex: number, dataIndex: string) =>
     `${arrayName}.${rowIndex}.${dataIndex}`;
+
+/** Whether a value counts as "empty" for `required` validation. */
+function isEmptyValue(v: unknown): boolean {
+    if (v == null) return true;
+    if (typeof v === 'string') return v.trim() === '';
+    if (Array.isArray(v)) return v.length === 0;
+    return false;
+}
+
+/**
+ * Compose the cell's validator: a required rule (when `required`) ahead of the
+ * user's `validator`. The required rule returns a fixed message on empty; the
+ * user validator runs only when the value is non-empty (or when not required).
+ */
+function composeValidator(
+    required: boolean | undefined,
+    requiredMessage: string | undefined,
+    validator: any,
+): any {
+    const reqMsg = requiredMessage ?? '必填';
+    const reqRule = required ? (value: any) => (isEmptyValue(value) ? reqMsg : '') : null;
+    if (!reqRule) return validator;
+    if (typeof validator !== 'function') return reqRule;
+    // Run required first; if it fails, short-circuit (don't run the user
+    // validator on an empty value — it may throw on undefined).
+    return (value: any) => {
+        const reqError = reqRule(value);
+        if (reqError) return reqError;
+        const result = validator(value);
+        return result;
+    };
+}
 
 /**
  * The high-perf editable cell. NOT a Formily `<Field>`:
@@ -56,16 +93,26 @@ export const CellBridge = observer(function CellBridge({
     control,
     controlProps,
     validator,
+    required,
+    requiredMessage,
     editable = true,
 }: CellBridgeProps): React.ReactElement {
     const form: any = useForm();
     const path = cellPath(arrayName, rowIndex, dataIndex);
 
+    // Compose the cell's validator: required rule (if any) ahead of the user
+    // validator. Memoised so the createField effect only re-runs when the
+    // composed validator's identity actually changes.
+    const composedValidator = React.useMemo(
+        () => composeValidator(required, requiredMessage, validator),
+        [required, requiredMessage, validator],
+    );
+
     // Register a Formily field on mount for every EDITABLE cell — this is the
     // field `onInput` writes through (so validators + `onFieldValueChange`
     // effects fire on edit) and whose `selfErrors` the cell observes. Re-run
-    // only when the validator changes. The field's value is NOT read here (the
-    // deep values read below drives display); only `selfErrors` is.
+    // only when the composed validator changes. The field's value is NOT read
+    // here (the deep values read below drives display); only `selfErrors` is.
     React.useEffect(() => {
         if (!form || editable === false) {
             return;
@@ -74,18 +121,23 @@ export const CellBridge = observer(function CellBridge({
             form.createField({
                 name: path,
                 basePath: '',
-                validator,
+                validator: composedValidator,
             });
         } catch {
             // createField may no-op if a field already exists at this path
             // (e.g. re-mount in StrictMode); that is fine.
         }
-    }, [form, path, validator, editable]);
+    }, [form, path, composedValidator, editable]);
 
     // Display value: read ONLY this leaf of the deeply-observable form.values
     // tree. Editing this cell notifies just this observer; editing any other
     // cell notifies a different leaf, so this cell never re-renders for it.
-    const value = form?.values?.[arrayName]?.[rowIndex]?.[dataIndex];
+    // `toJS` unwraps the reactive Proxy back to a plain value — required for
+    // controls whose value is a class instance with prototype methods (e.g. an
+    // antd DatePicker dayjs object: the Proxy strips `.isValid`, breaking the
+    // picker). Plain primitives (string/number/boolean) pass through unchanged.
+    const raw = form?.values?.[arrayName]?.[rowIndex]?.[dataIndex];
+    const value = toJS(raw);
 
     // Read this cell's errors reactively (observer layer). This is the only
     // other reactive read inside a cell, and it changes rarely.
@@ -126,11 +178,20 @@ export const CellBridge = observer(function CellBridge({
     if (readOnly) {
         content = value == null || value === '' ? '-' : String(value);
     } else if (React.isValidElement(control)) {
+        // A concrete element: clone it with value/onChange + controlProps.
         content = React.cloneElement(control as React.ReactElement<any>, {
             value,
             onChange: handleChange,
             ...controlProps,
         });
+    } else if (typeof control === 'function') {
+        // A component TYPE (function/class/forwardRef/memo): render it fresh
+        // with value/onChange + controlProps. This is the most ergonomic form
+        // for a custom control that takes props — `control: MyInput` plus
+        // `controlProps: {...}` — no need to pre-register a string key or wrap
+        // in an element.
+        const ControlComp = control as React.ComponentType<any>;
+        content = <ControlComp value={value} onChange={handleChange} {...controlProps} />;
     } else if (typeof control === 'string') {
         const ControlComp = getControl(control);
         if (!ControlComp) {

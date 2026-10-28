@@ -155,6 +155,8 @@ export function useTable<RecordType extends Record<string, any>>(
                             control={col.control}
                             controlProps={col.controlProps}
                             validator={col.validator}
+                            required={col.required}
+                            requiredMessage={col.requiredMessage}
                             editable={col.editable ?? col.control != null}
                         />
                     );

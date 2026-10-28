@@ -2,6 +2,7 @@ import type * as React from 'react';
 import * as FormilyReact from '@formily/react';
 import { Button as AntdButton } from 'antd';
 import { ArrayItems } from './array-items/ArrayItems';
+import { DatePicker } from './controls/DatePicker';
 import { Input, TextArea } from './controls/Input';
 import { InputNumber } from './controls/InputNumber';
 import { RadioGroup } from './controls/RadioGroup';
@@ -36,6 +37,7 @@ export { ArrayItems } from './array-items/ArrayItems';
 export type { ArrayUnionValidator } from './array-items/arrayUnion';
 export { arrayUnion } from './array-items/arrayUnion';
 export { ArrayFieldContext, useArrayField } from './array-items/useArrayItems';
+export { DatePicker } from './controls/DatePicker';
 // Controls + control registry.
 export type { ControlComponent, ControlKey } from './controls/FormComMap';
 export { getControl, getControls, registerControl } from './controls/FormComMap';
@@ -141,6 +143,7 @@ export type RsfForm = typeof FormComponent & {
     Select: React.ComponentType<any>;
     RadioGroup: typeof RadioGroup;
     Switch: typeof Switch;
+    DatePicker: typeof DatePicker;
     Submit: typeof Submit;
     /** antd `Button` re-export, for custom action buttons. */
     Button: typeof AntdButton;
@@ -159,6 +162,7 @@ export const Form: RsfForm = Object.assign(FormComponent, {
     Select,
     RadioGroup,
     Switch,
+    DatePicker,
     Submit,
     Button: AntdButton,
     Table,

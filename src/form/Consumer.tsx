@@ -20,21 +20,6 @@ export interface FormConsumerProps {
     children: (data: any) => React.ReactNode;
 }
 
-/**
- * Render-prop subscriber over reactive form state — a declarative way to read
- * form values inline without dropping into `useForm()` + `observer` by hand.
- *
- * Built on Formily v2's reactive engine: reads happen inside an `observer`, so
- * the engine tracks exactly the leaves touched and re-renders only when those
- * leaves change.
- *
- *  - `<Form.Consumer>{values => …}</Form.Consumer>` — any field change re-renders.
- *  - `<Form.Consumer name="province">{v => …}</Form.Consumer>` — only that leaf.
- *
- * Note: this is rsform's own convenience component; it is not a port of any
- * icloud-ui API (icloud-ui exposes a `useData()` hook instead). Implemented
- * clean-room on Formily v2's reactive primitives.
- */
 export const Consumer = observer(function Consumer({ name, children }: FormConsumerProps) {
     const form = useForm();
     const resolved = name ? useContentName(name) : '';

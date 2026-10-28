@@ -135,6 +135,27 @@
     transition: color 0.2s;
 }
 
+/* —— 可编辑表格单元格 —— */
+/* 单元格容器撑满 td，内部控件撑满单元格。这样列定义里的 `width` 才会真正
+   作用到控件上（否则 antd 裸 Input/Select/InputNumber 默认不撑满，列宽 120
+   但控件只有默认窄宽）。 */
+.rsf-table-cell {
+    width: 100%;
+}
+.rsf-table-cell .ant-input,
+.rsf-table-cell .ant-input-number,
+.rsf-table-cell .ant-input-affix-wrapper,
+.rsf-table-cell .ant-select,
+.rsf-table-cell .ant-select .ant-select-selector,
+.rsf-table-cell .ant-picker {
+    width: 100%;
+}
+/* switch / radio 不撑满，保持自然宽度居左。 */
+.rsf-table-cell .ant-switch,
+.rsf-table-cell .ant-radio-group {
+    width: auto;
+}
+
 /* —— ArrayItems —— */
 .rsf-array-items {
     display: flex;

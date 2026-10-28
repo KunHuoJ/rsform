@@ -3,16 +3,6 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Field, Form, Input } from '../src/index';
 
-/**
- * Form.Consumer — render-prop subscriber over reactive form state.
- *
- * Two modes:
- *  - no `name`: subscribes to the whole form.values (any field change re-renders)
- *  - with `name`: subscribes to that leaf only (only that leaf change re-renders)
- *
- * Clean-room reimpl of the "inline read form values" convenience — built on
- * Formily v2's observer + form.values, not a port of any icloud-ui API.
- */
 describe('Form.Consumer', () => {
     it('renders the whole form.values when no name is given', () => {
         const formRef: React.MutableRefObject<any> = { current: null };

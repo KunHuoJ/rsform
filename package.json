@@ -71,6 +71,7 @@
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "dayjs": "^1.11.13",
     "@vitejs/plugin-react": "^4.3.0",
     "antd": "^5.29.3",
     "jsdom": "^25.0.0",

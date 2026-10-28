@@ -1,8 +1,9 @@
 import type * as React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import dayjs from 'dayjs';
 import { describe, expect, it, vi } from 'vitest';
 import { registerControl } from '../src/controls/FormComMap';
-import { Field, Form, Input, InputNumber, Table } from '../src/index';
+import { Field, Form, Input, InputNumber, Submit, Table } from '../src/index';
 
 async function flush(): Promise<void> {
     await act(async () => {
@@ -211,6 +212,50 @@ describe('Table (Phase 5)', () => {
         expect(errs0).not.toContain('must be > 0');
     });
 
+    it('required on a column blocks submit and surfaces the error on empty cells', async () => {
+        // Regression: `required` is a Column-level prop (not `controlProps.required`,
+        // which would only set the antd Input's HTML attribute and do no Formily
+        // validation). rsform composes a required rule ahead of any `validator`
+        // into the cell field's validator, so an empty required cell fails on
+        // submit (submit blocked) and shows the error; a non-empty cell passes.
+        const submitted: any[] = [];
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form
+                initialValues={{ rows: [{ name: '阿里' }, { name: '' }] }}
+                formRef={formRef}
+                onSubmit={(values) => {
+                    submitted.push(values);
+                }}
+            >
+                <Table
+                    name="rows"
+                    pagination={false}
+                    columns={[
+                        {
+                            title: '名称',
+                            dataIndex: 'name',
+                            control: 'input',
+                            required: true,
+                            requiredMessage: '必填名称',
+                        },
+                    ]}
+                />
+                <Submit>提交</Submit>
+            </Form>,
+        );
+        await flush();
+        // Row 1 is empty → submit should be blocked (validation fails).
+        await formRef.current.submit().catch(() => {});
+        await flush();
+        expect(submitted).toHaveLength(0);
+        const errs = formRef.current.query('rows.1.name').take().selfErrors ?? [];
+        expect(errs).toContain('必填名称');
+        // Row 0 is non-empty → no error.
+        const errs0 = formRef.current.query('rows.0.name').take().selfErrors ?? [];
+        expect(errs0).not.toContain('必填名称');
+    });
+
     it('actions.remove in a column render removes a row', async () => {
         const formRef: React.MutableRefObject<any> = { current: null };
         render(
@@ -312,8 +357,74 @@ describe('Table (Phase 5)', () => {
     });
 
     it('Form namespace exposes Table', async () => {
-        const { Form: FormWithTable } = await import('../src/table/index');
+        const { Form: FormWithTable } = await import('../src/index');
         expect(FormWithTable.Table).toBe(Table);
+    });
+
+    it('a date cell renders the DatePicker from a stored ISO string without throwing', async () => {
+        // Regression: Formily's reactive engine stringifies a stored dayjs
+        // object (a class instance), so a raw dayjs does not survive a round
+        // trip through form.values — an antd DatePicker threw
+        // "date.isValid is not a function". The `date` control (`DateCell`)
+        // stores the value as an ISO string and converts string↔Dayjs at the
+        // control boundary, so the cell renders from a string without throwing.
+        const iso = dayjs('2024-06-01').toISOString();
+        render(
+            <Form initialValues={{ rows: [{ date: iso }] }}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    columns={[{ title: '日期', dataIndex: 'date', control: 'date' as const }]}
+                />
+            </Form>,
+        );
+        await flush();
+        // The DatePicker rendered a textbox input (no throw on mount).
+        expect(screen.getAllByRole('textbox').length).toBeGreaterThan(0);
+    });
+
+    it('a custom control passed as a component type renders and edits via controlProps', async () => {
+        // `control` accepts a component TYPE (not just a string key or element):
+        // CellBridge renders it fresh with value/onChange + controlProps merged
+        // in, so `control: MyInput` plus `controlProps: { placeholder }` works.
+        const MyInput = function MyInput(props: any) {
+            return (
+                <input
+                    data-testid="my-input"
+                    value={props.value ?? ''}
+                    placeholder={props.placeholder}
+                    onChange={props.onChange}
+                />
+            );
+        };
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form initialValues={{ rows: [{ a: 'x' }] }} formRef={formRef}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    columns={[
+                        {
+                            title: 'A',
+                            dataIndex: 'a',
+                            control: MyInput,
+                            controlProps: { placeholder: '填一下' },
+                        },
+                    ]}
+                />
+            </Form>,
+        );
+        await flush();
+        const inputs = screen.getAllByTestId('my-input') as HTMLInputElement[];
+        expect(inputs).toHaveLength(1);
+        // value flowed in.
+        expect(inputs[0].value).toBe('x');
+        // controlProps flowed in.
+        expect(inputs[0].placeholder).toBe('填一下');
+        // edit flows back to form.values.
+        fireEvent.change(inputs[0], { target: { value: 'edited' } });
+        await flush();
+        expect(formRef.current.values.rows[0].a).toBe('edited');
     });
 
     it('noop to silence unused-import lints', () => {

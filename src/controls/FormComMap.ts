@@ -1,4 +1,5 @@
 import type * as React from 'react';
+import { DateCell } from './DatePicker';
 import { Input } from './Input';
 import { InputNumber } from './InputNumber';
 import { RadioGroup } from './RadioGroup';
@@ -14,7 +15,7 @@ import { Switch } from './Switch';
  * Keys are stable rsform conventions; consumers may register their own keys
  * via `registerControl(key, component)` to extend the Table without forking.
  */
-export type ControlKey = 'input' | 'inputNumber' | 'select' | 'radioGroup' | 'switch';
+export type ControlKey = 'input' | 'inputNumber' | 'select' | 'radioGroup' | 'switch' | 'date';
 
 export type ControlComponent = React.ComponentType<any>;
 
@@ -24,6 +25,11 @@ const registry: Record<string, ControlComponent> = {
     select: Select,
     radioGroup: RadioGroup,
     switch: Switch,
+    // `date` is the cell-wired DatePicker: stores the value as an ISO string in
+    // form.values and converts string↔Dayjs at the control boundary, so a
+    // dayjs instance never enters the reactive store (Formily would stringify
+    // it and break the picker).
+    date: DateCell,
 };
 
 /** Look up a registered control by key. Returns undefined if not registered. */

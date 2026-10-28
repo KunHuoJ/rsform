@@ -11,6 +11,7 @@ import { Button as AntdButton } from 'antd';
 import { Form as BaseForm } from '../form/FormNamespace';
 import { Submit } from '../form/Submit';
 import { prefixCls } from '../shared/prefixCls';
+import { DatePicker } from './DatePicker';
 import { Input, TextArea } from './Input';
 import { InputNumber } from './InputNumber';
 import { RadioGroup } from './RadioGroup';
@@ -35,6 +36,7 @@ export type ControlsForm = typeof BaseForm & {
     Select: React.ComponentType<any>;
     RadioGroup: typeof RadioGroup;
     Switch: typeof Switch;
+    DatePicker: typeof DatePicker;
     Submit: typeof Submit;
     /** antd `Button` re-export, so consumers can build custom action buttons
      * (e.g. a custom Table remove/add button) from the same antd the lib uses. */
@@ -48,6 +50,7 @@ export const Form: ControlsForm = Object.assign(BaseForm, {
     Select,
     RadioGroup,
     Switch,
+    DatePicker,
     Submit,
     Button: AntdButton,
 }) as ControlsForm;
@@ -56,6 +59,7 @@ export const Form: ControlsForm = Object.assign(BaseForm, {
 export { Button as AntdButton } from 'antd';
 export type { SubmitProps } from '../form/Submit';
 export { Submit } from '../form/Submit';
+export { DatePicker } from './DatePicker';
 export type { ControlComponent, ControlKey } from './FormComMap';
 export {
     getControl,

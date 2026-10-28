@@ -17,7 +17,7 @@ import {Form} from 'rsform';
 | `initialValues` | `Record<string, any>` | — | 初始值 |
 | `asyncInitialValues` | `() => Promise<Record>` | — | 异步初始值；表单等其 resolve 后挂载 |
 | `effects` | `EffectFn \| EffectFn[]` | — | effect 回调，注入 `$` helper 包；数组按序扇出 |
-| `onSubmit` | `(values) => void \| Promise` | — | 提交回调 |
+| `onSubmit` | `(values) => void \| Promise` | — | 提交回调。**校验通过后才执行**——校验失败时 onSubmit 不跑，表单不会提交脏数据 |
 | `onReset` | `() => void` | — | 重置回调 |
 | `validateFirst` | `boolean` | — | 遇到第一个校验错误即停止 |
 | `validateFailed` | `'scroll' \| (field) => void` | `'scroll'` | 校验失败处理：滚到首个错误或自定义 |
@@ -58,7 +58,7 @@ import {Form} from 'rsform';
 
 ### Form.Submit
 
-提交按钮。包 antd `Button`，点击调 `form.submit()`，提交/校验期间显示 loading。
+提交按钮。包 antd `Button`，点击调 `form.submit()`，提交/校验期间显示 loading。提交先跑整表校验；**校验失败则拦截 onSubmit**（onSubmit 挂在 `onFormSubmitSuccess`，只在通过后执行）。
 
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
@@ -115,15 +115,24 @@ render-prop 订阅表单值。底层 `observer` + `form.values`/`form.getValuesI
 
 #### 自定义控件注册（Table）
 
-Table 的 `control` 列属性接受字符串 key（如 `'input'`），从 `FormComMap` 注册表查。
-自定义控件用 `registerControl` 注册：
+Table 的 `control` 列属性有三种写法，**都共享同一份性能契约**（CellBridge 注入 value/onChange、只订阅叶子、支持 validator/effects）：
+
+1. **字符串 key**（`'input'`/`'inputNumber'`/`'select'`/`'radioGroup'`/`'switch'`/`'date'`）：从 `FormComMap` 注册表查。自定义控件用 `registerControl` 注册后即可复用：
 
 ```tsx
 import {registerControl} from 'rsform';
 
-registerControl('datePicker', <MyDatePicker />);
-// 之后 Table 列可用 control: 'datePicker'
+registerControl('companyPicker', CompanyPicker);
+// 之后列里可用 control: 'companyPicker'
 ```
+
+2. **组件类型**（`control: CompanyPicker`）：直接传组件类型，配合 `controlProps` 最自然，无需注册。
+
+3. **元素**（`control: <CompanyPicker companies={...} />`）：一次性，CellBridge 用 `cloneElement` 注入 value/onChange。
+
+自定义控件只需接收 `value` / `onChange`（传裸值或 event 均可），无需感知 Formily/rsform。详见「可编辑表格」页的[自定义控件](#自定义控件)小节与完整示例。
+
+> ⚠️ 类实例（dayjs/moment 等）不要直接进 `form.values`——Formily 响应式 Proxy 会序列化它。仿照内置 `'date'`（`DateCell`，存 ISO 字符串、边界转 Dayjs），在控件边界做值类型转换。
 
 ---
 
@@ -146,6 +155,7 @@ import {Form} from 'rsform';
 | `columns` | `RsfTableColumn[]` | — | 列定义（见下） |
 | `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key |
 | `pagination` | `false \| object` | `false` | antd 分页；默认不分页 |
+| `scroll` | `object` | 见说明 | antd `scroll`。省略时 rsform 按列 `width` 求和算 `scroll.x`（让每列 `width` 严格生效，固定布局）；无列声明 width 时回退 `'max-content'`。传自定义则覆盖 |
 | `itemDefaultValue` | `any` | `{}` | `actions.add`/`actions.insert` 不传 value 时的默认行值 |
 | `className` | `string` | — | 表格包装类名 |
 
@@ -156,10 +166,12 @@ import {Form} from 'rsform';
 | `title` | `ReactNode` | — | 列标题 |
 | `dataIndex` | `string` | — | 行对象里对应此列的 key |
 | `width` | `number \| string` | — | 列宽 |
-| `control` | `string \| ReactElement` | — | 控件：`'input'`/`'inputNumber'`/`'select'`/... 或自定义元素；省略=只读文本 |
+| `control` | `string \| ComponentType \| ReactElement` | — | 控件：字符串 key（`'input'`/`'inputNumber'`/`'select'`/...）、组件类型（`control: MyInput`）、或 React 元素；省略=只读文本。三种写法见上方[自定义控件注册](#自定义控件注册table) |
 | `editable` | `boolean` | `true`（有 control 时） | 单元格是否可编辑 |
-| `validator` | `FormilyValidator` | — | 单元格校验器 |
-| `controlProps` | `object` | — | 控件额外 props（options/placeholder 等） |
+| `required` | `boolean` | `false` | 是否必填（列级）。`true` 时空值校验失败，提交被拦截、错误显示在单元格下方。**不是 `controlProps.required`**（那只设 HTML 属性） |
+| `requiredMessage` | `string` | `'必填'` | `required` 校验失败时的错误信息 |
+| `validator` | `FormilyValidator` | — | 单元格校验器。`required` 规则组合在 `validator` 前：空值先报必填、非空才跑 validator |
+| `controlProps` | `object` | — | 控件额外 props（options/placeholder 等）。`controlProps.required` 只设 antd 控件 HTML 属性，不进 Formily 校验 |
 | `align` | `'left' \| 'center' \| 'right'` | — | 对齐 |
 | `fixed` | `'left' \| 'right' \| boolean` | — | 固定列 |
 | `render` | `(value, record, index, actions) => Node` | — | 完全自定义渲染（覆盖 CellBridge）。`actions` 提供 `add`/`insert`/`remove`/`move`/`moveUp`/`moveDown`/`form`/`field`，可在任意列放操作按钮 |

@@ -1,0 +1,23 @@
+import {Demo} from '../Demo';
+import {TablePerfDemo} from '../demos/TablePerfDemo';
+
+## 性能压测表格
+
+50 行 × 20 列 = **1000 个可编辑单元格**，混合 input / inputNumber / select / date / switch 五种控件。
+
+编辑任意一格：只该格重渲染，表体不遍历整棵 1000 格的单元格树，FPS 不掉。对比「每格做成 Formily `<Field>`」的实现，编辑一格的响应式重算量从 O(N×M) = O(1000) 降到 O(1)。
+
+<Demo code="" title="50×20 混合控件性能表格">
+  <TablePerfDemo />
+</Demo>
+
+### 怎么验证它快
+
+1. 打开 Chrome DevTools → Performance，点录制。
+2. 在表格里连续编辑几个单元格（输入、切换 select、选日期）。
+3. 停止录制，看每次编辑的 Rendering 区间——应该只有一格的 commit，没有整表 1000 格的重渲染。
+4. 对比：把 `Form.Table` 换成「每格 `<Form.Field>`」的朴素实现，同样编辑一格，Rendering 区间会暴涨到整表。
+
+### 为什么快（一句话）
+
+单元格只订阅 `form.values` 的叶子节点（`rows.i.j`），编辑 (i,j) 只通知 (i,j) 的观察者；表体 `untracked` 读数组、不订阅编辑，`columns` 引用跨编辑稳定。详见 [可编辑表格](#table)。

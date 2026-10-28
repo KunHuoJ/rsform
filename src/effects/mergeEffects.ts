@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import type { Form as FormilyForm } from '@formily/core';
-import { onFormSubmit, onFormSubmitValidateFailed } from '@formily/core';
+import { onFormSubmitSuccess, onFormSubmitValidateFailed } from '@formily/core';
 import { toJS } from '@formily/reactive';
 import { createEffects, type EffectHelpers } from './helpers';
 
@@ -44,10 +44,14 @@ export function mergeEffects(
     // Wire onSubmit through the held ref so the form (created once) always
     // invokes the freshest callback without recreating. Capture the returned
     // promise into submitPromiseRef so Submit can await it for its loading
-    // state (form.submit() fires onSubmit through this lifecycle but does not
-    // await it).
+    // state. IMPORTANT: wire to `onFormSubmitSuccess`, NOT `onFormSubmit` —
+    // Formily fires ON_FORM_SUBMIT on BOTH the success and failure paths of
+    // batchSubmit, so `onFormSubmit` would run the consumer's onSubmit even
+    // when validation failed (submit appeared to "do nothing" because the
+    // callback fired on invalid data). `onFormSubmitSuccess` fires only after
+    // validation passes, so the consumer's onSubmit runs only on valid data.
     fns.push(($) => {
-        onFormSubmit(() => {
+        onFormSubmitSuccess(() => {
             const cb = opts.onSubmitRef.current;
             if (cb) {
                 // `form.values` is a deeply-observable Proxy; convert to a plain

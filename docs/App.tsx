@@ -24,6 +24,7 @@ const NAV_GROUPS: { title: string; items: { id: string; label: string }[] }[] = 
             { id: 'consumer', label: 'Consumer 订阅' },
             { id: 'array-items', label: 'ArrayItems 列表' },
             { id: 'table', label: '可编辑表格' },
+            { id: 'table-perf', label: '性能压测表格' },
         ],
     },
     {

@@ -124,9 +124,9 @@ const INITIAL_ROWS: Row[] = [
     pagination={false}
     itemDefaultValue={{ name: '', qty: 1, price: 0, status: 'pending' }}
     columns={[
-      { title: '名称', dataIndex: 'name', control: 'input', width: 160 },
+      { title: '名称', dataIndex: 'name', control: 'input', width: 160, required: true, requiredMessage: '必填名称' },
       { title: '数量', dataIndex: 'qty', control: 'inputNumber', width: 100,
-        validator: v => (v > 0 ? '' : '必须大于 0') },
+        required: true, validator: v => (v > 0 ? '' : '必须大于 0') },
       { title: '单价', dataIndex: 'price', control: 'inputNumber', width: 100,
         validator: v => (v >= 0 ? '' : '不能为负') },
       { title: '状态', dataIndex: 'status', control: 'select', width: 120,
@@ -147,7 +147,7 @@ const INITIAL_ROWS: Row[] = [
         ) },
     ]}
   />
-  <AForm.Submit>提交</AForm.Submit>
+  <Form.Submit>提交</Form.Submit>
 </Form>`;
 
 export const TABLE_SUMMARY_CODE = `import { useForm } from '@formily/react';

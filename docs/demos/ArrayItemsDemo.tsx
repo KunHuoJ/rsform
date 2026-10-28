@@ -1,4 +1,4 @@
-import type * as React from 'react';
+import React from 'react';
 import { arrayUnion, Form } from 'rsform';
 
 interface Member {

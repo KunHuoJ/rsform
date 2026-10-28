@@ -33,7 +33,7 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
     props: RsfTableProps<RecordType>,
 ): React.ReactElement {
     const { dataSource, columns } = useTable(props);
-    const { pagination, rowKey, className } = props;
+    const { pagination, rowKey, className, scroll } = props;
 
     // Default row key: the absolute index. antd passes a page-relative index
     // to rowKey(record, index); attach a synthetic __rsfIdx (absolute) to each
@@ -60,6 +60,26 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dataSource, rowKey, page, size]);
 
+    // antd Table defaults to `tableLayout: 'auto'`, under which the browser
+    // auto-distributes column widths from content and a column's `width` is only
+    // a suggestion — with many columns the table squishes each column to its
+    // content's minimum (a short input renders ~tens of px regardless of a
+    // declared `width: 120`). To make column `width`s actually take effect we
+    // switch to fixed layout by providing `scroll.x`. antd auto-enables
+    // `tableLayout: 'fixed'` whenever `scroll.x` is set, and fixed layout
+    // honours each `<col width>` strictly. We sum the declared column widths as
+    // the scroll width; if no column declares a width we fall back to
+    // 'max-content' so the table still sizes to content. A user-supplied
+    // `scroll` always wins.
+    const resolvedScroll = React.useMemo(() => {
+        if (scroll) return scroll;
+        const total = columns.reduce((sum: number, col: any) => {
+            const w = col?.width;
+            return sum + (typeof w === 'number' ? w : 0);
+        }, 0);
+        return { x: total > 0 ? total : 'max-content' };
+    }, [scroll, columns]);
+
     return (
         <AntdTable
             className={`${prefixCls}-table ${className ?? ''}`.trim()}
@@ -67,6 +87,7 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
             columns={columns as any}
             rowKey={resolvedRowKey as any}
             pagination={pagination as any}
+            scroll={resolvedScroll as any}
         />
     );
 }) as <RecordType extends Record<string, any>>(
