@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { useForm } from '@formily/react';
 import { LifeCycleTypes } from '@formily/core';
+import { useForm } from '@formily/react';
 import { observer } from '@formily/reactive-react';
 import { Button } from 'antd';
 import { useFormInternals } from './RsfFormInternals';

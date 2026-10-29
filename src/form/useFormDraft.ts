@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { LifeCycleTypes, type Form as FormilyForm } from '@formily/core';
+import { type Form as FormilyForm, LifeCycleTypes } from '@formily/core';
 import { useForm } from '@formily/react';
 import { debounce } from '../effects/debounce';
 
@@ -78,11 +78,7 @@ function readDraft(
     return env.v;
 }
 
-function writeDraft(
-    storage: Storage | undefined,
-    key: string,
-    values: Record<string, any>,
-): void {
+function writeDraft(storage: Storage | undefined, key: string, values: Record<string, any>): void {
     if (!storage) {
         return;
     }
@@ -125,22 +121,14 @@ function removeDraft(storage: Storage | undefined, key: string): void {
  *   </>
  * );
  */
-export function useFormDraft(
-    key: string,
-    options: UseFormDraftOptions = {},
-): UseFormDraftResult {
+export function useFormDraft(key: string, options: UseFormDraftOptions = {}): UseFormDraftResult {
     const form = useForm() as FormilyForm;
-    const {
-        debounceMs = DEFAULT_DEBOUNCE_MS,
-        clearOnSubmit = true,
-        maxAge,
-    } = options;
+    const { debounceMs = DEFAULT_DEBOUNCE_MS, clearOnSubmit = true, maxAge } = options;
     const storage: Storage | undefined =
-        options.storage ??
-        (typeof window !== 'undefined' ? window.localStorage : undefined);
+        options.storage ?? (typeof window !== 'undefined' ? window.localStorage : undefined);
 
-    const [draft, setDraft] = React.useState<Record<string, any> | undefined>(
-        () => readDraft(storage, key, maxAge),
+    const [draft, setDraft] = React.useState<Record<string, any> | undefined>(() =>
+        readDraft(storage, key, maxAge),
     );
     const hasDraft = draft !== undefined;
 
@@ -148,11 +136,7 @@ export function useFormDraft(
     // (storage, key, debounceMs), so the subscription effect below is stable too.
     const save = React.useMemo(
         () =>
-            debounce(
-                (values: Record<string, any>) =>
-                    writeDraft(storage, key, values),
-                debounceMs,
-            ),
+            debounce((values: Record<string, any>) => writeDraft(storage, key, values), debounceMs),
         [storage, key, debounceMs],
     );
 

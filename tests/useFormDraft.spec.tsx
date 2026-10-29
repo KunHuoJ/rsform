@@ -86,10 +86,7 @@ function DraftForm({
                 clearOnSubmit={draftProps.clearOnSubmit}
                 maxAge={draftProps.maxAge}
             />
-            <button
-                data-testid="submit"
-                onClick={() => formRef?.current?.submit()}
-            >
+            <button data-testid="submit" onClick={() => formRef?.current?.submit()}>
                 go
             </button>
         </Form>
@@ -110,13 +107,7 @@ describe('useFormDraft', () => {
             JSON.stringify({ v: { name: 'alice', city: 'sz' }, t: Date.now() }),
         );
         const formRef: React.MutableRefObject<any> = { current: null };
-        render(
-            <DraftForm
-                storage={storage}
-                storageKey="order"
-                formRef={formRef}
-            />,
-        );
+        render(<DraftForm storage={storage} storageKey="order" formRef={formRef} />);
         // Banner shows because a draft exists; form is still empty.
         expect(screen.getByTestId('banner')).toBeTruthy();
         expect(formRef.current.getValuesIn('name')).toBeUndefined();
@@ -133,11 +124,7 @@ describe('useFormDraft', () => {
         const storage = makeStorage();
         const formRef: React.MutableRefObject<any> = { current: null };
         const { unmount } = render(
-            <DraftForm
-                storage={storage}
-                storageKey="order"
-                formRef={formRef}
-            />,
+            <DraftForm storage={storage} storageKey="order" formRef={formRef} />,
         );
         fireEvent.change(screen.getByTestId('name'), {
             target: { value: 'bob' },
@@ -156,13 +143,7 @@ describe('useFormDraft', () => {
         unmount();
         // A fresh mount should detect the saved draft and offer to restore.
         const formRef2: React.MutableRefObject<any> = { current: null };
-        render(
-            <DraftForm
-                storage={storage}
-                storageKey="order"
-                formRef={formRef2}
-            />,
-        );
+        render(<DraftForm storage={storage} storageKey="order" formRef={formRef2} />);
         expect(screen.getByTestId('banner')).toBeTruthy();
         fireEvent.click(screen.getByTestId('restore'));
         await flush();
@@ -172,18 +153,9 @@ describe('useFormDraft', () => {
 
     it('dismiss() hides the prompt but keeps the draft in storage', async () => {
         const storage = makeStorage();
-        storage.setItem(
-            'order',
-            JSON.stringify({ v: { name: 'carol' }, t: Date.now() }),
-        );
+        storage.setItem('order', JSON.stringify({ v: { name: 'carol' }, t: Date.now() }));
         const formRef: React.MutableRefObject<any> = { current: null };
-        render(
-            <DraftForm
-                storage={storage}
-                storageKey="order"
-                formRef={formRef}
-            />,
-        );
+        render(<DraftForm storage={storage} storageKey="order" formRef={formRef} />);
         expect(screen.getByTestId('banner')).toBeTruthy();
         fireEvent.click(screen.getByTestId('dismiss'));
         await flush();
@@ -194,10 +166,7 @@ describe('useFormDraft', () => {
 
     it('clears the draft after a successful submit (clearOnSubmit default true)', async () => {
         const storage = makeStorage();
-        storage.setItem(
-            'order',
-            JSON.stringify({ v: { name: 'dave' }, t: Date.now() }),
-        );
+        storage.setItem('order', JSON.stringify({ v: { name: 'dave' }, t: Date.now() }));
         const onSubmit = vi.fn(() => Promise.resolve());
         const formRef: React.MutableRefObject<any> = { current: null };
         render(
@@ -220,10 +189,7 @@ describe('useFormDraft', () => {
 
     it('clearOnSubmit:false keeps the draft after submit', async () => {
         const storage = makeStorage();
-        storage.setItem(
-            'order',
-            JSON.stringify({ v: { name: 'eve' }, t: Date.now() }),
-        );
+        storage.setItem('order', JSON.stringify({ v: { name: 'eve' }, t: Date.now() }));
         const onSubmit = vi.fn(() => Promise.resolve());
         const formRef: React.MutableRefObject<any> = { current: null };
         render(
@@ -245,19 +211,9 @@ describe('useFormDraft', () => {
 
     it('maxAge expires a stale draft (treated as no draft)', async () => {
         const storage = makeStorage();
-        storage.setItem(
-            'order',
-            JSON.stringify({ v: { name: 'frank' }, t: Date.now() - 10_000 }),
-        );
+        storage.setItem('order', JSON.stringify({ v: { name: 'frank' }, t: Date.now() - 10_000 }));
         const formRef: React.MutableRefObject<any> = { current: null };
-        render(
-            <DraftForm
-                storage={storage}
-                storageKey="order"
-                maxAge={1000}
-                formRef={formRef}
-            />,
-        );
+        render(<DraftForm storage={storage} storageKey="order" maxAge={1000} formRef={formRef} />);
         // Stale draft: no prompt, and the entry is purged from storage.
         expect(screen.queryByTestId('banner')).toBeNull();
         expect(storage.dump().order).toBeUndefined();

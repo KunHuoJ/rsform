@@ -203,7 +203,16 @@ export function useTable<RecordType extends Record<string, any>>(
         // Deliberately EXCLUDE dataSource/value/length: columns must stay
         // referentially stable across edits. Fresh values are read via refs.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [propColumns, name, current, pageSize, props.itemDefaultValue, props.max, props.min, props.validateBeforeAdd]);
+    }, [
+        propColumns,
+        name,
+        current,
+        pageSize,
+        props.itemDefaultValue,
+        props.max,
+        props.min,
+        props.validateBeforeAdd,
+    ]);
 
     return { dataSource, columns };
 }

@@ -54,11 +54,7 @@ export interface EffectHelpers {
      * on init / 回显 (safe cascade-clear). Targets are written with
      * `clearValue` (default `undefined`).
      */
-    clearOn: (
-        deps: string | string[],
-        targets: string | string[],
-        clearValue?: any,
-    ) => void;
+    clearOn: (deps: string | string[], targets: string | string[], clearValue?: any) => void;
     /** Set a field's `visible` state. Sugar for `form.setFieldState(name, s => { s.visible = v })`. */
     setVisible: (name: string, visible: boolean) => void;
     /** Set a field's `required` state. Sugar for `form.setFieldState(name, s => { s.required = v })`. */
@@ -84,8 +80,17 @@ export function createEffects(form: FormilyForm): EffectHelpers {
         onEachRowMultiChange: (pre, keys, cb) => onEachRowMultiChange(form, pre, keys, cb),
         debounce,
         clearOn: (deps, targets, clearValue) => clearOn(form, deps, targets, clearValue),
-        setVisible: (name, visible) => form.setFieldState(name, (s: any) => { s.visible = visible; }),
-        setRequired: (name, required) => form.setFieldState(name, (s: any) => { s.required = required; }),
-        setEditable: (name, editable) => form.setFieldState(name, (s: any) => { s.editable = editable; }),
+        setVisible: (name, visible) =>
+            form.setFieldState(name, (s: any) => {
+                s.visible = visible;
+            }),
+        setRequired: (name, required) =>
+            form.setFieldState(name, (s: any) => {
+                s.required = required;
+            }),
+        setEditable: (name, editable) =>
+            form.setFieldState(name, (s: any) => {
+                s.editable = editable;
+            }),
     };
 }
