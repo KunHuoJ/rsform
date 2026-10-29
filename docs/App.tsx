@@ -1,5 +1,17 @@
 import * as React from 'react';
+import { theme as antdTheme, ConfigProvider } from 'antd';
+import zhCNRaw from 'antd/locale/zh_CN';
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
 import { useTheme } from './useTheme';
+
+// antd DatePicker 日历走 dayjs，需切到中文 locale（含星期/月份文案）。
+dayjs.locale('zh-cn');
+
+// Vite 对 antd/locale/zh_CN（CJS）的 default-import interop 不自动拆 .default，
+// 传给 ConfigProvider 的会是 { default: 真locale } 包装 → antd 不认回退英文。
+// 显式拆一层，两种 interop 都安全。
+const zhCN = (zhCNRaw as any).default ?? zhCNRaw;
 
 // 把 content/*.mdx 全部以组件形式静态导入，用于 hash 路由渲染。
 // Vite + @mdx-js/rollup 会把每个 .mdx 编译成 React 组件。
@@ -108,7 +120,12 @@ export function App(): React.ReactElement {
     const Page = pageComponent(active) ?? pageComponent('intro')!;
 
     return (
-        <>
+        <ConfigProvider
+            locale={zhCN}
+            theme={{
+                algorithm: theme === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+            }}
+        >
             <header className="rsfd-topbar">
                 <a href="#intro" className="rsfd-topbar-brand">
                     <span className="rsfd-logo">r</span>
@@ -162,6 +179,6 @@ export function App(): React.ReactElement {
                     <Page />
                 </main>
             </div>
-        </>
+        </ConfigProvider>
     );
 }

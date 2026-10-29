@@ -284,11 +284,15 @@ export function PlaygroundDemo(): React.ReactElement {
                     },
                 );
 
-                // 2) 级联：分类 → 子分类 options（异步派生）
+                // 2) 级联：分类 → 子分类 options（异步派生，只管 options，不碰 value → 回显安全）
                 $.linkedFieldProps('subcategory', ['category'], async ({ category }) => {
-                    if (!category) return { options: [], value: '' };
+                    if (!category) return { options: [] };
                     await new Promise((r) => setTimeout(r, 200));
-                    return { options: SUBCATEGORY[category] ?? [], value: '' };
+                    return { options: SUBCATEGORY[category] ?? [] };
+                });
+                //    用户切分类才清空子分类（onFieldValueChange 初始不触发，回显不会误清）
+                $.onFieldValueChange('category', () => {
+                    $.form.setValuesIn('subcategory', '');
                 });
 
                 // 3) 按行派生：物料 qty/price 任一变 → 重算 total 入 form.values

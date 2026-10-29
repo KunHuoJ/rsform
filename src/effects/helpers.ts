@@ -1,5 +1,5 @@
 import type { Form as FormilyForm } from '@formily/core';
-import { onFieldValueChange } from '@formily/core';
+import { onFieldReact, onFieldValueChange } from '@formily/core';
 import { type LinkedFieldPropsCompute, linkedFieldProps } from './linkedFieldProps';
 import { type EachRowCb, onEachRowChange } from './onEachRowChange';
 import { type EachRowMultiCb, onEachRowMultiChange } from './onEachRowMultiChange';
@@ -11,7 +11,8 @@ import { type ValidateFieldCb, type ValidateFieldHandle, validateField } from '.
  * raw Formily form plus rsform's sugar helpers (which close over the form so
  * callers don't repeat it). Bare Formily lifecycle hooks can also be called
  * directly inside an `effects` body (they auto-register on the active form),
- * so `$.onFieldValueChange` is provided for ergonomic parity.
+ * so `$.onFieldValueChange` / `$.onFieldReact` are provided for ergonomic
+ * parity.
  */
 export interface EffectHelpers {
     /** The underlying Formily form instance. */
@@ -19,7 +20,20 @@ export interface EffectHelpers {
     /** Non-reactive per-form scratch storage. A function value is an immer updater. */
     setRefState: (key: string, value: any) => void;
     getRefState: <T = any>(key: string) => T | undefined;
+    /**
+     * Field-value-change listener (Formily v2 native). Fires only when the
+     * field's value changes — does NOT fire on init.
+     */
     onFieldValueChange: typeof onFieldValueChange;
+    /**
+     * Reactive field reaction (Formily v2 native). Runs the callback once on
+     * field init AND again whenever any observable on the field changes
+     * (value/visible/display/...). This is the one to use for "init + change
+     * both run" linkage — e.g. toggling another field's `visible` from a value,
+     * where the initial value must also apply on mount (no need to pair
+     * `onFieldValueChange` with a separate `ON_FIELD_MOUNT` handler).
+     */
+    onFieldReact: typeof onFieldReact;
     linkedFieldProps: (target: string, deps: string[], compute: LinkedFieldPropsCompute) => void;
     validateField: (
         name: string,
@@ -40,6 +54,7 @@ export function createEffects(form: FormilyForm): EffectHelpers {
         setRefState: (key, value) => setRefState(form, key, value),
         getRefState: <T>(key: string) => getRefState<T>(form, key),
         onFieldValueChange,
+        onFieldReact,
         linkedFieldProps: (target, deps, compute) => linkedFieldProps(form, target, deps, compute),
         validateField: (name, triggers, cb) => validateField(form, name, triggers, cb),
         onEachRowChange: (pre, key, cb) => onEachRowChange(form, pre, key, cb),

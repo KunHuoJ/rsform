@@ -1,0 +1,13 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "paths": {
+            "rsform": ["../src/index.ts"],
+            "rsform/antd": ["../src/controls/index.ts"],
+            "rsform/table": ["../src/table/index.ts"],
+            "rsform/array-items": ["../src/array-items/index.ts"],
+            "rsform/effects": ["../src/effects/index.ts"]
+        }
+    },
+    "include": [".", "../src"]
+}

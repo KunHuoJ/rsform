@@ -252,3 +252,76 @@ import { Form } from 'rsform';
     },
   ]}
 />`;
+
+export const PLAYGROUND_CODE = `import * as React from 'react';
+import dayjs from 'dayjs';
+import { arrayUnion, Form } from 'rsform';
+
+// 小计列：必须是 CellBridge 的 control（订阅 items.i.total 叶子），
+// 不能用列的 render——render 是表体快照，编辑时不重渲染，小计不会更新。
+function TotalCell({ value }: { value?: any }) {
+  return <span>{(Number(value) || 0).toFixed(2)}</span>;
+}
+
+const phoneUnique = arrayUnion('phone', '手机号重复');
+const phoneValidator = (v: any, rule: any, ctx: any) =>
+  !v || !/^1\\d{10}$/.test(String(v)) ? '请输入有效手机号' : phoneUnique(v, rule, ctx) ?? '';
+
+<Form
+  initialValues={{ orderName: '', orderDate: '', priority: 'mid', contacts: [], items: [] }}
+  validateFailed="scroll"
+  effects={$ => {
+    // 跨字段校验：交付日期必须晚于下单日期
+    $.validateField('deliveryDate', ['orderDate', 'deliveryDate'], ({ orderDate, deliveryDate }) =>
+      !deliveryDate || !orderDate ? '' : dayjs(deliveryDate).isAfter(dayjs(orderDate)) ? '' : '交付日期必须晚于下单日期',
+    );
+    // 级联：分类 → 子分类 options（异步派生）
+    $.linkedFieldProps('subcategory', ['category'], async ({ category }) => {
+      if (!category) return { options: [], value: '' };
+      await new Promise(r => setTimeout(r, 200));
+      return { options: SUBCATEGORY[category] ?? [], value: '' };
+    });
+    // 按行派生：qty/price 任一变 → 重算 total 入 form.values
+    $.onEachRowMultiChange('items', ['qty', 'price'], ({ values, setFieldState }) =>
+      setFieldState('total', { value: (Number(values.qty) || 0) * (Number(values.price) || 0) }),
+    );
+  }}
+  onSubmit={values => console.log(values)}
+>
+  <Form.Field name="orderName" title="订单名称" required>
+    <Form.Input />
+  </Form.Field>
+  <Form.Field name="orderDate" title="下单日期" required format={toDayjs} parse={toIso}>
+    <Form.DatePicker />
+  </Form.Field>
+
+  {/* ArrayItems：联系人，跨行唯一手机号 + 正则校验 */}
+  <Form.ArrayItems name="contacts" itemDefaultValue={{ name: '', phone: '' }} min={1} max={8}>
+    {() => (
+      <>
+        <Form.Field name="name" title="姓名" required><Form.Input /></Form.Field>
+        <Form.Field name="phone" title="手机号" required validator={phoneValidator}>
+          <Form.Input />
+        </Form.Field>
+      </>
+    )}
+  </Form.ArrayItems>
+
+  {/* Table：物料明细，小计由 effect 派生，列只读展示 */}
+  <Form.Table
+    name="items"
+    columns={[
+      { title: '名称', dataIndex: 'name', control: 'input', required: true },
+      { title: '数量', dataIndex: 'qty', control: 'inputNumber', required: true },
+      { title: '单价', dataIndex: 'price', control: 'inputNumber', required: true },
+      { title: '小计', dataIndex: 'total', control: <TotalCell /> },
+    ]}
+  />
+
+  {/* Consumer 实时汇总 */}
+  <Form.Consumer>
+    {values => <span>合计：{(values.items ?? []).reduce((s, r) => s + (Number(r.total) || 0), 0).toFixed(2)}</span>}
+  </Form.Consumer>
+
+  <Form.Submit>提交订单</Form.Submit>
+</Form>`;

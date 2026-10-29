@@ -177,8 +177,8 @@ import {Form} from 'rsform';
 
 ### Form.ArrayItems
 
-轻量增删/移动列表，类似 antd `Form.List`。基于 Formily `ArrayField` mutators，行末
-上移/下移/删除走 Formily `moveUp`/`moveDown`/`remove`——不引入拖拽库。
+轻量增删列表，类似 antd `Form.List`。基于 Formily `ArrayField` mutators。默认只给
+删除按钮；上下移动按需开启（`sortable`）。添加/删除均可自定义按钮或拦截。
 
 ```jsx
 import {Form} from 'rsform';
@@ -197,8 +197,13 @@ import {Form} from 'rsform';
 | `min` | `number` | — | 最小行数，到限禁用删除 |
 | `max` | `number` | — | 最大行数，到限禁用新增 |
 | `validateBeforeAdd` | `(values, itemDefault) => boolean \| string \| void` | — | 新增前门禁；`false` 静默阻止，`string` 报错 |
-| `addDisabled` | `boolean` | `false` | 隐藏新增按钮 |
-| `addText` | `ReactNode` | `'添加'` | 新增按钮文字 |
+| `addDisabled` | `boolean` | `false` | 隐藏内置新增按钮（配合 `renderAdd`） |
+| `addText` | `ReactNode` | `'添加'` | 内置新增按钮文字 |
+| `renderAdd` | `(add: () => void) => ReactNode` | — | 完全自定义新增按钮；提供后内置按钮不渲染 |
+| `removeText` | `ReactNode` | `'×'` | 内置删除按钮文字 |
+| `onRemove` | `(index, values) => boolean \| Promise<boolean>` | — | 删除前拦截；返回 `false` 取消（用于二次确认） |
+| `renderRemove` | `(index, remove: () => void) => ReactNode` | — | 完全自定义删除按钮；提供后内置按钮不渲染 |
+| `sortable` | `boolean` | `false` | 是否显示上移/下移按钮；多数表单不需要排序 |
 | `children` | `(value, index) => ReactNode \| ReactNode` | — | 行内容；render-prop 内用相对路径 Field |
 
 #### 相对路径
@@ -208,8 +213,9 @@ import {Form} from 'rsform';
 
 #### 行操作
 
-每行行末提供上移/下移/删除按钮。上移/下移走 Formily `moveUp`/`moveDown`，
-删除走 `remove`——都是 Formily 原生 mutator，零额外依赖。`min` 到限时删除禁用。
+默认每行行末一个删除按钮。`sortable` 开启后额外显示上移/下移（走 Formily
+`moveUp`/`moveDown`）。`renderRemove` 可整行替换删除按钮；`onRemove` 可在删除前
+拦截（如弹确认框，返回 `false` 取消）。`renderAdd` 同理替换底部新增按钮。
 
 #### 跨行唯一校验 `arrayUnion`
 

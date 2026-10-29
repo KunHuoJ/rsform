@@ -67,6 +67,7 @@ export {
     mergeEffects,
     onEachRowChange,
     onEachRowMultiChange,
+    onFieldInputValueChange,
     onFieldMount,
     onFieldReact,
     onFieldUnmount,

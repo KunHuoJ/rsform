@@ -61,6 +61,44 @@ describe('effects: $ bundle + sugar helpers', () => {
         expect(seen).toContain('x');
     });
 
+    it('onFieldReact runs on init AND on change (init + change linkage)', async () => {
+        // Regression for the icloud-ui pattern: a value drives another field's
+        // visible, and the rule must apply on mount too (not only on change).
+        // `onFieldValueChange` does NOT fire on init, so the old library paired
+        // it with an ON_FIELD_MOUNT handler. `onFieldReact` = onFieldInit +
+        // autorun, so the callback runs once on init AND again on any change —
+        // one call replaces the old two-handler pairing.
+        const formRef = useFormRef();
+        render(
+            <Form
+                initialValues={{ requireType: 1, suitName: '' }}
+                effects={($) => {
+                    $.onFieldReact('requireType', (field: any) => {
+                        $.form.setFieldState('suitName', (s: any) => {
+                            s.visible = field.value === 1;
+                        });
+                    });
+                }}
+                formRef={formRef}
+            >
+                <Field name="requireType">
+                    <Input data-testid="requireType" />
+                </Field>
+                <Field name="suitName">
+                    <Input data-testid="suitName" />
+                </Field>
+            </Form>,
+        );
+        await flush();
+        // Init: requireType === 1 → suitName visible (the init run applied it).
+        expect(formRef.current.getFieldState('suitName', (s: any) => s.visible)).toBe(true);
+
+        // Change requireType to 0 → suitName hidden.
+        fireEvent.change(screen.getByTestId('requireType'), { target: { value: '0' } });
+        await flush();
+        expect(formRef.current.getFieldState('suitName', (s: any) => s.visible)).toBe(false);
+    });
+
     it('linkedFieldProps reactively toggles target visibility from a dep', async () => {
         const formRef = useFormRef();
         render(

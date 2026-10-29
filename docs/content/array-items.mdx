@@ -5,8 +5,9 @@ import {CodeBlock} from '../CodeBlock';
 
 ## ArrayItems 可增删列表
 
-轻量增删/移动列表，类似 antd `Form.List`。基于 Formily `ArrayField` mutators，行末
-上移/下移/删除按钮走 Formily `moveUp`/`moveDown`/`remove`——不引入拖拽库，零额外依赖。
+轻量增删列表，类似 antd `Form.List`。基于 Formily `ArrayField` mutators。默认只给
+删除按钮；上下移动按需开启（`sortable`）。添加/删除均可自定义按钮（`renderAdd`/
+`renderRemove`）或拦截（`onRemove` 二次确认）——不引入拖拽库，零额外依赖。
 行内字段用 `name="email"`（无前导点 = append 到当前行 → `members.N.email`）自动绑到当前行。
 
 ### 属性
@@ -17,7 +18,12 @@ import {CodeBlock} from '../CodeBlock';
 | `itemDefaultValue` | `{}` | 新增行的默认值 |
 | `min` / `max` | — | 行数上下限，到限禁用对应按钮 |
 | `validateBeforeAdd` | — | 新增前门禁，返回 `false` 静默阻止，`string` 报错 |
-| `addDisabled` | `false` | 隐藏新增按钮 |
+| `addDisabled` | `false` | 隐藏内置新增按钮（配合 `renderAdd`） |
+| `addText` / `removeText` | `'添加'` / `'×'` | 内置按钮文字 |
+| `renderAdd` | — | `(add) => Node`，完全自定义新增按钮 |
+| `renderRemove` | — | `(index, remove) => Node`，完全自定义删除按钮 |
+| `onRemove` | — | `(index, values) => boolean \| Promise<boolean>`，返回 `false` 取消删除 |
+| `sortable` | `false` | 显示上移/下移按钮；多数表单不需要排序 |
 
 <CodeBlock code={ARRAY_ITEMS_CODE} />
 

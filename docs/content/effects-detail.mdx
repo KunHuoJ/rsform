@@ -25,8 +25,17 @@ rsform 在表单创建时把它注入一个 `$` helper 包并执行一次——*
 
 1. **rsform 糖 helper**：`linkedFieldProps` / `validateField` / `onEachRowChange` /
    `onEachRowMultiChange`，闭包绑定好了 form，调用即注册，自动随字段卸载而拆卸。
-2. **原始 Formily form**：`$.form`，以及可以直接裸调 Formily 生命周期 hook
-   （如 `onFieldValueChange`），它们自动注册到当前活动 form。
+2. **原始 Formily form**：`$.form`，以及 `$.onFieldReact` / `$.onFieldValueChange`（透传
+   Formily 同名 hook）。其他 Formily 生命周期 hook（`onFieldMount` / `onFormSubmit` /
+   `onFormSubmitValidateFailed` / `onFormReset` / …）**不在 `$` 上**，需从 `rsform`
+   导入后直接调用——它们会自动注册到当前活动 form：
+
+   ```jsx
+   import { Form, onFormSubmitValidateFailed } from 'rsform';
+   effects={$ => {
+     onFormSubmitValidateFailed(form => { /* 校验失败时滚动到首个错误 */ });
+   }}
+   ```
 
 > 关键心智模型：effects 回调是**注册时机**，不是**执行时机**。回调里写的每条
 > 语句都是「当 X 发生时，做 Y」的声明；具体什么时候真跑，取决于 X 什么时候发生。
@@ -47,6 +56,7 @@ $.validateField(
     | string                 //   返回非空串 = 错误信息
     | string[]               //   返回数组 = 多条错误
     | null                   //   返回 null/'' = 通过
+    | Promise<上述>           //   也支持异步（如远程校验）
 ): { clearEffect(): void }   // 返回句柄，可手动拆卸
 ```
 
@@ -54,8 +64,12 @@ $.validateField(
 
 ### 触发时机
 
-`triggers` 里**任意一个**字段值变化，`cb` 就重跑；`name` 字段也会在自身变化时
-重跑。`cb` 拿到的 `values` 是 `{ [triggerName]: 当前值 }` 的快照。
+`triggers` 里**任意一个**字段值变化，`cb` 就重跑。注册时 `cb` 也会**立即跑一次**
+（初始校验，不用等第一次编辑）。`cb` 拿到的 `values` 是 `{ [triggerName]: 当前值 }` 的快照。
+
+> ⚠️ `name` 本身**不会**自动成为触发源——只有把它写进 `triggers` 才会在自身变化时
+> 重跑。例：`validateField('confirm', ['password', 'confirm'], cb)` 改 password 或
+> confirm 都重跑；`validateField('confirm', ['password'], cb)` 只有改 password 才重跑。
 
 ### 示例：密码确认一致
 
@@ -128,10 +142,53 @@ effects={$ => {
 
 ---
 
+## `$.onFieldReact` — 初始化 + 变化都执行的响应式联动
+
+Formily v2 原生 hook，rsform 挂在 `$` 上。底层是 `onFieldInit` + `autorun`——字段 init
+时 `autorun` **立即跑一次** cb，之后字段任一 observable（value/visible/display/…）变化再跑。
+**这是「初始化 + 变化都执行」的联动**，适合「一个字段值驱动另一个字段显隐/props，且初始值也要生效」。
+
+### 签名
+
+```ts
+$.onFieldReact(
+  pattern: string,
+  cb: (field: DataField, form: Form) => void
+): void
+```
+
+`cb` 收到 `(field, form)`，用 `field.value` 读当前值，用 `$.form.setFieldState` 改其它字段。
+
+```jsx
+effects={$ => {
+  $.onFieldReact('requireType', (field) => {
+    $.form.setFieldState('suitName', (s) => {
+      s.visible = field.value === 1;
+    });
+  });
+}}
+```
+
+> `onFieldReact` 追踪字段**所有** observable，不只是 value——所以 value/visible/display
+> 变化都会重跑。适合「值驱动显隐 / 联动 props」场景。
+
+### 与 `$.onFieldValueChange` 的区别
+
+| | `$.onFieldReact` | `$.onFieldValueChange` |
+|---|---|---|
+| 初始化执行 | ✅ 跑一次 | ❌ 不跑 |
+| 变化触发 | ✅（追踪所有 observable） | ✅（只在 value 变化时） |
+| 典型用途 | 值驱动显隐 / 联动 props（初始也要生效） | 只在值变化时做联动（初始化不要） |
+
+> 口诀：**要初始化也生效 → `onFieldReact`；只要变化触发 → `onFieldValueChange`**。
+
+---
+
 ## `$.onFieldValueChange` — 字段值变化监听
 
 Formily v2 原生 hook，rsform 直接透传。比糖 helper 更底层，适合自定义联动逻辑
-（设置其他字段值、改字段可见性等）。
+（设置其他字段值、改字段可见性等）。**初始化不执行**——只在字段 value 变化时触发；
+要初始化也跑用 [`$.onFieldReact`](#onfieldreact--初始化--变化都执行的响应式联动)。
 
 ```jsx
 effects={$ => {
@@ -180,6 +237,29 @@ effects={$ => {
 
 `setFieldState('total', {value})` 只改**当前行**的 `total`，不会波及其他行。
 
+#### `setFieldState(key, partial)` 能传什么
+
+`partial` 是一个部分对象，按 key 分流到两条路径：
+
+| 传的 key | 走哪 | 语义 |
+|---|---|---|
+| `value` | `form.setValuesIn` 写 `pre.index.key` 叶子 | 直接写 `form.values` 的叶子。**即使该 key 没渲染对应字段**（如 Table 的只读派生列 `total`），值也持久存在、提交时能拿到。这是派生值最常用的。 |
+| `visible` / `display` / `hidden` | `form.setFieldState` | 控制该行该 key 字段的显隐 |
+| `required` / `title` / `description` | `form.setFieldState` | 改必填、标题、描述 |
+| `editable` / `readEmpty` | `form.setFieldState` | 改可编辑性、空值占位 |
+| `rules` / `validator` | `form.setFieldState` | 动态换校验规则 |
+| 其他 Formily 字段状态键 | `form.setFieldState` | `Object.assign(state, rest)` 整体合并 |
+
+简言之：**`value` 单独走持久写入（进 form.values），其余任意 Formily 字段状态键走 `form.setFieldState` 改字段模型**。一条调用可同时传多个键：
+
+```jsx
+setFieldState('total', { value: qty * price });                 // 只派生值
+setFieldState('discount', { visible: hasDiscount, required: hasDiscount }); // 改显隐 + 必填
+```
+
+> **初始触发**：每行挂载时 `cb` 也会跑一次（不只等第一次变化），所以派生值在初始就有，
+> 不用手动播种。
+
 ---
 
 ## `$.onEachRowMultiChange` — 数组按行多 key 联动
@@ -215,7 +295,8 @@ effects={$ => {
 }}
 ```
 
-比写两个 `onEachRowChange` 更省——一次注册，多 key 任一变化都触发。
+比写两个 `onEachRowChange` 更省——一次注册，多 key 任一变化都触发。`setFieldState` 的
+`partial` 分流、`value` 持久语义与初始触发同 `onEachRowChange`（见上表）。
 
 ---
 
@@ -243,13 +324,19 @@ effects={$ => {
 
 | helper | 触发时机 | 典型用途 |
 |---|---|---|
-| `$.validateField` | 依赖字段值变化 | 跨字段校验 |
+| `$.validateField` | 依赖字段值变化（注册时也跑一次） | 跨字段校验 |
 | `$.linkedFieldProps` | 依赖字段值变化 | 派生 options/disabled（进 componentProps）、visible/required（进字段 state） |
-| `$.onFieldValueChange` | 字段值变化 | 自定义联动（设值/显隐） |
+| `$.onFieldReact` | 字段 init 跑一次 + 任一 observable 变化 | 值驱动显隐/联动 props（**初始也生效**） |
+| `$.onFieldValueChange` | 字段 value 变化（**初始化不跑**） | 自定义联动（设值/显隐），只关心变化 |
 | `$.onEachRowChange` | 数组行内单 key 变化 | 按行联动 |
 | `$.onEachRowMultiChange` | 数组行内多 key 任一变化 | 按行多 key 联动 |
 | `$.setRefState` / `$.getRefState` | 主动调用 | effect 间共享非响应状态 |
 | `$.form` | — | 原始 Formily form 实例 |
+
+> 上表是 `$` 上挂载的 helper。Formily 原生生命周期 hook（`onFieldMount` /
+> `onFormSubmit` / `onFormSubmitValidateFailed` / `onFormReset` / `onFormValuesChange` /
+> …）从 `rsform` 命名导入后直接在 `effects` 里调用即可，自动注册到当前 form。完整列表
+> 见 [API 参考](#api) 的 effects 导出。
 
 ### effects 可以是数组
 

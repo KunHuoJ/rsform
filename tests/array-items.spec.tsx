@@ -145,7 +145,7 @@ describe('ArrayItems (Phase 4)', () => {
                 initialValues={{ tags: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] }}
                 formRef={formRef}
             >
-                <ArrayItems name="tags">
+                <ArrayItems name="tags" sortable>
                     {() => (
                         <Field name="label">
                             <Input />
@@ -170,7 +170,7 @@ describe('ArrayItems (Phase 4)', () => {
         // so all rows bound to ONE field and moves had no visible effect.)
         render(
             <Form initialValues={{ tags: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] }}>
-                <ArrayItems name="tags">
+                <ArrayItems name="tags" sortable>
                     {() => (
                         <Field name="label">
                             <Input />
@@ -208,6 +208,55 @@ describe('ArrayItems (Phase 4)', () => {
         await flush();
         const errs = formRef.current.query('tags.1.label').take().selfErrors ?? [];
         expect(errs).toContain('重复了');
+    });
+
+    it('onRemove returning false cancels removal', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form initialValues={{ tags: [{ label: 'a' }, { label: 'b' }] }} formRef={formRef}>
+                <ArrayItems name="tags" onRemove={() => false}>
+                    {() => (
+                        <Field name="label">
+                            <Input />
+                        </Field>
+                    )}
+                </ArrayItems>
+            </Form>,
+        );
+        await flush();
+        clickRemove(0);
+        await flush();
+        // onRemove returned false → row not removed.
+        expect(formRef.current.values.tags).toHaveLength(2);
+    });
+
+    it('renderAdd replaces the built-in add button', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form initialValues={{ tags: [] }} formRef={formRef}>
+                <ArrayItems
+                    name="tags"
+                    itemDefaultValue={{ label: '' }}
+                    renderAdd={(add) => (
+                        <button type="button" data-testid="custom-add" onClick={add}>
+                            custom
+                        </button>
+                    )}
+                >
+                    {() => (
+                        <Field name="label">
+                            <Input />
+                        </Field>
+                    )}
+                </ArrayItems>
+            </Form>,
+        );
+        await flush();
+        // Built-in add button is gone; custom one present.
+        expect(screen.queryByText('添加')).toBeNull();
+        fireEvent.click(screen.getByTestId('custom-add'));
+        await flush();
+        expect(formRef.current.values.tags).toHaveLength(1);
     });
 
     it('Form namespace exposes ArrayItems', async () => {
