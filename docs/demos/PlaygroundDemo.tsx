@@ -290,10 +290,8 @@ export function PlaygroundDemo(): React.ReactElement {
                     await new Promise((r) => setTimeout(r, 200));
                     return { options: SUBCATEGORY[category] ?? [] };
                 });
-                //    用户切分类才清空子分类（onFieldValueChange 初始不触发，回显不会误清）
-                $.onFieldValueChange('category', () => {
-                    $.form.setValuesIn('subcategory', '');
-                });
+                //    用户切分类才清空子分类（clearOn 初始不触发，回显不会误清）
+                $.clearOn('category', 'subcategory', '');
 
                 // 3) 按行派生：物料 qty/price 任一变 → 重算 total 入 form.values
                 $.onEachRowMultiChange('items', ['qty', 'price'], ({ values, setFieldState }) => {

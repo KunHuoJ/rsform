@@ -23,6 +23,8 @@ export {
 } from '@formily/core';
 export type { EffectHelpers } from './helpers';
 export { createEffects } from './helpers';
+export { clearOn } from './clearOn';
+export { debounce } from './debounce';
 export type { LinkedFieldPropsCompute } from './linkedFieldProps';
 export { linkedFieldProps } from './linkedFieldProps';
 export type { EffectFn, EffectsProp, MergeEffectsOptions } from './mergeEffects';

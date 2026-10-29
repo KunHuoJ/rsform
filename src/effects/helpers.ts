@@ -1,5 +1,7 @@
 import type { Form as FormilyForm } from '@formily/core';
 import { onFieldReact, onFieldValueChange } from '@formily/core';
+import { clearOn } from './clearOn';
+import { debounce } from './debounce';
 import { type LinkedFieldPropsCompute, linkedFieldProps } from './linkedFieldProps';
 import { type EachRowCb, onEachRowChange } from './onEachRowChange';
 import { type EachRowMultiCb, onEachRowMultiChange } from './onEachRowMultiChange';
@@ -42,6 +44,21 @@ export interface EffectHelpers {
     ) => ValidateFieldHandle;
     onEachRowChange: (pre: string, key: string, cb: EachRowCb) => void;
     onEachRowMultiChange: (pre: string, keys: string[], cb: EachRowMultiCb) => void;
+    /**
+     * Trailing-edge debounce. Stable across renders, safe to pass as a prop.
+     * Use to tame `onSearch` / `onChange` before a remote request.
+     */
+    debounce: typeof debounce;
+    /**
+     * Clear target field(s) when any dep field's value changes. Does NOT fire
+     * on init / 回显 (safe cascade-clear). Targets are written with
+     * `clearValue` (default `undefined`).
+     */
+    clearOn: (
+        deps: string | string[],
+        targets: string | string[],
+        clearValue?: any,
+    ) => void;
 }
 
 /**
@@ -59,5 +76,7 @@ export function createEffects(form: FormilyForm): EffectHelpers {
         validateField: (name, triggers, cb) => validateField(form, name, triggers, cb),
         onEachRowChange: (pre, key, cb) => onEachRowChange(form, pre, key, cb),
         onEachRowMultiChange: (pre, keys, cb) => onEachRowMultiChange(form, pre, keys, cb),
+        debounce,
+        clearOn: (deps, targets, clearValue) => clearOn(form, deps, targets, clearValue),
     };
 }

@@ -62,12 +62,6 @@ describe('effects: $ bundle + sugar helpers', () => {
     });
 
     it('onFieldReact runs on init AND on change (init + change linkage)', async () => {
-        // Regression for the icloud-ui pattern: a value drives another field's
-        // visible, and the rule must apply on mount too (not only on change).
-        // `onFieldValueChange` does NOT fire on init, so the old library paired
-        // it with an ON_FIELD_MOUNT handler. `onFieldReact` = onFieldInit +
-        // autorun, so the callback runs once on init AND again on any change —
-        // one call replaces the old two-handler pairing.
         const formRef = useFormRef();
         render(
             <Form
@@ -343,5 +337,85 @@ describe('effects: $ bundle + sugar helpers', () => {
         // Error stays as last applied ('err'); clearEffect is a liveness flag,
         // so it doesn't actively clear — it just stops new reactions.
         expect(formRef.current.query('b').take().selfErrors).toContain('err');
+    });
+
+    it('$.clearOn clears targets when a dep changes, but not on init (回显 safe)', () => {
+        const formRef = useFormRef();
+        render(
+            <Form
+                initialValues={{ province: 'gd', city: 'sz' }}
+                effects={($) => {
+                    $.clearOn('province', 'city');
+                }}
+                formRef={formRef}
+            >
+                <Field name="province">
+                    <Input data-testid="province" />
+                </Field>
+                <Field name="city">
+                    <Input data-testid="city" />
+                </Field>
+            </Form>,
+        );
+        // 回显: initial values survive — clearOn must NOT fire on init.
+        expect(formRef.current.getValuesIn('province')).toBe('gd');
+        expect(formRef.current.getValuesIn('city')).toBe('sz');
+        // User changes province → city cleared (to undefined default).
+        fireEvent.change(screen.getByTestId('province'), { target: { value: 'bj' } });
+        expect(formRef.current.getValuesIn('city')).toBeUndefined();
+    });
+
+    it('$.clearOn accepts arrays + a custom clearValue', () => {
+        const formRef = useFormRef();
+        render(
+            <Form
+                initialValues={{ a: '1', b: 'x', c: 'y' }}
+                effects={($) => {
+                    $.clearOn(['a'], ['b', 'c'], '');
+                }}
+                formRef={formRef}
+            >
+                <Field name="a">
+                    <Input data-testid="a" />
+                </Field>
+            </Form>,
+        );
+        expect(formRef.current.getValuesIn('b')).toBe('x');
+        fireEvent.change(screen.getByTestId('a'), { target: { value: '2' } });
+        expect(formRef.current.getValuesIn('b')).toBe('');
+        expect(formRef.current.getValuesIn('c')).toBe('');
+    });
+
+    it('$.debounce collapses rapid calls into one trailing invocation', async () => {
+        const formRef = useFormRef();
+        const calls: string[] = [];
+        render(
+            <Form
+                initialValues={{ kw: '' }}
+                effects={($) => {
+                    const run = $.debounce((v: string) => {
+                        calls.push(v);
+                    }, 20);
+                    $.onFieldValueChange('kw', (field: any) => {
+                        run(field.value);
+                    });
+                }}
+                formRef={formRef}
+            >
+                <Field name="kw">
+                    <Input data-testid="kw" />
+                </Field>
+            </Form>,
+        );
+        fireEvent.change(screen.getByTestId('kw'), { target: { value: 'a' } });
+        fireEvent.change(screen.getByTestId('kw'), { target: { value: 'ab' } });
+        fireEvent.change(screen.getByTestId('kw'), { target: { value: 'abc' } });
+        // Nothing fired yet — trailing edge.
+        expect(calls).toEqual([]);
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 40));
+        });
+        // Only the latest args invoked, exactly once.
+        expect(calls).toEqual(['abc']);
     });
 });

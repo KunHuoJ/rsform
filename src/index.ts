@@ -60,7 +60,9 @@ export type {
     ValidateFieldHandle,
 } from './effects';
 export {
+    clearOn,
     createEffects,
+    debounce,
     getRefState,
     LifeCycleTypes,
     linkedFieldProps,

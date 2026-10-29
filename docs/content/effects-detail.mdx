@@ -320,6 +320,76 @@ effects={$ => {
 
 ---
 
+## `$.clearOn` — 级联清空（回显安全）
+
+级联清空是最高频组合操作：选了省份 → 清空城市，切了分类 → 清空子分类。
+`clearOn` 把它一行化，且**初始 / 回显不触发**（底层是 `onFieldValueChange`，
+不会在 mount 时误清回显值）。
+
+### 签名
+
+```ts
+$.clearOn(
+  deps: string | string[],      // 依赖字段：这些变 → 触发清空
+  targets: string | string[],   // 被清空的字段
+  clearValue?: any,             // 写入的空值，默认 undefined（Select 传 '' 更常见）
+): void
+```
+
+### 示例：省市级联清空
+
+```jsx
+effects={$ => {
+  // 省份变 → 派生城市 options
+  $.linkedFieldProps('city', ['province'], async ({ province }) => ({
+    options: await fetchCity(province),
+  }));
+  // 省份变 → 清空城市（回显时不会误清）
+  $.clearOn('province', 'city', '');
+}}
+```
+
+> 对比手写 `$.onFieldValueChange('province', () => $.form.setValuesIn('city', ''))`：
+> 语义一致，但 `clearOn` 把「初始不触发」这个坑封装进去了，且一行声明多个依赖 / 多个目标。
+
+---
+
+## `$.debounce` — 联动防抖
+
+远程搜索、输入联想、按输入触发远程校验都要防抖——高频触发先折叠，只在停顿后跑一次。
+`debounce` 是纯工具（不依赖 Formily），返回的函数**跨渲染稳定**，可直接当 prop 传，
+无需 `useCallback`。
+
+### 签名
+
+```ts
+$.debounce(
+  fn: (...args) => void | Promise<void>,
+  ms: number,
+): (...args) => void       // trailing-edge：最后一次调用后 ms 才跑，用最新参数
+```
+
+### 示例：远程搜索 Select
+
+```jsx
+effects={$ => {
+  const search = $.debounce(async (kw: string) => {
+    const list = await api.searchUser(kw);
+    $.form.setFieldState('userId', s => {
+      s.componentProps = { ...s.componentProps, options: list, loading: false };
+    });
+  }, 300);
+  // 透传给 Select 的 onSearch
+  $.form.setFieldState('userId', s => {
+    s.componentProps = { ...s.componentProps, onSearch: search, loading: true };
+  });
+}}
+```
+
+连续输入 `a` → `ab` → `abc`：前两次被丢弃，只在停顿后用 `'abc'` 发一次请求。
+
+---
+
 ## `$` helper 全集
 
 | helper | 触发时机 | 典型用途 |
@@ -330,6 +400,8 @@ effects={$ => {
 | `$.onFieldValueChange` | 字段 value 变化（**初始化不跑**） | 自定义联动（设值/显隐），只关心变化 |
 | `$.onEachRowChange` | 数组行内单 key 变化 | 按行联动 |
 | `$.onEachRowMultiChange` | 数组行内多 key 任一变化 | 按行多 key 联动 |
+| `$.clearOn` | 依赖字段值变化（**初始化不跑**） | 级联清空（回显安全） |
+| `$.debounce` | 主动调用（trailing-edge） | 联动防抖（远程搜索 / 输入联想） |
 | `$.setRefState` / `$.getRefState` | 主动调用 | effect 间共享非响应状态 |
 | `$.form` | — | 原始 Formily form 实例 |
 

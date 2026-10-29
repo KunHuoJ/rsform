@@ -275,12 +275,14 @@ const phoneValidator = (v: any, rule: any, ctx: any) =>
     $.validateField('deliveryDate', ['orderDate', 'deliveryDate'], ({ orderDate, deliveryDate }) =>
       !deliveryDate || !orderDate ? '' : dayjs(deliveryDate).isAfter(dayjs(orderDate)) ? '' : '交付日期必须晚于下单日期',
     );
-    // 级联：分类 → 子分类 options（异步派生）
+    // 级联：分类 → 子分类 options（异步派生，只管 options → 回显安全）
     $.linkedFieldProps('subcategory', ['category'], async ({ category }) => {
-      if (!category) return { options: [], value: '' };
+      if (!category) return { options: [] };
       await new Promise(r => setTimeout(r, 200));
-      return { options: SUBCATEGORY[category] ?? [], value: '' };
+      return { options: SUBCATEGORY[category] ?? [] };
     });
+    // 用户切分类才清空子分类（clearOn 初始不触发，回显不会误清）
+    $.clearOn('category', 'subcategory', '');
     // 按行派生：qty/price 任一变 → 重算 total 入 form.values
     $.onEachRowMultiChange('items', ['qty', 'price'], ({ values, setFieldState }) =>
       setFieldState('total', { value: (Number(values.qty) || 0) * (Number(values.price) || 0) }),
