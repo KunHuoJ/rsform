@@ -89,6 +89,34 @@ export function useTable<RecordType extends Record<string, any>>(
         // is preserved; only structural changes re-render the body, as they
         // should.
         const itemDefault = props.itemDefaultValue;
+        const max = props.max;
+        const min = props.min ?? 0;
+        const validateBeforeAdd = props.validateBeforeAdd;
+
+        // Gate row additions before they hit the array.
+        //  - `true` (convenience): run `form.validate(`${name}.*`)` on the
+        //    existing rows; `form.validate` rejects (throws) when any validated
+        //    field is invalid, so a caught throw blocks the add. Errors already
+        //    render under each cell, so we bail silently.
+        //  - a function (escape hatch, same signature as `ArrayItems`): return
+        //    `false`/string to block, `true`/`undefined` to allow.
+        const ensureValid = async (): Promise<boolean> => {
+            if (!validateBeforeAdd) return true;
+            if (validateBeforeAdd === true) {
+                if (!form) return true;
+                try {
+                    await form.validate(`${name}.*`);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+            const result = await validateBeforeAdd(getArr(), itemDefault);
+            return result !== false && typeof result !== 'string';
+        };
+        const withinMax = (len: number) => max == null || len < max;
+        const aboveMin = (len: number) => len > min;
+
         const getArr = (): RecordType[] => {
             const v = form?.values?.[name];
             return Array.isArray(v) ? (v as RecordType[]) : [];
@@ -97,13 +125,24 @@ export function useTable<RecordType extends Record<string, any>>(
             form?.setValuesIn?.(name, next);
         };
         const actions = () => ({
-            add: (value?: RecordType) => setArr([...getArr(), value ?? itemDefault]),
-            insert: (index: number, value?: RecordType) => {
+            add: async (value?: RecordType) => {
                 const arr = getArr();
+                if (!withinMax(arr.length)) return;
+                if (!(await ensureValid())) return;
+                setArr([...arr, value ?? itemDefault]);
+            },
+            insert: async (index: number, value?: RecordType) => {
+                const arr = getArr();
+                if (!withinMax(arr.length)) return;
+                if (!(await ensureValid())) return;
                 const at = Math.max(0, Math.min(index, arr.length));
                 setArr([...arr.slice(0, at), value ?? itemDefault, ...arr.slice(at)]);
             },
-            remove: (index: number) => setArr(getArr().filter((_, k) => k !== index)),
+            remove: (index: number) => {
+                const arr = getArr();
+                if (!aboveMin(arr.length)) return;
+                setArr(arr.filter((_, k) => k !== index));
+            },
             move: (from: number, to: number) => {
                 const arr = getArr();
                 if (from < 0 || to < 0 || from >= arr.length || to >= arr.length || from === to) {
@@ -164,7 +203,7 @@ export function useTable<RecordType extends Record<string, any>>(
         // Deliberately EXCLUDE dataSource/value/length: columns must stay
         // referentially stable across edits. Fresh values are read via refs.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [propColumns, name, current, pageSize, props.itemDefaultValue]);
+    }, [propColumns, name, current, pageSize, props.itemDefaultValue, props.max, props.min, props.validateBeforeAdd]);
 
     return { dataSource, columns };
 }

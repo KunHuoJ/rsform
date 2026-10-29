@@ -33,7 +33,7 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
     props: RsfTableProps<RecordType>,
 ): React.ReactElement {
     const { dataSource, columns } = useTable(props);
-    const { pagination, rowKey, className, scroll } = props;
+    const { pagination, rowKey, className, scroll, tableProps } = props;
 
     // Default row key: the absolute index. antd passes a page-relative index
     // to rowKey(record, index); attach a synthetic __rsfIdx (absolute) to each
@@ -82,6 +82,7 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
 
     return (
         <AntdTable
+            {...tableProps}
             className={`${prefixCls}-table ${className ?? ''}`.trim()}
             dataSource={keyedDataSource as any}
             columns={columns as any}

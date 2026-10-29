@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import type { ColumnsType } from 'antd/es/table';
+import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { ControlKey } from '../controls/FormComMap';
 
 /**
@@ -115,6 +115,39 @@ export interface RsfTableProps<RecordType = any> {
     itemDefaultValue?: any;
     /** ClassName for the table wrapper. */
     className?: string;
+    /**
+     * antd `Table` props passthrough (e.g. `virtual`, `bordered`, `size`,
+     * `rowSelection`, `onChange`, `onRow`, `sticky`). rsform-owned props
+     * (`columns` / `dataSource` / `pagination` / `rowKey` / `scroll`) are set
+     * explicitly and win; everything else here is forwarded. Pass `virtual: true`
+     * with `scroll: { y }` to enable antd's built-in virtual scrolling.
+     */
+    tableProps?: Omit<
+        TableProps<RecordType>,
+        'columns' | 'dataSource' | 'pagination' | 'rowKey' | 'scroll'
+    >;
+    /**
+     * Max number of rows. Row-mutation actions (`actions.add` / `actions.insert`)
+     * are blocked once the array reaches `max`. When omitted, unlimited.
+     */
+    max?: number;
+    /**
+     * Min number of rows (default 0). `actions.remove` is blocked once the array
+     * reaches `min`.
+     */
+    min?: number;
+    /**
+     * Gate row additions before they hit the array.
+     *  - `true` (convenience): run `form.validate(\`${name}.*\`)` on the existing
+     *    rows first; if any row is invalid the add/insert is blocked (errors
+     *    already render under each cell).
+     *  - a function (escape hatch, same signature as `ArrayItems`): called with
+     *    `(values, itemDefaultValue)`; return `false`/a string to block,
+     *    `true`/`undefined` to allow.
+     */
+    validateBeforeAdd?:
+        | boolean
+        | ((values: RecordType[], itemDefaultValue: any) => boolean | string | void);
 }
 
 /** The built antd columns type rsform hands to `<Table columns>`. */

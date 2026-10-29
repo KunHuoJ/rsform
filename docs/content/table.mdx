@@ -50,12 +50,14 @@ import {TABLE_CODE, TABLE_SUMMARY_CODE} from '../snippets';
 
 | 方法 | 签名 | 说明 |
 |---|---|---|
-| `add` | `(value?) => void` | 末尾追加一行（默认 `itemDefaultValue`） |
-| `insert` | `(index, value?) => void` | 在 `index` 处插入一行（默认 `itemDefaultValue`） |
-| `remove` | `(index) => void` | 删除 `index` 行 |
+| `add` | `(value?) => Promise<void>` | 末尾追加一行（默认 `itemDefaultValue`）。受 `max`/`validateBeforeAdd` 约束（不满足则静默拒绝） |
+| `insert` | `(index, value?) => Promise<void>` | 在 `index` 处插入一行（默认 `itemDefaultValue`）。受 `max`/`validateBeforeAdd` 约束 |
+| `remove` | `(index) => void` | 删除 `index` 行。受 `min` 约束（到下限则静默拒绝） |
 | `move` | `(from, to) => void` | 把 `from` 行移到 `to` |
 | `moveUp` / `moveDown` | `(index) => void` | 上移/下移一行 |
 | `form` / `field` | — | Formily form 实例 / ArrayField 模型（读 `form.values`、调原始 mutator 等） |
+
+> `add`/`insert` 是 `async`：开了 `validateBeforeAdd` 时会先 `await form.validate(\`${name}.*\`)` 再决定是否写入。按钮里不 `await` 也没关系——校验/写入都在内部完成。
 
 ```jsx
 import { Button } from 'antd';
@@ -194,6 +196,10 @@ export function CompanyPicker({ value, onChange, companies = COMPANIES }: any) {
 | `pagination` | `false \| object` | `false` | antd 分页；默认不分页 |
 | `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key；默认用注入的 `__rsfIdx`（跨页稳定） |
 | `itemDefaultValue` | `any` | `{}` | `actions.add`/`actions.insert` 不传 value 时的默认行值 |
+| `max` | `number` | — | 行数上限；到上限后 `actions.add`/`actions.insert` 静默拒绝 |
+| `min` | `number` | `0` | 行数下限；到下限后 `actions.remove` 静默拒绝 |
+| `validateBeforeAdd` | `boolean \| ((values, itemDefault) => boolean \| string \| void)` | `false` | `actions.add`/`actions.insert` 前的门禁。`true`：先 `form.validate(\`${name}.*\`)` 校验已有行，有错则拒绝（错误已在格下显示）。传函数则同 `ArrayItems` 签名自定义门禁：返 `false`/字符串拒绝、`true`/`undefined` 放行 |
+| `tableProps` | `object` | — | antd `Table` props 透传（`virtual`/`bordered`/`size`/`rowSelection`/`onChange`/`onRow`/`sticky`…）。rsform 接管的 `columns`/`dataSource`/`pagination`/`rowKey`/`scroll` 优先；传 `virtual: true` + `scroll: { y }` 开 antd 虚拟滚动 |
 
 ### 校验
 

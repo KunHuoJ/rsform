@@ -427,6 +427,190 @@ describe('Table (Phase 5)', () => {
         expect(formRef.current.values.rows[0].a).toBe('edited');
     });
 
+    it('max blocks actions.add / actions.insert once the cap is reached', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form initialValues={{ rows: [{ a: 'x' }] }} formRef={formRef}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    max={2}
+                    itemDefaultValue={{ a: '' }}
+                    columns={[
+                        { title: 'A', dataIndex: 'a', control: 'input' },
+                        {
+                            title: '操作',
+                            dataIndex: '__ops',
+                            editable: false,
+                            render: (_v, _r, _index, actions) => (
+                                <>
+                                    <button onClick={() => actions.add()}>添加</button>
+                                    <button onClick={() => actions.insert(0)}>插入</button>
+                                </>
+                            ),
+                        },
+                    ]}
+                />
+            </Form>,
+        );
+        await flush();
+        expect(screen.getAllByRole('textbox')).toHaveLength(1);
+
+        // add → 2 rows (reaches max).
+        fireEvent.click(screen.getAllByText('添加')[0]);
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(2);
+        expect(screen.getAllByRole('textbox')).toHaveLength(2);
+
+        // add again at max → blocked (still 2). There are now 2 add buttons
+        // (the action column renders per row), so index into them.
+        fireEvent.click(screen.getAllByText('添加')[0]);
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(2);
+
+        // insert at max → blocked (still 2).
+        fireEvent.click(screen.getAllByText('插入')[0]);
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(2);
+    });
+
+    it('min blocks actions.remove once the floor is reached', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form initialValues={{ rows: [{ a: 'x' }, { a: 'y' }] }} formRef={formRef}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    min={1}
+                    columns={[
+                        { title: 'A', dataIndex: 'a', control: 'input' },
+                        {
+                            title: '操作',
+                            dataIndex: '__ops',
+                            editable: false,
+                            render: (_v, _r, index, actions) => (
+                                <button onClick={() => actions.remove(index)}>删除</button>
+                            ),
+                        },
+                    ]}
+                />
+            </Form>,
+        );
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(2);
+
+        // remove one → 1 row (reaches min).
+        fireEvent.click(screen.getAllByText('删除')[0]);
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(1);
+
+        // remove again at min → blocked (still 1).
+        fireEvent.click(screen.getAllByText('删除')[0]);
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(1);
+    });
+
+    it('validateBeforeAdd blocks add when an existing row is invalid', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
+        render(
+            <Form initialValues={{ rows: [{ a: '' }] }} formRef={formRef}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    validateBeforeAdd
+                    itemDefaultValue={{ a: '' }}
+                    columns={[
+                        {
+                            title: 'A',
+                            dataIndex: 'a',
+                            control: 'input',
+                            required: true,
+                        },
+                        {
+                            title: '操作',
+                            dataIndex: '__ops',
+                            editable: false,
+                            render: (_v, _r, _index, actions) => (
+                                <button onClick={() => actions.add()}>添加</button>
+                            ),
+                        },
+                    ]}
+                />
+            </Form>,
+        );
+        await flush();
+        // The single existing row's `a` is empty → required fails on validate.
+        // validateBeforeAdd runs form.validate(`${name}.*`) before add; since it
+        // rejects, add is blocked (still 1 row).
+        fireEvent.click(screen.getByText('添加'));
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(1);
+
+        // Fill the cell, so validation passes; now add proceeds.
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ok' } });
+        await flush();
+        fireEvent.click(screen.getByText('添加'));
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(2);
+    });
+
+    it('validateBeforeAdd callback blocks (false) or allows (true) explicitly', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
+        const gate = vi.fn(() => false);
+        render(
+            <Form initialValues={{ rows: [{ a: 'x' }] }} formRef={formRef}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    validateBeforeAdd={gate}
+                    itemDefaultValue={{ a: '' }}
+                    columns={[
+                        { title: 'A', dataIndex: 'a', control: 'input' },
+                        {
+                            title: '操作',
+                            dataIndex: '__ops',
+                            editable: false,
+                            render: (_v, _r, _index, actions) => (
+                                <button onClick={() => actions.add()}>添加</button>
+                            ),
+                        },
+                    ]}
+                />
+            </Form>,
+        );
+        await flush();
+        // gate returns false → add blocked; gate called with current values.
+        fireEvent.click(screen.getAllByText('添加')[0]);
+        await flush();
+        expect(gate).toHaveBeenLastCalledWith([{ a: 'x' }], { a: '' });
+        expect(formRef.current.values.rows).toHaveLength(1);
+
+        // flip gate to allow → add proceeds.
+        gate.mockReturnValue(true);
+        fireEvent.click(screen.getAllByText('添加')[0]);
+        await flush();
+        expect(formRef.current.values.rows).toHaveLength(2);
+    });
+
+    it('tableProps is forwarded to antd Table (bordered/size surface in DOM)', async () => {
+        const formRef: React.MutableRefObject<any> = { current: null };
+        const { container } = render(
+            <Form initialValues={{ rows: [{ a: 'x' }] }} formRef={formRef}>
+                <Table
+                    name="rows"
+                    pagination={false}
+                    tableProps={{ bordered: true, size: 'small' }}
+                    columns={[{ title: 'A', dataIndex: 'a', control: 'input' }]}
+                />
+            </Form>,
+        );
+        await flush();
+        // antd applies `bordered` as a class on the `.ant-table` wrapper (and
+        // `size: 'small'` as `ant-table-small`), not on the raw <table> element.
+        expect(container.querySelector('.ant-table-bordered')).not.toBeNull();
+        expect(container.querySelector('.ant-table-small')).not.toBeNull();
+    });
+
     it('noop to silence unused-import lints', () => {
         expect(vi.fn()).toBeDefined();
         void Field;

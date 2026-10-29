@@ -176,6 +176,10 @@ import {Form} from 'rsform';
 | `pagination` | `false \| object` | `false` | antd 分页；默认不分页。⚠️ 用分页时必须**受控**传 `current`/`pageSize`——非受控分页下 `useTable` 拿不到当前页，跨页单元格路径会错位 |
 | `scroll` | `object` | 见说明 | antd `scroll`。省略时 rsform 按列 `width` 求和算 `scroll.x`（让每列 `width` 严格生效，固定布局）；无列声明 width 时回退 `'max-content'`。传自定义则覆盖 |
 | `itemDefaultValue` | `any` | `{}` | `actions.add`/`actions.insert` 不传 value 时的默认行值 |
+| `max` | `number` | — | 行数上限；到上限后 `actions.add`/`actions.insert` 静默拒绝 |
+| `min` | `number` | `0` | 行数下限；到下限后 `actions.remove` 静默拒绝 |
+| `validateBeforeAdd` | `boolean \| (values, itemDefault) => boolean \| string \| void` | `false` | `add`/`insert` 前门禁。`true`：先 `form.validate(\`${name}.*\`)` 校验已有行，有错拒绝。传函数同 `ArrayItems` 签名自定义门禁 |
+| `tableProps` | `object` | — | antd `Table` props 透传（`virtual`/`bordered`/`size`/`rowSelection`/`onChange`/`onRow`/`sticky`…）。rsform 接管的 `columns`/`dataSource`/`pagination`/`rowKey`/`scroll` 优先 |
 | `className` | `string` | — | 表格包装类名 |
 
 #### RsfTableColumn
