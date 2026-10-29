@@ -63,6 +63,7 @@ import {Form} from 'rsform';
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
 | `onSubmit` | `(values) => void \| Promise` | Form 的 onSubmit | **覆盖** Form 的 onSubmit（仅本次点击）：传了它，`<Form onSubmit>` 就**不会**触发；不传则走 Form 的。校验失败时两者都不跑 |
+| `preventDuplicate` | `boolean` | `false` | 防重复提交。① 同步重入锁——同一 tick 内连点只跑一次 `form.submit()`；② 成功提交后按钮锁定（一次性），直到 `form.reset()` 才解锁，避免同一表单提交两次 |
 | `children` | `ReactNode` | — | 按钮文字 |
 | 其余 | — | — | 透传 antd `Button` 的所有 props（除 `onClick`/`htmlType`/`loading`） |
 
@@ -86,6 +87,29 @@ render-prop 订阅表单值。底层 `observer` + `form.values`/`form.getValuesI
 | `children` | `(data) => ReactNode` | — | render-prop：接收订阅到的数据并返回节点。`name` 省略时 `data` 是整个 `form.values`；有 `name` 时 `data` 是该字段值 |
 
 > `children` 是纯渲染函数，不要在里面写副作用（写状态/发请求）；需要副作用用 `effects` 里的 `$.onFieldValueChange`。
+
+---
+
+### useFormDraft
+
+草稿自动保存 / 恢复 hook。在 `<Form>` 内部调用，给定业务语义稳定的 key，表单每次值变化防抖写进 `localStorage`，提交成功后草稿自动清除，重新进入发现历史草稿时 `hasDraft` 为 `true` 供渲染恢复横条。
+
+```tsx
+import {useFormDraft} from 'rsform';
+
+const draft = useFormDraft('order-edit', {debounceMs: 400});
+// draft.hasDraft / draft.restore() / draft.dismiss() / draft.clear()
+```
+
+| 参数 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `key` | `string` | — | 草稿存储 key（业务语义命名，同一种表单复用同一 key） |
+| `options.debounceMs` | `number` | `500` | 防抖保存间隔 |
+| `options.storage` | `Storage` | `window.localStorage` | 存储后端；SSR/测试可传 mock。`window` 不存在时 hook 降级为 no-op |
+| `options.clearOnSubmit` | `boolean` | `true` | 提交成功（`ON_FORM_SUBMIT_SUCCESS`）后自动清草稿 |
+| `options.maxAge` | `number` | — | 草稿有效期（ms）；过期草稿读取时即被清除 |
+
+返回 `{ hasDraft, draft, restore(), dismiss(), clear() }`。详见「草稿恢复」页。
 
 ---
 

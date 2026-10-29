@@ -98,6 +98,70 @@ export const CONSUMER_CODE = `import { Form } from 'rsform';
   <Form.Consumer name="name">{name => <span>{name}</span>}</Form.Consumer>
 </Form>`;
 
+export const REMOTE_SEARCH_CODE = `import { Form } from 'rsform';
+
+// 模拟远程接口
+function searchUser(kw: string): Promise<Option[]> {
+  return fetch('/api/users?q=' + kw).then(r => r.json());
+}
+
+
+<Form initialValues={{ userId: '' }} effects={$ => {
+  // 防抖搜索：停顿 300ms 后用最新关键词发请求，把结果灌进 options
+  const search = $.debounce(async (kw: string) => {
+    const options = await searchUser(kw);
+    $.form.setFieldState('userId', s => {
+      s.componentProps = { ...s.componentProps, options, loading: false };
+    });
+  }, 300);
+  // 透传给 Select：onSearch 触发搜索，关掉本地过滤
+  $.form.setFieldState('userId', s => {
+    s.componentProps = { showSearch: true, filterOption: false, onSearch: search, options: [] };
+  });
+  // 进入页面先拉一次全量
+  search('');
+}}>
+  <Form.Field name="userId" title="用户" required>
+    <Form.Select placeholder="输入姓名或拼音搜索" style={{ width: 280 }} />
+  </Form.Field>
+</Form>`;
+
+export const DRAFT_CODE = `import * as React from 'react';
+import { Form, useFormDraft } from 'rsform';
+
+function DraftBody() {
+  // key 用业务语义命名——同一种表单复用同一 key，刷新/重开都能恢复
+  const draft = useFormDraft('order-edit', { debounceMs: 400 });
+
+  return (
+    <>
+      {draft.hasDraft && (
+        <div className="draft-banner">
+          发现未提交的草稿，是否恢复？
+          <button onClick={draft.restore}>恢复</button>
+          <button onClick={draft.dismiss}>忽略</button>
+        </div>
+      )}
+      <Form.Field name="name" title="姓名" required><Form.Input /></Form.Field>
+      <Form.Field name="email" title="邮箱"><Form.Input /></Form.Field>
+      <Form.Submit preventDuplicate>提交</Form.Submit>
+    </>
+  );
+}
+
+// 每次值变化防抖写入 localStorage；提交成功后草稿自动清除；
+// 重新进入发现历史草稿时，draft.hasDraft=true 弹恢复横条。
+export function DraftDemo() {
+  return (
+    <Form
+      initialValues={{ name: '', email: '' }}
+      onSubmit={async values => console.log('submitted', values)}
+    >
+      <DraftBody />
+    </Form>
+  );
+}`;
+
 export const TABLE_PERF_CODE = `import * as React from 'react';
 import { Form, type RsfTableColumn } from 'rsform';
 

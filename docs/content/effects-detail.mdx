@@ -1,7 +1,8 @@
 import {Demo} from '../Demo';
 import {EffectsDemo} from '../demos/EffectsDemo';
 import {CascadeDemo} from '../demos/CascadeDemo';
-import {EFFECTS_CODE, CASCADE_CODE} from '../snippets';
+import {RemoteSearchDemo} from '../demos/RemoteSearchDemo';
+import {EFFECTS_CODE, CASCADE_CODE, REMOTE_SEARCH_CODE} from '../snippets';
 
 ## Effects 详解
 
@@ -388,6 +389,40 @@ effects={$ => {
 
 连续输入 `a` → `ab` → `abc`：前两次被丢弃，只在停顿后用 `'abc'` 发一次请求。
 
+### 示例：远程搜索 Select
+
+<Demo code={REMOTE_SEARCH_CODE} title="远程搜索（防抖 + onSearch）">
+  <RemoteSearchDemo />
+</Demo>
+
+输入姓名/拼音搜索：每次输入触发 `onSearch`，`$.debounce` 折叠高频输入，停顿 300ms 后才发一次请求，结果灌进 `options`、关掉 `loading`。整段没有 `useState` / `useEffect` / 手动清 timer——防抖与状态全在 `effects` 里声明。
+
+---
+
+## `$.setVisible` / `$.setRequired` / `$.setEditable` — 字段状态语义糖
+
+`form.setFieldState(name, s => { s.x = v })` 写多了啰嗦。三个语义糖直接对应最常改的字段状态键：
+
+```ts
+$.setVisible(name: string, visible: boolean): void;     // s.visible = v
+$.setRequired(name: string, required: boolean): void;   // s.required = v
+$.setEditable(name: string, editable: boolean): void;   // s.editable = v
+```
+
+### 示例
+
+```jsx
+effects={$ => {
+  // 勾选「启用」才显示 detail 字段 + 设必填
+  $.onFieldValueChange('enabled', (field) => {
+    $.setVisible('detail', field.value === true);
+    $.setRequired('detail', field.value === true);
+  });
+}}
+```
+
+比 `$.form.setFieldState('detail', s => { s.visible = ...; s.required = ...; })` 更直白，对不熟 Formily 的团队成员也一目了然。
+
 ---
 
 ## `$` helper 全集
@@ -402,6 +437,7 @@ effects={$ => {
 | `$.onEachRowMultiChange` | 数组行内多 key 任一变化 | 按行多 key 联动 |
 | `$.clearOn` | 依赖字段值变化（**初始化不跑**） | 级联清空（回显安全） |
 | `$.debounce` | 主动调用（trailing-edge） | 联动防抖（远程搜索 / 输入联想） |
+| `$.setVisible` / `$.setRequired` / `$.setEditable` | 主动调用 | 改字段 visible/required/editable（`setFieldState` 语义糖） |
 | `$.setRefState` / `$.getRefState` | 主动调用 | effect 间共享非响应状态 |
 | `$.form` | — | 原始 Formily form 实例 |
 

@@ -418,4 +418,40 @@ describe('effects: $ bundle + sugar helpers', () => {
         // Only the latest args invoked, exactly once.
         expect(calls).toEqual(['abc']);
     });
+
+    it('$.setVisible / $.setRequired / $.setEditable set the named field state', () => {
+        const formRef = useFormRef();
+        render(
+            <Form
+                initialValues={{ enabled: false, detail: '' }}
+                effects={($) => {
+                    $.onFieldValueChange('enabled', (field: any) => {
+                        const on = field.value === true;
+                        $.setVisible('detail', on);
+                        $.setRequired('detail', on);
+                        $.setEditable('detail', on);
+                    });
+                }}
+                formRef={formRef}
+            >
+                <Field name="enabled">
+                    <Input data-testid="enabled" />
+                </Field>
+                <Field name="detail">
+                    <Input data-testid="detail" />
+                </Field>
+            </Form>,
+        );
+        const detail = () => formRef.current.query('detail').take();
+        // flip enabled on → all three flip on
+        formRef.current.setValuesIn('enabled', true);
+        expect(detail().visible).toBe(true);
+        expect(detail().required).toBe(true);
+        expect(detail().editable).toBe(true);
+        // flip enabled off → all three flip off
+        formRef.current.setValuesIn('enabled', false);
+        expect(detail().visible).toBe(false);
+        expect(detail().required).toBe(false);
+        expect(detail().editable).toBe(false);
+    });
 });

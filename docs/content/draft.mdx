@@ -1,0 +1,111 @@
+import {Demo} from '../Demo';
+import {DraftDemo} from '../demos/DraftDemo';
+import {DRAFT_CODE} from '../snippets';
+
+## useFormDraft — 草稿自动保存 / 恢复
+
+长表单（订单、录入、审批）里，用户填到一半误关页面、断网、甚至手滑刷新，半天录入全丢。
+`useFormDraft` 把"防丢失"这层兜底做成一行声明：表单每次值变化都防抖写进 `localStorage`，
+提交成功后草稿自动清除；重新进入页面发现历史草稿时，`hasDraft` 为 `true`，让你弹一个
+「恢复 / 忽略」横条。
+
+```tsx
+import {Form, useFormDraft} from 'rsform';
+```
+
+### 用法
+
+在 `<Form>` 内部调用（它内部读 `useForm()`，所以必须在表单上下文里），传一个**业务语义稳定**
+的 key——同一种表单复用同一个 key，刷新、重开页面都能恢复。
+
+<Demo code={DRAFT_CODE} title="草稿自动保存 / 恢复">
+  <DraftDemo />
+</Demo>
+
+> 想体验恢复：在表单里填几个字段 → 刷新本页 → 顶部出现「发现未提交的草稿」横条，
+> 点「恢复」即可找回。点「提交」成功后草稿会从 `localStorage` 清除。
+
+### 返回值
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `hasDraft` | `boolean` | 存储里存在历史草稿（未恢复/未忽略）→ 渲染恢复横条 |
+| `draft` | `Record \| undefined` | 草稿快照；恢复/忽略后变 `undefined` |
+| `restore()` | `() => void` | 把草稿 `deepMerge` 进当前表单值，并隐藏横条 |
+| `dismiss()` | `() => void` | 仅隐藏横条，草稿仍留在存储里 |
+| `clear()` | `() => void` | 主动删除存储里的草稿 |
+
+### 参数
+
+```ts
+useFormDraft(key: string, options?: {
+  debounceMs?: number;        // 防抖保存间隔，默认 500
+  storage?: Storage;          // 默认 window.localStorage；SSR/测试可传 mock
+  clearOnSubmit?: boolean;     // 提交成功后自动清草稿，默认 true
+  maxAge?: number;            // 草稿有效期（ms）；过期草稿读取时即被清除
+})
+```
+
+### 设计要点
+
+- **回显安全**：草稿的恢复用 `form.setValues(draft, 'deepMerge')`，不重建表单、不触发
+  `onFieldValueChange`（那是 `createReaction` 语义，仅在值**变化**时触发）。已有 effects 不会
+  因此误清空联动字段——比如某行用 `$.clearOn` 清空子分类，恢复草稿时不会触发它。
+- **提交即清**：默认订阅 `ON_FORM_SUBMIT_SUCCESS`，提交成功后草稿从存储清除。业务里通常
+  "提交完跳走"，这保证下一次进入是干净状态，不会误恢复已提交的旧草稿。
+- **防抖写盘**：复用 `$.debounce`，高频输入折叠成一次写盘；保存的是 `{v: values, t: ts}`
+  信封，`maxAge` 据此判定过期。
+- **SSR 安全**：`window` 不存在时 hook 自动降级为 no-op（不读不写），不在服务端炸。
+- **存储隔离**：key 完全由业务控制。多实例表单各用各的 key 即可互不干扰；想跨用户隔离
+  可拼用户 id（`'order-edit-' + userId`）。
+
+### 与 effects 的关系
+
+`useFormDraft` 不走 `effects`——它是 React hook，在组件里订阅表单生命周期事件
+（`ON_FORM_VALUES_CHANGE` / `ON_FORM_SUBMIT_SUCCESS`），不进 Formily 的 effects 注册流。
+所以它和 `effects` 里的 `$.clearOn` / `$.debounce` / `$.linkedFieldProps` 完全正交，可叠加使用。
+
+### 一个完整业务片段
+
+```tsx
+import {Form, useFormDraft} from 'rsform';
+
+function OrderForm() {
+  return (
+    <Form
+      initialValues={{orderName: '', contacts: [], items: []}}
+      effects={$ => {
+        // 联动 / 跨字段校验 / 行派生照常写
+        $.linkedFieldProps('subcategory', ['category'], async ({category}) => ({/* ... */}));
+        $.clearOn('category', 'subcategory', '');
+        $.onEachRowMultiChange('items', ['qty', 'price'], ({values, setFieldState}) =>
+          setFieldState('total', {value: (Number(values.qty) || 0) * (Number(values.price) || 0)}),
+        );
+      }}
+      onSubmit={async values => {
+        await api.submitOrder(values);
+      }}
+    >
+      <DraftableBody />
+    </Form>
+  );
+}
+
+function DraftableBody() {
+  const draft = useFormDraft('order-edit', {debounceMs: 400});
+  return (
+    <>
+      {draft.hasDraft && (
+        <div className="draft-banner">
+          发现未提交的草稿，是否恢复？
+          <button onClick={draft.restore}>恢复</button>
+          <button onClick={draft.dismiss}>忽略</button>
+        </div>
+      )}
+      <Form.Field name="orderName" title="订单名称" required><Form.Input /></Form.Field>
+      {/* ... contacts / items ... */}
+      <Form.Submit preventDuplicate>提交订单</Form.Submit>
+    </>
+  );
+}
+```

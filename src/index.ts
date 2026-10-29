@@ -112,6 +112,8 @@ export type { FormProps } from './form/Form';
 export type { FormConsumerProps } from './form/FormNamespace';
 export type { SubmitProps } from './form/Submit';
 export { Submit } from './form/Submit';
+export type { UseFormDraftOptions, UseFormDraftResult } from './form/useFormDraft';
+export { useFormDraft } from './form/useFormDraft';
 export type { CellBridgeProps } from './table/CellBridge';
 export { CellBridge } from './table/CellBridge';
 export { Table } from './table/Table';
