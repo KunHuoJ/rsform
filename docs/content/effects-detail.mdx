@@ -10,6 +10,28 @@ import {EFFECTS_CODE, CASCADE_CODE, REMOTE_SEARCH_CODE} from '../snippets';
 rsform 在表单创建时把它注入一个 `$` helper 包并执行一次——**注册**各类响应式监听。
 之后字段值变化时，对应的监听自动触发，无需手动订阅、无需在组件里写 `useEffect`。
 
+> 关键心智模型：effects 回调是**注册时机**，不是**执行时机**。回调里写的每条
+> 语句都是「当 X 发生时，做 Y」的声明；具体什么时候真跑，取决于 X 什么时候发生。
+
+### 📖 目录
+
+按类别跳转，每节顶部都有 **TL;DR** 一句话说清「这 helper 干什么、什么时候伸手」：
+
+- **[工作原理](#工作原理)** — `$` 包含什么、注册时机 vs 执行时机
+- **联动类**
+  - [`onFieldReact`](#onfieldreact--初始化--变化都执行的响应式联动) — 初始化 + 变化都跑
+  - [`onFieldValueChange`](#onfieldvaluechange--字段值变化监听) — 只在 value 变化跑（初始化不跑）
+  - [`linkedFieldProps`](#linkedfieldprops--异步派生字段状态props) — 派生 options / 显隐
+- **校验类**
+  - [`validateField`](#validatefield--跨字段响应式校验) — 跨字段校验
+- **按行类**
+  - [`onEachRowChange`](#oneachrowchange--数组按行单-key-联动) / [`onEachRowMultiChange`](#oneachrowmultichange--数组按行多-key-联动)
+- **工具类**
+  - [`debounce`](#debounce--联动防抖) · [`clearOn`](#clearon--级联清空回显安全)
+  - [`setRefState`/`getRefState`](#setrefstate--getrefstate--非响应式草稿区)
+  - [`setVisible`/`setRequired`/`setEditable`](#setvisible--setrequired--seteditable--字段状态语义糖)
+- **速查**：[`$ helper 全集`](#-helper-全集) 表
+
 ### 工作原理
 
 ```jsx
@@ -38,12 +60,11 @@ rsform 在表单创建时把它注入一个 `$` helper 包并执行一次——*
    }}
    ```
 
-> 关键心智模型：effects 回调是**注册时机**，不是**执行时机**。回调里写的每条
-> 语句都是「当 X 发生时，做 Y」的声明；具体什么时候真跑，取决于 X 什么时候发生。
-
 ---
 
 ## `$.validateField` — 跨字段响应式校验
+
+> TL;DR: `triggers` 里任一字段值变化就重跑 `cb`,返回非空串为错误信息、空串/null 为通过。适合「密码 vs 确认密码」这类一个字段校验规则依赖另一个字段的场景。注册时也立即跑一次(初始校验)。
 
 最常见的联动校验：A 字段的校验规则依赖 B 字段的值。
 
@@ -84,6 +105,8 @@ $.validateField(
 ---
 
 ## `$.linkedFieldProps` — 异步派生字段状态/props
+
+> TL;DR: 一个字段的 props(最常见是 Select 的 `options`)或状态(显隐/必填/标题)依赖其他字段值时用。`compute` 返回对象按 key 自动分流到字段 state 或 `componentProps`。支持异步(发请求拉 options),内置防 stale。
 
 当一个字段的 props（最典型是 Select 的 `options`）或状态（显隐、标题）依赖其他字段值时用。
 
@@ -145,6 +168,8 @@ effects={$ => {
 
 ## `$.onFieldReact` — 初始化 + 变化都执行的响应式联动
 
+> TL;DR: 字段 init 时立即跑一次 `cb`,之后字段任一 observable(value/visible/...)变化再跑。适合「一个字段值驱动另一个字段显隐/props,且初始值也要生效」的场景。要初始化也生效用它;只要变化触发用 `onFieldValueChange`。
+
 Formily v2 原生 hook，rsform 挂在 `$` 上。底层是 `onFieldInit` + `autorun`——字段 init
 时 `autorun` **立即跑一次** cb，之后字段任一 observable（value/visible/display/…）变化再跑。
 **这是「初始化 + 变化都执行」的联动**，适合「一个字段值驱动另一个字段显隐/props，且初始值也要生效」。
@@ -187,9 +212,29 @@ effects={$ => {
 
 ## `$.onFieldValueChange` — 字段值变化监听
 
+> TL;DR: 字段 **value 变化时**才跑 `cb`,**初始化不跑**——这是它的核心特征(回显安全:mount 时不会误触发联动)。适合「只关心用户改了值,初始化不要动」的自定义联动(设值/改显隐)。要初始化也生效用 `onFieldReact`。
+
 Formily v2 原生 hook，rsform 直接透传。比糖 helper 更底层，适合自定义联动逻辑
-（设置其他字段值、改字段可见性等）。**初始化不执行**——只在字段 value 变化时触发；
-要初始化也跑用 [`$.onFieldReact`](#onfieldreact--初始化--变化都执行的响应式联动)。
+（设置其他字段值、改字段可见性等）。
+
+### 签名
+
+```ts
+$.onFieldValueChange(
+  pattern: string,
+  cb: (field: DataField, form: Form) => void,
+): void
+```
+
+### 触发时机
+
+| 时机 | 是否触发 |
+|---|---|
+| 字段 init / mount | ❌ 不跑(回显安全) |
+| 字段 value 变化 | ✅ 跑 |
+| 字段 visible/display 变化 | ❌ 不跑(只追踪 value) |
+
+「初始化不触发」是它的核心特征——回显场景(从后端拉初始值填充表单)下,mount 时不会误触发联动清空/重算。这也正是 `$.clearOn` 选它作底层的原因。
 
 ```jsx
 effects={$ => {
@@ -205,6 +250,8 @@ effects={$ => {
 ---
 
 ## `$.onEachRowChange` — 数组按行单 key 联动
+
+> TL;DR: 数组字段(Table / ArrayItems)每行的某个 key 变化时,基于该行其他 key 做联动。`pre` 是数组字段名,`key` 是监听的 key。`setFieldState(key, {value})` 派生值进 `form.values` 叶子(只读派生列也能提交)。多 key 用 `onEachRowMultiChange`。
 
 当数组字段（Table / ArrayItems）里**每一行的某个 key 变化时**，基于该行其他 key
 做联动。`pre` 是数组字段名，`key` 是监听的 key。
@@ -265,6 +312,8 @@ setFieldState('discount', { visible: hasDiscount, required: hasDiscount }); // �
 
 ## `$.onEachRowMultiChange` — 数组按行多 key 联动
 
+> TL;DR: `onEachRowChange` 的多 key 版本——监听一行里多个 key,任一变化触发,`cb` 拿到所有监听 key 的值。比写多个 `onEachRowChange` 省,一次注册多 key 任一变化都触发。
+
 `onEachRowChange` 的多 key 版本：监听一行里多个 key，任一变化触发，cb 拿到所有监听
 key 的值，并知道是哪个 key 触发的。
 
@@ -303,8 +352,16 @@ effects={$ => {
 
 ## `$.setRefState` / `$.getRefState` — 非响应式草稿区
 
-在 effect 间共享状态，但**不触发**任何重渲染（区别于 form 字段值）。基于 immer，
-传函数即草稿更新。
+> TL;DR: effect 间共享状态但**不触发任何重渲染**(区别于 form 字段值——改字段值会引发响应式更新)。基于 immer,传函数即草稿更新。适合「记录上一次值做去抖/去重判断」这类不需要 UI 反应的内部记账。
+
+### 签名
+
+```ts
+$.setRefState(key: string, value: any | (draft: any) => void): void;
+$.getRefState(key: string): any;
+```
+
+`setRefState` 传值直接替换,传函数则用 immer 草稿式更新。读写**不进响应式追踪**,不会触发任何字段/组件重渲染——这是它和 `form.setValuesIn` 的本质区别(后者改值会触发监听该叶子的重渲染)。
 
 ```jsx
 effects={$ => {
@@ -322,6 +379,8 @@ effects={$ => {
 ---
 
 ## `$.clearOn` — 级联清空（回显安全）
+
+> TL;DR: 依赖字段变化时清空目标字段。底层是 `onFieldValueChange`,**初始化不触发**——回显(从后端拉值填充)时不会误清空已回显的值。一行声明多依赖 → 多目标清空,省去手写 `onFieldValueChange` + `setValuesIn` 样板。
 
 级联清空是最高频组合操作：选了省份 → 清空城市，切了分类 → 清空子分类。
 `clearOn` 把它一行化，且**初始 / 回显不触发**（底层是 `onFieldValueChange`，
@@ -356,6 +415,8 @@ effects={$ => {
 ---
 
 ## `$.debounce` — 联动防抖
+
+> TL;DR: 高频触发先折叠,只在停顿后跑一次(用最新参数),trailing-edge。纯工具(不依赖 Formily),返回函数**跨渲染稳定**,可直接当 prop 传,无需 `useCallback`。用于远程搜索 / 输入联想 / 按输入触发远程校验。
 
 远程搜索、输入联想、按输入触发远程校验都要防抖——高频触发先折叠，只在停顿后跑一次。
 `debounce` 是纯工具（不依赖 Formily），返回的函数**跨渲染稳定**，可直接当 prop 传，
@@ -401,7 +462,7 @@ effects={$ => {
 
 ## `$.setVisible` / `$.setRequired` / `$.setEditable` — 字段状态语义糖
 
-`form.setFieldState(name, s => { s.x = v })` 写多了啰嗦。三个语义糖直接对应最常改的字段状态键：
+> TL;DR: `form.setFieldState(name, s => { s.x = v })` 写多了啰嗦,这三个糖分别直接对应最常改的字段状态键 `visible` / `required` / `editable`。**何时用糖**:只改单个状态键、想写得直白。**何时用 `setFieldState`**:一次改多个键(`{visible, required, title}`)或改非这三个的键(`title`/`dataSource`/`rules`)。
 
 ```ts
 $.setVisible(name: string, visible: boolean): void;     // s.visible = v

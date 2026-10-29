@@ -13,10 +13,6 @@ import {CONSUMER_CODE} from '../snippets';
 
 `name` 走 `Form.Field` 同一套相对路径规则（`.foo` / `..foo` 在 `Form.Field` 内解析到当前行），所以放在数组/表格行内也能用。
 
-### 为什么不直接读 `form.values`
-
-直接 `const values = form.values` 拿到的是快照，字段变化时**不会**触发组件重渲染。包在 `observer` 里读 `form.values` 才响应式——而 `Form.Consumer` 就是把这层 `observer` + 叶子订阅封装成一个声明式组件，丢进 JSX 即可，不用自己写 `useForm()` + `observer`。
-
 <Demo code={CONSUMER_CODE} title="订阅表单值">
   <ConsumerDemo />
 </Demo>
@@ -38,9 +34,11 @@ import {CONSUMER_CODE} from '../snippets';
 
 一句话：**只读展示用 Consumer，写值联动用 effects**。
 
-### 不用 Consumer 怎么实现同样的效果
+### 为什么需要 `observer` + 等价实现
 
-`Form.Consumer` 底层就是 `observer` + 读 `form.values`/`form.getValuesIn`。不用它，等价写法是手动 `useForm` + `observer` 包一层——同样能响应式，只是样板多了：
+直接 `const values = form.values` 拿到的是快照，字段变化时**不会**触发组件重渲染——必须
+包在 `observer` 里读才响应式。`Form.Consumer` 就是把这层 `observer` + 叶子订阅封装成声明式
+组件。不用它，等价写法是手动 `useForm` + `observer` 包一层——同样响应式，只是样板多了：
 
 ```jsx
 import { useForm } from '@formily/react';
@@ -58,11 +56,9 @@ const FieldValue = observer(function FieldValue({ name, children }) {
   // getValuesIn 在 observer 内读，Formily 只追踪这个叶子
   return <>{children(form.getValuesIn(name))}</>;
 });
-
-// 用法与 Form.Consumer 完全等价
-<WholeValues>{values => <pre>{JSON.stringify(values)}</pre>}</WholeValues>
-<FieldValue name="name">{name => <span>{name}</span>}</FieldValue>
 ```
 
-关键点：**必须包在 `observer` 里读**，否则拿到的是快照、字段变化不重渲染。`Form.Consumer` 只是把这层样板封成了一个声明式组件——少写 `useForm` + `observer` + 函数定义，丢进 JSX 即用。所以你能自己写出来，`Form.Consumer` 只是省事，不是魔法。
+关键点：**必须包在 `observer` 里读**，否则拿到的是快照、字段变化不重渲染。`Form.Consumer`
+只是把这层样板封成了声明式组件——少写 `useForm` + `observer` + 函数定义。所以你能自己写
+出来，它不是魔法，只是省事。
 

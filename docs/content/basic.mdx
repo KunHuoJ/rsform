@@ -11,10 +11,62 @@ import {BASIC_CODE} from '../snippets';
   <BasicFormDemo />
 </Demo>
 
-### 字段属性
+### Form 容器
 
-- `name`：字段路径，支持相对路径（`.foo` 在 ArrayItems 行内）。
+`Form` 做三件事：内部 `createForm` 建表单实例、`FormProvider` 注入上下文、再包一层
+空 `preName` 的 `FieldContext.Provider` 让相对路径 Field 能解析。你只需把字段塞进去。
+
+高频 props（完整参考见 [API](#api-参考)）：
+
+| 属性 | 类型 | 说明 |
+|---|---|---|
+| `initialValues` | `Record` | 初始值（同步） |
+| `asyncInitialValues` | `() => Promise<Record>` | 异步初始值；表单等其 resolve 后挂载，loading 期间渲染占位 |
+| `effects` | `EffectFn \| EffectFn[]` | 联动逻辑；数组按序扇出。见 [Effects 详解](#effects-详解) |
+| `onSubmit` | `(values) => void \| Promise` | 提交回调。**校验通过后才执行** |
+| `formRef` | `MutableRefObject` | 拿到 form 实例（命令式：`formRef.current.submit()` / `.reset()` / `.values`） |
+| `validateFailed` | `'scroll' \| (field) => void` | 校验失败处理；`'scroll'` 滚到首个错误。不传不处理 |
+
+### 提交流程
+
+点击 `Form.Submit` → 跑整表校验 → **通过才执行 `onSubmit(values)`**；校验失败时
+`onSubmit` 不跑、表单不会提交脏数据，错误显示在对应字段下方：
+
+```
+点击 Submit → 整表校验 ──通过──→ onSubmit(values)
+                     └─失败──→ 拦截 onSubmit，错误显示在字段下
+```
+
+`onSubmit` 拿到的 `values` 已是普通对象（库内 `toJS` 转过），可直接 `JSON.stringify` /
+发请求，不必再转。
+
+### Form.Field 核心机制
+
+`Form.Field` 包 Formily `<Field>`，用 `commonMap` 自动把 `field.value` / `field.onInput`
+桥接成 antd 控件的 `value` / `onChange`——**控件丢进去即受控**，无需手写
+`useState` + `value=` + `onChange=`。选项类控件（Radio/Switch）还会自动把 `value`
+互换成 `checked`。
+
+### 字段高频 props
+
+- `name`：字段路径，支持相对路径（`.foo` / `..foo` 在 ArrayItems 行内解析到当前行）。
 - `title`：label 文本。
-- `required`：显示红星 **且** 触发 Formily 内置非空校验（submit 空值会被拦截）。需要额外自定义规则时再配 `validator`，两者叠加都进 `selfErrors`。
-- `validator`：同步/异步校验，返回空串或 `''` 表示通过，非空串为错误信息。
-- `editable={false}`：字段只读，渲染为 `NonEditable` 文本态。
+- `required`：显示红星 **且** 触发 Formily 内置非空校验（submit 空值被拦截）。⚠️ 不是
+  仅展示红星——它会拦截提交。自定义规则另配 `validator`，两者叠加都进 `selfErrors`。
+- `validator`：同步/异步校验，返回空串/`''` 表示通过，非空串为错误信息。
+- `editable={false}`：字段只读，渲染为 `NonEditable` 文本态（不渲染控件）。
+- `format` / `parse`：值边界转换。`format(value)` 写入控件前变换（如 ISO → Dayjs），
+  `parse(value)` 控件 onChange 后写入表单前变换（如 Dayjs → ISO）。DatePicker 传给
+  `Form.Field` 时用这对做 string↔Dayjs 转换（表格列用 `'date'` 已内置）。
+- `selectFirst`：挂载时自动选首项（单选 option 控件）。
+- `hideUi` / `requiredOnlyUi`：只渲染控件无 label/error 外壳 / 只渲染红星+控件隐藏 title。
+
+### 常见坑
+
+- **类实例别直接进 `form.values`**：Formily 响应式 Proxy 会序列化它（dayjs/moment 等）。
+  用 `format`/`parse` 在控件边界做值类型转换，仿照表格内置的 `'date'` 列（`DateCell`
+  存 ISO 字符串、边界转 Dayjs）。
+- **`required` 触发非空校验**：不是「仅展示红星」——它会让 submit 空值被拦截。只想展示
+  红星不校验？用 `title` 前手拼，别用 `required`。
+
+> 完整 props 见 [API 参考](#api-参考)。
