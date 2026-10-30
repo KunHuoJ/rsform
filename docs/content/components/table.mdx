@@ -1,0 +1,371 @@
+---
+title: 可编辑表格
+description: Form.Table 单元格级渲染的高性能表格
+---
+
+import {Demo} from '../../Demo';
+import {TableDemo} from '../../demos/TableDemo';
+
+# 可编辑表格
+
+> `Form.Table` 是 rsform 的性能重点：可编辑表格的每个单元格**不是** Formily `<Field>`——每个单元格只订阅 `form.values` 的叶子节点。编辑一格只重渲染**该格**，不波及其余 N×M−1 格；`columns` 引用在整个编辑过程中保持稳定。
+
+## 完整示例
+
+一个进货单：名称 / 数量 / 单价 / 状态可编辑，小计只读派生，操作列上移 / 下方插入 / 删除（全在列 `render` 里用 `actions` 自定义），外加校验、添加行、合计。
+
+<Demo title="可编辑表格">
+    <TableDemo />
+</Demo>
+
+```tsx title="进货单可编辑表格"
+import { Button } from 'antd';
+import { Form } from 'rsform';
+
+interface Row {
+    name: string;
+    qty: number;
+    price: number;
+    status: string;
+}
+
+const STATUS = [
+    { label: '待入库', value: 'pending' },
+    { label: '已入库', value: 'done' },
+];
+
+const INITIAL_ROWS: Row[] = [
+    { name: '组件 A', qty: 2, price: 9.5, status: 'done' },
+    { name: '组件 B', qty: 1, price: 19.0, status: 'pending' },
+];
+
+<Form
+    initialValues={{ rows: INITIAL_ROWS }}
+    onSubmit={(values) => {
+        // values 已是普通对象（库内用 toJS 转过），可直接 JSON.stringify
+        console.log(values);
+    }}
+>
+    <Form.Table<Row>
+        name="rows"
+        pagination={false}
+        itemDefaultValue={{ name: '', qty: 1, price: 0, status: 'pending' }}
+        columns={[
+            { title: '名称', dataIndex: 'name', control: 'input', width: 160, required: true, requiredMessage: '必填名称' },
+            { title: '数量', dataIndex: 'qty', control: 'inputNumber', width: 100, required: true, validator: (v) => (v > 0 ? '' : '必须大于 0') },
+            { title: '单价', dataIndex: 'price', control: 'inputNumber', width: 100, validator: (v) => (v >= 0 ? '' : '不能为负') },
+            { title: '状态', dataIndex: 'status', control: 'select', width: 120, controlProps: { options: STATUS } },
+            { title: '小计', dataIndex: 'subtotal', width: 100, editable: false, render: (_v, r) => <span>{(Number(r.qty) * Number(r.price)).toFixed(2)}</span> },
+            // 操作列：用 render 的 actions 自定义——上移/下方插入/删除
+            {
+                title: '操作',
+                dataIndex: '__ops',
+                width: 160,
+                editable: false,
+                render: (_v, _r, index, actions) => (
+                    <span>
+                        <Button type="link" size="small" disabled={index === 0} onClick={() => actions.moveUp(index)}>
+                            上移
+                        </Button>
+                        <Button type="link" size="small" onClick={() => actions.insert(index + 1)}>
+                            下方插入
+                        </Button>
+                        <Button type="link" danger size="small" onClick={() => actions.remove(index)}>
+                            删除
+                        </Button>
+                    </span>
+                ),
+            },
+        ]}
+    />
+    <Form.Submit>提交</Form.Submit>
+</Form>
+```
+
+:::tip
+演示里的「添加一行」与「合计」用 `Form.Consumer` + `useForm` 实现，代码见下方 [派生展示与添加行](#派生展示与添加行)。
+:::
+
+## 为什么快
+
+普通「每格做成 Formily `<Field>`」的可编辑表格，N×M 个 Field 各自订阅，编辑一格会触发整行甚至整表的响应式重算，行数一多就卡。rsform 的做法是把订阅粒度降到**叶子**：
+
+- **读** — 单元格在 `observer` 内读 `form.values[arrName][rowIndex][dataIndex]`，Formily 响应式只追踪这个叶子节点——编辑 (i,j) 只通知 (i,j) 的观察者，其余 N×M−1 格不重渲染
+- **写** — `field.onInput(v)` 设置该叶子值（触发本格重渲染）、跑校验、触发 `onFieldValueChange` effect，且**不替换行对象**——同行其它格也不重渲染
+- **表体** — 通过 `untracked` 读数组值，表体不订阅单元格编辑；只在数组长度变化时 bump 一个 `lenTick` 触发重渲染。所以编辑一格**不会**重渲染表体、不会遍历整棵单元格树
+- **columns 稳定** — `useTable` 的 `columns` useMemo 依赖只有 `[columns, name, current, pageSize, itemDefaultValue]`，**不含**数组值 / 长度；最新值通过 ref + 叶子订阅读取。100 次按键后 `Object.is(columns, prev)` 仍为 `true`
+
+一句话：**编辑一格 → 只重渲染该格**。50×5 表格单格输入不卡顿、FPS 不掉。
+
+## 列定义
+
+每列是一个 `RsfTableColumn`：
+
+| 属性 | 类型 | 默认 | 说明 |
+| --- | --- | --- | --- |
+| `dataIndex` | `string` | — | 行对象里的字段键 |
+| `title` | `ReactNode` | `dataIndex` | 列标题 |
+| `control` | `string \| ComponentType \| ReactElement` | — | 控件：字符串从注册表查、或组件类型、或元素。三种写法见 [自定义控件](#自定义控件) |
+| `editable` | `boolean` | `control` 存在时 `true` | 是否可编辑；`false` 渲染为只读文本 |
+| `required` | `boolean` | `false` | 是否必填。`true` 时空值校验失败，提交被拦截、错误显示在单元格下方 |
+| `requiredMessage` | `string` | `'必填'` | `required` 校验失败时的错误信息 |
+| `validator` | `(value) => string \| Promise<string>` | — | 单元格校验，空串通过、非空串为错误信息 |
+| `controlProps` | `Record<string, any>` | — | 合并进控件的额外 props（如 Select 的 `options`） |
+| `width` / `align` / `fixed` | — | — | 透传 antd 列 |
+| `render` | `(value, record, index, actions) => Node` | — | 完全自定义渲染（覆盖 CellBridge）。`actions` 提供行增删移方法 |
+
+:::warning
+`controlProps: { required: true }` 只设 antd 控件的 HTML 属性、**不进 Formily 校验**。表单级必填必须用列级 `required`。
+:::
+
+### 列 `render` 与行操作 `actions`
+
+**没有内置删除列**。需要删除 / 上移 / 插入等操作时，自己在 `columns` 里加一列，给该列写 `render`，第 4 个参数 `actions` 就是行增删移方法集——按钮样式完全由你控制（推荐 antd `Button type="link"`）。
+
+| 方法 | 签名 | 说明 |
+| --- | --- | --- |
+| `add` | `(value?) => Promise<void>` | 末尾追加一行（默认 `itemDefaultValue`）。受 `max` / `validateBeforeAdd` 约束 |
+| `insert` | `(index, value?) => Promise<void>` | 在 `index` 处插入一行。受 `max` / `validateBeforeAdd` 约束 |
+| `remove` | `(index) => void` | 删除 `index` 行。受 `min` 约束 |
+| `move` | `(from, to) => void` | 把 `from` 行移到 `to` |
+| `moveUp` / `moveDown` | `(index) => void` | 上移 / 下移一行 |
+| `form` / `field` | — | Formily form 实例 / ArrayField 模型 |
+
+:::info
+`add` / `insert` 是 `async`：开了 `validateBeforeAdd` 时会先 `await form.validate(\`${name}.*\`)` 再决定是否写入。按钮里不 `await` 也没关系——校验 / 写入都在内部完成。
+:::
+
+<details>
+<summary>操作列示例</summary>
+
+```tsx title="操作列：上移 / 下方插入 / 删除"
+import { Button } from 'antd';
+import { Form } from 'rsform';
+
+<Form.Table<Row>
+    name="rows"
+    itemDefaultValue={{ name: '', qty: 1, price: 0 }}
+    columns={[
+        { title: '名称', dataIndex: 'name', control: 'input' },
+        {
+            title: '操作',
+            dataIndex: '__ops',
+            editable: false,
+            render: (_v, record, index, actions) => (
+                <span>
+                    <Button type="link" size="small" disabled={index === 0} onClick={() => actions.moveUp(index)}>
+                        上移
+                    </Button>
+                    <Button type="link" size="small" onClick={() => actions.insert(index + 1)}>
+                        下方插入
+                    </Button>
+                    <Button type="link" danger size="small" onClick={() => actions.remove(index)}>
+                        删除
+                    </Button>
+                </span>
+            ),
+        },
+    ]}
+/>
+```
+
+只想要一个删除按钮？把 `render` 里只放 `actions.remove(index)` 的按钮即可——删除完全由你控制。上面的「小计」列也是用 `render` 做的只读派生：`render: (_v, r) => <span>{r.qty * r.price}</span>`。
+
+</details>
+
+## 自定义控件
+
+`control` 有三种写法，按场景选最顺手的即可。**三种都共享同一份性能契约**——CellBridge 照样注入 `value` / `onChange`、照样只订阅叶子、照样支持 `validator` 与 `onFieldValueChange` effects。自定义控件**无需感知 Formily/rsform**，只要是个接收 `value` / `onChange` 的普通受控组件即可。
+
+### 1. 传组件类型（最符合 React 习惯）
+
+直接把组件类型给 `control`，CellBridge 渲染 `<MyInput value onChange {...controlProps} />`。适合「控件 + 配置 props」的场景，复用时不必注册：
+
+```tsx title="control 传组件类型"
+import { CompanyPicker } from './CompanyPicker';
+
+const columns = [
+    {
+        title: '供应商',
+        dataIndex: 'supplier',
+        width: 120,
+        control: CompanyPicker,
+        controlProps: { companies: COMPANY_LIST, multiple: false },
+    },
+];
+```
+
+### 2. 注册字符串 key（跨多个表格复用）
+
+和内置 `'input'` / `'select'` 一样，注册一次到处用，列定义里只写字符串最干净：
+
+```tsx title="registerControl 注册字符串 key"
+import { registerControl } from 'rsform';
+import { CompanyPicker } from './CompanyPicker';
+
+registerControl('companyPicker', CompanyPicker);
+
+// 之后任意表格都能用
+const columns = [
+    { title: '供应商', dataIndex: 'supplier', width: 120, control: 'companyPicker', controlProps: { companies: COMPANY_LIST } },
+];
+```
+
+内置 key：`'input'` / `'inputNumber'` / `'select'` / `'radioGroup'` / `'switch'` / `'date'`（`'date'` 是存 ISO 字符串、边界转 Dayjs 的 `DateCell`，避免 dayjs 被 Formily 响应式序列化）。
+
+### 3. 传元素（一次性）
+
+适合「这个控件只用在这一个表格、不想单独抽组件」的临时场景。CellBridge 用 `cloneElement` 注入 `value` / `onChange`，`controlProps` 也会展开进去（同名 prop 以 `controlProps` 为准）：
+
+```tsx title="control 传元素"
+const columns = [
+    { title: '供应商', dataIndex: 'supplier', width: 120, control: <CompanyPicker companies={COMPANY_LIST} /> },
+];
+```
+
+### 自定义控件约定
+
+接收 `value`（当前值）与 `onChange`（写回新值）。`onChange` 传**裸值**或 **event**（`e.target.value`）都行，CellBridge 内部已处理。
+
+<details>
+<summary>完整示例：点文本 → 弹窗选 → 确定 → 回写</summary>
+
+```tsx title="CompanyPicker：弹窗选择并回写单元格"
+import * as React from 'react';
+import { Modal, Radio } from 'antd';
+
+const COMPANIES = [
+    { label: '阿里巴巴', value: 'ali' },
+    { label: '字节跳动', value: 'bytedance' },
+    { label: '小红书', value: 'xhs' },
+];
+
+export function CompanyPicker({ value, onChange, companies = COMPANIES }: any) {
+    const [open, setOpen] = React.useState(false);
+    const [picked, setPicked] = React.useState(value);
+    React.useEffect(() => {
+        if (open) setPicked(value);
+    }, [open, value]);
+
+    const label = companies.find((c) => c.value === value)?.label ?? value ?? '请选择';
+
+    return (
+        <>
+            <a onClick={() => setOpen(true)} style={{ display: 'block', width: '100%' }}>
+                {label}
+            </a>
+            <Modal
+                title="选择供应商"
+                open={open}
+                onCancel={() => setOpen(false)}
+                onOk={() => {
+                    onChange(picked); // 回写——只更新这一格
+                    setOpen(false);
+                }}
+            >
+                <Radio.Group
+                    value={picked}
+                    onChange={(e) => setPicked(e.target.value)}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 0' }}
+                >
+                    {companies.map((c) => (
+                        <Radio key={c.value} value={c.value}>
+                            {c.label}
+                        </Radio>
+                    ))}
+                </Radio.Group>
+            </Modal>
+        </>
+    );
+}
+```
+
+</details>
+
+:::warning 类实例边界转换铁律
+若你的控件内部用的是**类实例**（dayjs、moment 等），不要让实例进 `form.values`——Formily 的响应式 Proxy 会把类实例序列化成字符串。仿照内置 `DateCell`：存原始值（ISO 字符串、number、boolean、普通对象 / 数组都安全），在控件边界做 `string ↔ 实例` 转换。
+:::
+
+## Table props
+
+| 属性 | 类型 | 默认 | 说明 |
+| --- | --- | --- | --- |
+| `name` | `string` | — | 数组字段名；支持相对路径 |
+| `columns` | `RsfTableColumn[]` | — | 列定义（引用稳定，编辑时不重建） |
+| `pagination` | `false \| object` | `false` | antd 分页；默认不分页 |
+| `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key；默认用注入的 `__rsfIdx`（跨页稳定） |
+| `itemDefaultValue` | `any` | `{}` | `actions.add` / `actions.insert` 不传 value 时的默认行值 |
+| `max` | `number` | — | 行数上限；到上限后 `add` / `insert` 静默拒绝 |
+| `min` | `number` | `0` | 行数下限；到下限后 `remove` 静默拒绝 |
+| `validateBeforeAdd` | `boolean \| ((values, itemDefault) => boolean \| string \| void)` | `false` | `add` / `insert` 前门禁 |
+| `tableProps` | `object` | — | antd `Table` props 透传；rsform 接管的 `columns` / `dataSource` / `pagination` / `rowKey` / `scroll` 优先 |
+
+## 校验
+
+表格校验有两种写法，都通过单元格注册的 Formily 字段生效：
+
+- **`required` / `requiredMessage`**（列级）— 必填校验。`required: true` 时空值失败，提交被拦截
+- **`validator`**（列级）— 自定义校验，返回空串通过、非空串为错误信息
+
+`required` 规则组合在 `validator` **之前**：空值先报必填错，非空才跑 `validator`，所以一个列可以同时必填 + 自定义校验。错误通过单元格订阅的 `selfErrors` 实时显示在单元格下方，不波及其它格。
+
+```tsx title="必填 + 自定义校验"
+columns={[
+    { title: '名称', dataIndex: 'name', control: 'input', required: true, requiredMessage: '必填名称' },
+    { title: '数量', dataIndex: 'qty', control: 'inputNumber', required: true, validator: (v) => (v > 0 ? '' : '必须大于 0') },
+]}
+```
+
+提交时走 Formily 整表校验。**校验失败会拦截 `onSubmit`**——rsform 把 `onSubmit` 挂在 `onFormSubmitSuccess` 上（只在校验通过后执行），所以必填列空值时点提交，`onSubmit` 不执行、单元格显示错误，表单不会提交脏数据。失败可配 `Form` 的 `validateFailed="scroll"` 滚到首个错误格。
+
+## 派生展示与添加行
+
+表体只管单元格编辑，行级派生（小计、合计、行数）与增删行用 `Form.Consumer` + `useForm` 在表格外做：
+
+<Demo title="派生展示与添加行">
+    <TableDemo />
+</Demo>
+
+```tsx title="添加行 + 合计"
+import { useForm } from '@formily/react';
+import { Button } from 'antd';
+import { Form } from 'rsform';
+
+// 添加行：antd link 按钮（link 样式，不依赖 rsform/styles）
+function AddRowButton({ arrayName, defaultRow }) {
+    const form = useForm();
+    return (
+        <Button
+            type="link"
+            onClick={() => {
+                const arr = form.values[arrayName] ?? [];
+                form.setValuesIn(arrayName, [...arr, { ...defaultRow }]);
+            }}
+        >
+            + 添加一行
+        </Button>
+    );
+}
+
+// 合计：Form.Consumer 订阅整个 rows，实时派生行数与合计金额
+function Summary() {
+    return (
+        <Form.Consumer>
+            {(values) => {
+                const rows = values.rows ?? [];
+                const total = rows.reduce((s, r) => s + Number(r.qty) * Number(r.price), 0);
+                return <span>共 {rows.length} 行，合计 {total.toFixed(2)}</span>;
+            }}
+        </Form.Consumer>
+    );
+}
+```
+
+- **添加行** — `useForm` 拿 form，`form.setValuesIn(name, [...arr, defaultRow])` 替换整个数组——长度变化触发 `lenTick` 重渲染表体（单元格各订阅自己的叶子，已编辑的值不丢）。也可以直接在列 `render` 里用 `actions.add()` 加一行
+- **合计** — `Form.Consumer` 订阅整个 `rows`，实时 `reduce` 出行数与合计金额。任一单元格编辑 → `rows` 变化 → 合计重算。这是 [订阅表单值](/components/consumer) 在表格场景的应用
+
+## 下一步
+
+- [表格性能压测](/components/table-perf) — 50×20 大表格压测
+- [可增删列表](/components/array-items) — 轻量列表增删
+- [API 参考](/advanced/api) — `Form.Table` / `RsfTableColumn` 完整 props

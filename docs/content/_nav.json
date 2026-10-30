@@ -1,0 +1,27 @@
+[
+    {
+        "text": "入门",
+        "link": "/intro/intro",
+        "activeMatch": "/intro"
+    },
+    {
+        "text": "使用",
+        "link": "/components/basic",
+        "activeMatch": "/components"
+    },
+    {
+        "text": "演练场",
+        "link": "/playground/playground",
+        "activeMatch": "/playground"
+    },
+    {
+        "text": "深入",
+        "link": "/advanced/effects-detail",
+        "activeMatch": "/advanced"
+    },
+    {
+        "text": "主题",
+        "link": "/theme/tokens",
+        "activeMatch": "/theme"
+    }
+]

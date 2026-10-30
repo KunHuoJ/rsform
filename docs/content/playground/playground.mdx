@@ -1,0 +1,134 @@
+---
+title: 综合样板间
+description: 采购订单创建综合演示
+---
+
+import {Demo} from '../../Demo';
+import {PlaygroundDemo} from '../../demos/PlaygroundDemo';
+
+# 综合样板间
+
+> 一个「采购订单创建」表单，把 rsform 全部能力揉进一个真实业务场景，提交拿到完整数据。
+
+## 覆盖的能力
+
+- **基础控件** — Input / TextArea / InputNumber / Select / RadioGroup / Switch / DatePicker（含 string↔Dayjs 边界转换）
+- **级联 Select** — `$.linkedFieldProps` 异步派生子分类 options
+- **跨字段校验** — `$.validateField` 交付日期必须晚于下单日期
+- **ArrayItems** — 联系人列表，`min` / `max` / `validateBeforeAdd` + 跨行唯一手机号 + 正则格式校验
+- **Table** — 物料明细，列级 `required` + `validator` + 按行派生 `total` + `date` + `switch` + 操作列
+- **按行联动** — `$.onEachRowMultiChange` 监听 qty / price，任一变化重算 total 写入 `form.values`
+- **Form.Consumer** — 实时汇总（联系人数、物料数、合计金额）
+- **validateFailed="scroll"** — 校验失败滚到首个错误
+- **编程式重置** — `formRef.current.reset()`
+- **Submit** — 校验通过后拿到 `toJS` 后的普通对象
+
+<Demo title="采购订单创建（综合演示）">
+    <PlaygroundDemo />
+</Demo>
+
+<details>
+<summary>完整源码</summary>
+
+```tsx title="采购订单创建"
+import * as React from 'react';
+import dayjs from 'dayjs';
+import { arrayUnion, Form } from 'rsform';
+
+// 小计列：必须是 CellBridge 的 control（订阅 items.i.total 叶子），
+// 不能用列的 render——render 是表体快照，编辑时不重渲染，小计不会更新。
+function TotalCell({ value }: { value?: any }) {
+    return <span>{(Number(value) || 0).toFixed(2)}</span>;
+}
+
+const phoneUnique = arrayUnion('phone', '手机号重复');
+const phoneValidator = (v: any, rule: any, ctx: any) =>
+    !v || !/^1\d{10}$/.test(String(v)) ? '请输入有效手机号' : phoneUnique(v, rule, ctx) ?? '';
+
+<Form
+    initialValues={{ orderName: '', orderDate: '', priority: 'mid', contacts: [], items: [] }}
+    validateFailed="scroll"
+    effects={($ ) => {
+        // 跨字段校验：交付日期必须晚于下单日期
+        $.validateField('deliveryDate', ['orderDate', 'deliveryDate'], ({ orderDate, deliveryDate }) =>
+            !deliveryDate || !orderDate
+                ? ''
+                : dayjs(deliveryDate).isAfter(dayjs(orderDate))
+                  ? ''
+                  : '交付日期必须晚于下单日期',
+        );
+        // 级联：分类 → 子分类 options（异步派生，只管 options → 回显安全）
+        $.linkedFieldProps('subcategory', ['category'], async ({ category }) => {
+            if (!category) return { options: [] };
+            await new Promise((r) => setTimeout(r, 200));
+            return { options: SUBCATEGORY[category] ?? [] };
+        });
+        // 用户切分类才清空子分类（clearOn 初始不触发，回显不会误清）
+        $.clearOn('category', 'subcategory', '');
+        // 按行派生：qty/price 任一变 → 重算 total 入 form.values
+        $.onEachRowMultiChange('items', ['qty', 'price'], ({ values, setFieldState }) =>
+            setFieldState('total', { value: (Number(values.qty) || 0) * (Number(values.price) || 0) }),
+        );
+    }}
+    onSubmit={(values) => console.log(values)}
+>
+    <Form.Field name="orderName" title="订单名称" required>
+        <Form.Input />
+    </Form.Field>
+    <Form.Field name="orderDate" title="下单日期" required format={toDayjs} parse={toIso}>
+        <Form.DatePicker />
+    </Form.Field>
+
+    {/* ArrayItems：联系人，跨行唯一手机号 + 正则校验 */}
+    <Form.ArrayItems name="contacts" itemDefaultValue={{ name: '', phone: '' }} min={1} max={8}>
+        {() => (
+            <>
+                <Form.Field name="name" title="姓名" required>
+                    <Form.Input />
+                </Form.Field>
+                <Form.Field name="phone" title="手机号" required validator={phoneValidator}>
+                    <Form.Input />
+                </Form.Field>
+            </>
+        )}
+    </Form.ArrayItems>
+
+    {/* Table：物料明细，小计由 effect 派生，列只读展示 */}
+    <Form.Table
+        name="items"
+        columns={[
+            { title: '名称', dataIndex: 'name', control: 'input', required: true },
+            { title: '数量', dataIndex: 'qty', control: 'inputNumber', required: true },
+            { title: '单价', dataIndex: 'price', control: 'inputNumber', required: true },
+            { title: '小计', dataIndex: 'total', control: <TotalCell /> },
+        ]}
+    />
+
+    {/* Consumer 实时汇总 */}
+    <Form.Consumer>
+        {(values) => (
+            <span>合计：{(values.items ?? []).reduce((s, r) => s + (Number(r.total) || 0), 0).toFixed(2)}</span>
+        )}
+    </Form.Consumer>
+
+    <Form.Submit>提交订单</Form.Submit>
+</Form>
+```
+
+</details>
+
+## 试这些交互
+
+1. 清空「订单名称」再提交 → 校验拦截、滚到错误格、`onSubmit` 不触发
+2. 选「下单日期」晚于「交付日期」→ 交付日期下方报「必须晚于下单日期」
+3. 切换「物料分类」→ 「子分类」options 异步重新加载
+4. 在物料表里改任一行的「数量」或「单价」→ 该行「小计」实时更新，底部合计同步变化，**其余格不重渲染**
+5. 联系人里填两个相同手机号 → 报「手机号重复」；填非 11 位 → 报「请输入有效手机号」
+6. 点「重置」→ 表单回到初始值
+7. 全部填合法 → 点「提交订单」→ 底部输出完整 JSON（普通对象，可直接 `JSON.stringify` / 送接口）
+
+## 下一步
+
+- [可编辑表格](/components/table) — 列定义、自定义控件、行操作
+- [Effects 详解](/advanced/effects-detail) — 全部 effects helper
+- [API 参考](/advanced/api) — 完整导出

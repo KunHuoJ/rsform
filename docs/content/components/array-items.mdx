@@ -1,0 +1,79 @@
+---
+title: 可增删列表
+description: ArrayItems 轻量增删列表
+---
+
+import {Demo} from '../../Demo';
+import {ArrayItemsDemo} from '../../demos/ArrayItemsDemo';
+
+# 可增删列表
+
+> `Form.ArrayItems` 是轻量增删列表，类似 antd `Form.List`。基于 Formily `ArrayField` mutators，默认只给删除按钮；上下移动按需开启（`sortable`）。添加 / 删除均可自定义按钮或拦截——不引入拖拽库，零额外依赖。
+
+行内字段用 `name="email"`（无前导点 = append 到当前行 → `members.N.email`）自动绑到当前行。
+
+<Demo title="团队成员名单（多字段 + 跨行唯一校验 + 提交）">
+    <ArrayItemsDemo />
+</Demo>
+
+```tsx title="团队成员名单"
+import { arrayUnion, Form } from 'rsform';
+
+const ROLES = [
+    { label: '管理员', value: 'admin' },
+    { label: '开发', value: 'dev' },
+];
+
+<Form initialValues={{ members: [] }} onSubmit={async (v) => console.log(v)}>
+    <Form.ArrayItems
+        name="members"
+        itemDefaultValue={{ name: '', email: '', role: 'dev' }}
+        min={1}
+    >
+        {() => (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <Form.Field name="name" title="姓名" required>
+                    <Form.Input placeholder="姓名" />
+                </Form.Field>
+                <Form.Field
+                    name="email"
+                    title="邮箱"
+                    required
+                    validator={arrayUnion('email', '该邮箱已存在')}
+                >
+                    <Form.Input placeholder="邮箱" />
+                </Form.Field>
+                <Form.Field name="role" title="角色">
+                    <Form.Select options={ROLES} />
+                </Form.Field>
+            </div>
+        )}
+    </Form.ArrayItems>
+    <Form.Submit>提交</Form.Submit>
+</Form>
+```
+
+## 属性
+
+| 属性 | 默认 | 说明 |
+| --- | --- | --- |
+| `name` | — | 数组字段名 |
+| `itemDefaultValue` | `{}` | 新增行的默认值 |
+| `min` / `max` | — | 行数上下限，到限禁用对应按钮 |
+| `validateBeforeAdd` | — | 新增前门禁，返回 `false` 静默阻止，`string` 报错 |
+| `addDisabled` | `false` | 隐藏内置新增按钮（配合 `renderAdd`） |
+| `addText` / `removeText` | `'添加'` / `'×'` | 内置按钮文字 |
+| `renderAdd` | — | `(add) => Node`，完全自定义新增按钮 |
+| `renderRemove` | — | `(index, remove) => Node`，完全自定义删除按钮 |
+| `onRemove` | — | `(index, values) => boolean \| Promise<boolean>`，返回 `false` 取消删除 |
+| `sortable` | `false` | 显示上移 / 下移按钮；多数表单不需要排序 |
+
+## 跨行唯一校验
+
+`arrayUnion(key)` 挂在行内 `<Field validator={arrayUnion('email')}>` 上，自动读取最近的数组祖先，若该 `key` 在其他行已出现则报错。上例用于保证成员邮箱不重复。
+
+## 下一步
+
+- [可编辑表格](/components/table) — 单元格级渲染的高性能表格
+- [表格性能压测](/components/table-perf) — 50×20 大表格压测
+- [API 参考](/advanced/api) — `Form.ArrayItems` 完整 props

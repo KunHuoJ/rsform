@@ -1,0 +1,302 @@
+/* rsform base 样式表（字段 label / 必填星号 / error 红 / 字段间距等
+ * `rsf-field` 类 + `--rsf-*` 变量）。@import 必须在文件最前。 */
+@import '../src/styles/index.css';
+
+/**
+ * rsform 文档自定义样式（挂 Rspress 之上）。
+ *
+ * 仅保留两类:
+ *  1. 品牌 CSS 变量（浅/深双主题）——与 `src/styles/index.css` 的 `--rsf-*`
+ *     token 对齐,让 demo 组件在文档站与真实使用场景视觉一致。
+ *  2. `<Demo>` 预览容器 + 首页 Hero/特性 + demo 专用类（合计/Consumer 输出等）
+ *     的样式——这些是手写组件,不随 Rspress 内置主题走。
+ *
+ * 站点外壳(侧栏/顶栏/布局/暗色切换/代码高亮)由 Rspress 内置,不在此重复。
+ */
+
+:root {
+    --rsf-bg: #ffffff;
+    --rsf-bg-soft: #f9fafb;
+    --rsf-fg: #1f2937;
+    --rsf-fg-strong: #111827;
+    --rsf-muted: #6b7280;
+    --rsf-border: #e5e7eb;
+    --rsf-border-strong: #d1d5db;
+    --rsf-accent: #2563eb;
+    --rsf-accent-soft: #dbeafe;
+    --rsf-cyan: #0ea5e9;
+    --rsf-code-bg: #f3f4f6;
+    --rsf-code-fg: #1f2937;
+    --rsf-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --rsf-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --rsf-brand-grad: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+    --rsf-radius: 10px;
+    --rsf-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas,
+        'Liberation Mono', monospace;
+}
+
+:root[data-theme='dark'] {
+    --rsf-bg: #0f172a;
+    --rsf-bg-soft: #1e293b;
+    --rsf-fg: #e2e8f0;
+    --rsf-fg-strong: #f1f5f9;
+    --rsf-muted: #94a3b8;
+    --rsf-border: #1e293b;
+    --rsf-border-strong: #334155;
+    --rsf-accent: #38bdf8;
+    --rsf-accent-soft: #0c4a6e;
+    --rsf-cyan: #22d3ee;
+    --rsf-code-bg: #1e293b;
+    --rsf-code-fg: #e2e8f0;
+    --rsf-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --rsf-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* —— <Demo> 预览容器 —— */
+.rsfd-demo {
+    border: 1px solid var(--rsf-border);
+    border-radius: var(--rsf-radius);
+    margin: 20px 0;
+    overflow: hidden;
+    box-shadow: var(--rsf-shadow);
+    background: var(--rsf-bg);
+}
+.rsfd-demo-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--rsf-bg-soft);
+    border-bottom: 1px solid var(--rsf-border);
+    font-size: 12px;
+    color: var(--rsf-muted);
+}
+.rsfd-demo-head .rsfd-demo-label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+.rsfd-demo-body {
+    padding: 22px;
+}
+
+/* —— Form.Consumer demo —— */
+.rsfd-consumer-block {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--rsf-border);
+    border-radius: 8px;
+    background: var(--rsf-bg-soft);
+}
+.rsfd-consumer-label {
+    font-size: 12px;
+    color: var(--rsf-muted);
+    margin-bottom: 8px;
+}
+.rsfd-consumer-out {
+    margin: 0;
+    font-family: var(--rsf-mono);
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* —— 表格 demo 合计 —— */
+.rsfd-table-summary {
+    margin-top: 12px;
+    display: flex;
+    gap: 24px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    background: var(--rsf-bg-soft);
+    font-size: 13px;
+}
+.rsfd-table-summary strong {
+    color: var(--rsf-accent);
+}
+
+/* —— 输出区 —— */
+.rsfd-output {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--rsf-code-bg);
+    border-radius: 8px;
+    font-family: var(--rsf-mono);
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    border: 1px solid var(--rsf-border);
+}
+
+/* —— 首页 Hero（宽幅品牌头:左主信息 + 右起手代码,底部细分割线）—— */
+.rsfd-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 48px;
+    padding: 56px 0 44px;
+    border-bottom: 1px solid var(--rsf-border);
+    margin-bottom: 40px;
+}
+.rsfd-hero-main {
+    flex: 1 1 0;
+    min-width: 0;
+}
+.rsfd-hero-logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 0 18px;
+    display: block;
+}
+.rsfd-hero h1 {
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin: 0 0 14px;
+}
+.rsfd-hero .rsfd-hero-tagline {
+    font-size: 19px;
+    color: var(--rsf-fg-strong);
+    margin: 0 0 6px;
+    font-weight: 500;
+}
+.rsfd-hero .rsfd-hero-sub {
+    font-size: 15px;
+    color: var(--rsf-muted);
+    margin: 0;
+    line-height: 1.6;
+}
+.rsfd-hero .rsfd-hero-cta {
+    margin-top: 26px;
+    display: flex;
+    gap: 12px;
+}
+.rsfd-hero .rsfd-hero-cta a {
+    display: inline-block;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+.rsfd-hero .rsfd-hero-cta a.rsfd-cta-primary {
+    background: var(--rsf-accent);
+    color: #fff;
+}
+.rsfd-hero .rsfd-hero-cta a.rsfd-cta-primary:hover {
+    filter: brightness(1.08);
+}
+.rsfd-hero .rsfd-hero-cta a.rsfd-cta-secondary {
+    border: 1px solid var(--rsf-border);
+    color: var(--rsf-fg);
+    background: transparent;
+}
+.rsfd-hero .rsfd-hero-cta a.rsfd-cta-secondary:hover {
+    border-color: var(--rsf-accent);
+    color: var(--rsf-accent);
+}
+/* 右侧起手代码卡:浅底 + 等宽,不抢主列视觉 */
+.rsfd-hero-aside {
+    flex: 0 0 320px;
+    max-width: 340px;
+    background: var(--rsf-code-bg);
+    border: 1px solid var(--rsf-border);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+.rsfd-aside-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rsf-muted);
+    display: block;
+    margin-bottom: 10px;
+}
+.rsfd-aside-code {
+    margin: 0;
+    font-family: var(--rsf-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--rsf-code-fg);
+    white-space: pre;
+    overflow-x: auto;
+}
+.rsfd-aside-code code {
+    background: none;
+    padding: 0;
+    font-family: inherit;
+    color: inherit;
+}
+/* 窄屏:右列折到下方,避免挤压 */
+@media (max-width: 760px) {
+    .rsfd-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 32px;
+    }
+    .rsfd-hero-aside {
+        flex-basis: auto;
+        width: 100%;
+        max-width: none;
+    }
+    .rsfd-hero h1 {
+        font-size: 40px;
+    }
+}
+
+/* —— 特性卡片 —— */
+.rsfd-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 40px 0;
+}
+.rsfd-feature {
+    border: 1px solid var(--rsf-border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.15s;
+}
+.rsfd-feature:hover {
+    border-color: var(--rsf-accent);
+}
+.rsfd-feature .rsfd-feature-icon {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+.rsfd-feature h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+}
+.rsfd-feature p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--rsf-text-soft);
+    line-height: 1.6;
+}
+
+/* —— 首页纯落地页（无 nav/侧栏）—— */
+.rsfd-landing {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--rsf-bg);
+    color: var(--rsf-fg);
+}
+.rsfd-landing > * {
+    width: 100%;
+}
+/* 首页正文限宽居中（blank 页无 DocLayout 容器，需自备可读列宽） */
+.rsfd-landing-inner {
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 24px 64px;
+    box-sizing: border-box;
+}
+.rsfd-landing-inner > :first-child {
+    margin-top: 0;
+}

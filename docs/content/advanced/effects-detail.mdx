@@ -1,19 +1,22 @@
-import {Demo} from '../Demo';
-import {EffectsDemo} from '../demos/EffectsDemo';
-import {CascadeDemo} from '../demos/CascadeDemo';
-import {RemoteSearchDemo} from '../demos/RemoteSearchDemo';
-import {EFFECTS_CODE, CASCADE_CODE, REMOTE_SEARCH_CODE} from '../snippets';
+---
+title: Effects 详解
+description: rsform 字段联动与跨字段校验机制
+---
 
-## Effects 详解
+import {Demo} from '../../Demo';
+import {EffectsDemo} from '../../demos/EffectsDemo';
+import {CascadeDemo} from '../../demos/CascadeDemo';
+import {RemoteSearchDemo} from '../../demos/RemoteSearchDemo';
 
-`effects` 是 rsform 处理字段联动的核心机制。你把联动逻辑声明在 `effects` 回调里，
-rsform 在表单创建时把它注入一个 `$` helper 包并执行一次——**注册**各类响应式监听。
-之后字段值变化时，对应的监听自动触发，无需手动订阅、无需在组件里写 `useEffect`。
+# Effects 详解
 
-> 关键心智模型：effects 回调是**注册时机**，不是**执行时机**。回调里写的每条
-> 语句都是「当 X 发生时，做 Y」的声明；具体什么时候真跑，取决于 X 什么时候发生。
+`effects` 是 rsform 处理字段联动的核心机制。你把联动逻辑声明在 `effects` 回调里，rsform 在表单创建时把它注入一个 `$` helper 包并执行一次——**注册**各类响应式监听。之后字段值变化时，对应的监听自动触发，无需手动订阅、无需在组件里写 `useEffect`。
 
-### 📖 目录
+:::tip 关键心智模型
+effects 回调是**注册时机**，不是**执行时机**。回调里写的每条语句都是「当 X 发生时，做 Y」的声明；具体什么时候真跑，取决于 X 什么时候发生。
+:::
+
+## 目录
 
 按类别跳转，每节顶部都有 **TL;DR** 一句话说清「这 helper 干什么、什么时候伸手」：
 
@@ -28,11 +31,11 @@ rsform 在表单创建时把它注入一个 `$` helper 包并执行一次——*
   - [`onEachRowChange`](#oneachrowchange--数组按行单-key-联动) / [`onEachRowMultiChange`](#oneachrowmultichange--数组按行多-key-联动)
 - **工具类**
   - [`debounce`](#debounce--联动防抖) · [`clearOn`](#clearon--级联清空回显安全)
-  - [`setRefState`/`getRefState`](#setrefstate--getrefstate--非响应式草稿区)
-  - [`setVisible`/`setRequired`/`setEditable`](#setvisible--setrequired--seteditable--字段状态语义糖)
+  - [`setRefState` / `getRefState`](#setrefstate--getrefstate--非响应式草稿区)
+  - [`setVisible` / `setRequired` / `setEditable`](#setvisible--setrequired--seteditable--字段状态语义糖)
 - **速查**：[`$ helper 全集`](#-helper-全集) 表
 
-### 工作原理
+## 工作原理
 
 ```jsx
 <Form
@@ -64,7 +67,9 @@ rsform 在表单创建时把它注入一个 `$` helper 包并执行一次——*
 
 ## `$.validateField` — 跨字段响应式校验
 
-> TL;DR: `triggers` 里任一字段值变化就重跑 `cb`,返回非空串为错误信息、空串/null 为通过。适合「密码 vs 确认密码」这类一个字段校验规则依赖另一个字段的场景。注册时也立即跑一次(初始校验)。
+:::tip TL;DR
+`triggers` 里任一字段值变化就重跑 `cb`,返回非空串为错误信息、空串/null 为通过。适合「密码 vs 确认密码」这类一个字段校验规则依赖另一个字段的场景。注册时也立即跑一次(初始校验)。
+:::
 
 最常见的联动校验：A 字段的校验规则依赖 B 字段的值。
 
@@ -89,15 +94,36 @@ $.validateField(
 `triggers` 里**任意一个**字段值变化，`cb` 就重跑。注册时 `cb` 也会**立即跑一次**
 （初始校验，不用等第一次编辑）。`cb` 拿到的 `values` 是 `{ [triggerName]: 当前值 }` 的快照。
 
-> ⚠️ `name` 本身**不会**自动成为触发源——只有把它写进 `triggers` 才会在自身变化时
+:::warning
+`name` 本身**不会**自动成为触发源——只有把它写进 `triggers` 才会在自身变化时
+:::
 > 重跑。例：`validateField('confirm', ['password', 'confirm'], cb)` 改 password 或
 > confirm 都重跑；`validateField('confirm', ['password'], cb)` 只有改 password 才重跑。
 
 ### 示例：密码确认一致
 
-<Demo code={EFFECTS_CODE} title="两次密码必须一致">
+<Demo title="两次密码必须一致">
   <EffectsDemo />
 </Demo>
+
+```tsx
+import { Form } from 'rsform';
+
+<Form
+  effects={$ =>
+    $.validateField('confirm', ['password', 'confirm'], ({ password, confirm }) =>
+      password === confirm ? '' : '两次密码不一致',
+    )
+  }
+>
+  <Form.Field name="password" title="密码" required>
+    <Form.Input.Password />
+  </Form.Field>
+  <Form.Field name="confirm" title="确认密码" required>
+    <Form.Input.Password />
+  </Form.Field>
+</Form>
+```
 
 输入密码和确认密码，不一致时确认密码字段下方出现红色错误；改一致后错误自动消失。
 这就是 `validateField` 的工作方式——声明依赖，依赖变就重跑校验，无需手动管理。
@@ -106,7 +132,9 @@ $.validateField(
 
 ## `$.linkedFieldProps` — 异步派生字段状态/props
 
-> TL;DR: 一个字段的 props(最常见是 Select 的 `options`)或状态(显隐/必填/标题)依赖其他字段值时用。`compute` 返回对象按 key 自动分流到字段 state 或 `componentProps`。支持异步(发请求拉 options),内置防 stale。
+:::tip TL;DR
+一个字段的 props(最常见是 Select 的 `options`)或状态(显隐/必填/标题)依赖其他字段值时用。`compute` 返回对象按 key 自动分流到字段 state 或 `componentProps`。支持异步(发请求拉 options),内置防 stale。
+:::
 
 当一个字段的 props（最典型是 Select 的 `options`）或状态（显隐、标题）依赖其他字段值时用。
 
@@ -137,9 +165,34 @@ $.linkedFieldProps(
 
 ### 示例：省市级联
 
-<Demo code={CASCADE_CODE} title="级联 Select（异步 options）">
+<Demo title="级联 Select（异步 options）">
   <CascadeDemo />
 </Demo>
+
+```tsx
+import { Form } from 'rsform';
+
+const PROVINCES = [{ label: '广东', value: 'gd' }, /* ... */];
+const CITIES = { gd: [{ label: '广州', value: 'gz' }, /* ... */] };
+
+<Form
+  initialValues={{ province: '', city: '' }}
+  effects={$ =>
+    $.linkedFieldProps('city', ['province'], async ({ province }) => {
+      if (!province) return { options: [] };
+      await new Promise(r => setTimeout(r, 300)); // 模拟请求
+      return { options: CITIES[province] ?? [] };
+    })
+  }
+>
+  <Form.Field name="province" title="省份" required>
+    <Form.Select options={PROVINCES} />
+  </Form.Field>
+  <Form.Field name="city" title="城市" required>
+    <Form.Select />
+  </Form.Field>
+</Form>
+```
 
 切换省份 → 城市的 `options` 重新派生（`{options}` 走 `componentProps` 透传给 Select）。
 整个过程没有 `useEffect` / `useState`，联动逻辑全部声明在 `effects` 里。
@@ -168,7 +221,9 @@ effects={$ => {
 
 ## `$.onFieldReact` — 初始化 + 变化都执行的响应式联动
 
-> TL;DR: 字段 init 时立即跑一次 `cb`,之后字段任一 observable(value/visible/...)变化再跑。适合「一个字段值驱动另一个字段显隐/props,且初始值也要生效」的场景。要初始化也生效用它;只要变化触发用 `onFieldValueChange`。
+:::tip TL;DR
+字段 init 时立即跑一次 `cb`,之后字段任一 observable(value/visible/...)变化再跑。适合「一个字段值驱动另一个字段显隐/props,且初始值也要生效」的场景。要初始化也生效用它;只要变化触发用 `onFieldValueChange`。
+:::
 
 Formily v2 原生 hook，rsform 挂在 `$` 上。底层是 `onFieldInit` + `autorun`——字段 init
 时 `autorun` **立即跑一次** cb，之后字段任一 observable（value/visible/display/…）变化再跑。
@@ -212,7 +267,9 @@ effects={$ => {
 
 ## `$.onFieldValueChange` — 字段值变化监听
 
-> TL;DR: 字段 **value 变化时**才跑 `cb`,**初始化不跑**——这是它的核心特征(回显安全:mount 时不会误触发联动)。适合「只关心用户改了值,初始化不要动」的自定义联动(设值/改显隐)。要初始化也生效用 `onFieldReact`。
+:::tip TL;DR
+字段 **value 变化时**才跑 `cb`,**初始化不跑**——这是它的核心特征(回显安全:mount 时不会误触发联动)。适合「只关心用户改了值,初始化不要动」的自定义联动(设值/改显隐)。要初始化也生效用 `onFieldReact`。
+:::
 
 Formily v2 原生 hook，rsform 直接透传。比糖 helper 更底层，适合自定义联动逻辑
 （设置其他字段值、改字段可见性等）。
@@ -251,7 +308,9 @@ effects={$ => {
 
 ## `$.onEachRowChange` — 数组按行单 key 联动
 
-> TL;DR: 数组字段(Table / ArrayItems)每行的某个 key 变化时,基于该行其他 key 做联动。`pre` 是数组字段名,`key` 是监听的 key。`setFieldState(key, {value})` 派生值进 `form.values` 叶子(只读派生列也能提交)。多 key 用 `onEachRowMultiChange`。
+:::tip TL;DR
+数组字段(Table / ArrayItems)每行的某个 key 变化时,基于该行其他 key 做联动。`pre` 是数组字段名,`key` 是监听的 key。`setFieldState(key, {value})` 派生值进 `form.values` 叶子(只读派生列也能提交)。多 key 用 `onEachRowMultiChange`。
+:::
 
 当数组字段（Table / ArrayItems）里**每一行的某个 key 变化时**，基于该行其他 key
 做联动。`pre` 是数组字段名，`key` 是监听的 key。
@@ -312,7 +371,9 @@ setFieldState('discount', { visible: hasDiscount, required: hasDiscount }); // �
 
 ## `$.onEachRowMultiChange` — 数组按行多 key 联动
 
-> TL;DR: `onEachRowChange` 的多 key 版本——监听一行里多个 key,任一变化触发,`cb` 拿到所有监听 key 的值。比写多个 `onEachRowChange` 省,一次注册多 key 任一变化都触发。
+:::tip TL;DR
+`onEachRowChange` 的多 key 版本——监听一行里多个 key,任一变化触发,`cb` 拿到所有监听 key 的值。比写多个 `onEachRowChange` 省,一次注册多 key 任一变化都触发。
+:::
 
 `onEachRowChange` 的多 key 版本：监听一行里多个 key，任一变化触发，cb 拿到所有监听
 key 的值，并知道是哪个 key 触发的。
@@ -352,7 +413,9 @@ effects={$ => {
 
 ## `$.setRefState` / `$.getRefState` — 非响应式草稿区
 
-> TL;DR: effect 间共享状态但**不触发任何重渲染**(区别于 form 字段值——改字段值会引发响应式更新)。基于 immer,传函数即草稿更新。适合「记录上一次值做去抖/去重判断」这类不需要 UI 反应的内部记账。
+:::tip TL;DR
+effect 间共享状态但**不触发任何重渲染**(区别于 form 字段值——改字段值会引发响应式更新)。基于 immer,传函数即草稿更新。适合「记录上一次值做去抖/去重判断」这类不需要 UI 反应的内部记账。
+:::
 
 ### 签名
 
@@ -380,7 +443,9 @@ effects={$ => {
 
 ## `$.clearOn` — 级联清空（回显安全）
 
-> TL;DR: 依赖字段变化时清空目标字段。底层是 `onFieldValueChange`,**初始化不触发**——回显(从后端拉值填充)时不会误清空已回显的值。一行声明多依赖 → 多目标清空,省去手写 `onFieldValueChange` + `setValuesIn` 样板。
+:::tip TL;DR
+依赖字段变化时清空目标字段。底层是 `onFieldValueChange`,**初始化不触发**——回显(从后端拉值填充)时不会误清空已回显的值。一行声明多依赖 → 多目标清空,省去手写 `onFieldValueChange` + `setValuesIn` 样板。
+:::
 
 级联清空是最高频组合操作：选了省份 → 清空城市，切了分类 → 清空子分类。
 `clearOn` 把它一行化，且**初始 / 回显不触发**（底层是 `onFieldValueChange`，
@@ -416,7 +481,9 @@ effects={$ => {
 
 ## `$.debounce` — 联动防抖
 
-> TL;DR: 高频触发先折叠,只在停顿后跑一次(用最新参数),trailing-edge。纯工具(不依赖 Formily),返回函数**跨渲染稳定**,可直接当 prop 传,无需 `useCallback`。用于远程搜索 / 输入联想 / 按输入触发远程校验。
+:::tip TL;DR
+高频触发先折叠,只在停顿后跑一次(用最新参数),trailing-edge。纯工具(不依赖 Formily),返回函数**跨渲染稳定**,可直接当 prop 传,无需 `useCallback`。用于远程搜索 / 输入联想 / 按输入触发远程校验。
+:::
 
 远程搜索、输入联想、按输入触发远程校验都要防抖——高频触发先折叠，只在停顿后跑一次。
 `debounce` 是纯工具（不依赖 Formily），返回的函数**跨渲染稳定**，可直接当 prop 传，
@@ -452,9 +519,39 @@ effects={$ => {
 
 ### 示例：远程搜索 Select
 
-<Demo code={REMOTE_SEARCH_CODE} title="远程搜索（防抖 + onSearch）">
+<Demo title="远程搜索（防抖 + onSearch）">
   <RemoteSearchDemo />
 </Demo>
+
+```tsx
+import { Form } from 'rsform';
+
+// 模拟远程接口
+function searchUser(kw: string): Promise<Option[]> {
+  return fetch('/api/users?q=' + kw).then(r => r.json());
+}
+
+
+<Form initialValues={{ userId: '' }} effects={$ => {
+  // 防抖搜索：停顿 300ms 后用最新关键词发请求，把结果灌进 options
+  const search = $.debounce(async (kw: string) => {
+    const options = await searchUser(kw);
+    $.form.setFieldState('userId', s => {
+      s.componentProps = { ...s.componentProps, options, loading: false };
+    });
+  }, 300);
+  // 透传给 Select：onSearch 触发搜索，关掉本地过滤
+  $.form.setFieldState('userId', s => {
+    s.componentProps = { showSearch: true, filterOption: false, onSearch: search, options: [] };
+  });
+  // 进入页面先拉一次全量
+  search('');
+}}>
+  <Form.Field name="userId" title="用户" required>
+    <Form.Select placeholder="输入姓名或拼音搜索" style={{ width: 280 }} />
+  </Form.Field>
+</Form>
+```
 
 输入姓名/拼音搜索：每次输入触发 `onSearch`，`$.debounce` 折叠高频输入，停顿 300ms 后才发一次请求，结果灌进 `options`、关掉 `loading`。整段没有 `useState` / `useEffect` / 手动清 timer——防抖与状态全在 `effects` 里声明。
 
@@ -462,7 +559,9 @@ effects={$ => {
 
 ## `$.setVisible` / `$.setRequired` / `$.setEditable` — 字段状态语义糖
 
-> TL;DR: `form.setFieldState(name, s => { s.x = v })` 写多了啰嗦,这三个糖分别直接对应最常改的字段状态键 `visible` / `required` / `editable`。**何时用糖**:只改单个状态键、想写得直白。**何时用 `setFieldState`**:一次改多个键(`{visible, required, title}`)或改非这三个的键(`title`/`dataSource`/`rules`)。
+:::tip TL;DR
+`form.setFieldState(name, s => { s.x = v })` 写多了啰嗦,这三个糖分别直接对应最常改的字段状态键 `visible` / `required` / `editable`。**何时用糖**:只改单个状态键、想写得直白。**何时用 `setFieldState`**:一次改多个键(`{visible, required, title}`)或改非这三个的键(`title`/`dataSource`/`rules`)。
+:::
 
 ```ts
 $.setVisible(name: string, visible: boolean): void;     // s.visible = v
@@ -505,7 +604,7 @@ effects={$ => {
 > 上表是 `$` 上挂载的 helper。Formily 原生生命周期 hook（`onFieldMount` /
 > `onFormSubmit` / `onFormSubmitValidateFailed` / `onFormReset` / `onFormValuesChange` /
 > …）从 `rsform` 命名导入后直接在 `effects` 里调用即可，自动注册到当前 form。完整列表
-> 见 [API 参考](#api) 的 effects 导出。
+> 见 [API 参考](/advanced/api) 的 effects 导出。
 
 ### effects 可以是数组
 

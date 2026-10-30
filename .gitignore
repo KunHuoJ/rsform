@@ -8,6 +8,7 @@ dist
 
 # docs
 docs/dist
+docs/doc_build
 docs/.rspress
 docs/node_modules
 

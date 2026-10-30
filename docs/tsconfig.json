@@ -1,8 +1,10 @@
 {
     "extends": "../tsconfig.json",
     "compilerOptions": {
+        "types": ["node"],
         "paths": {
             "rsform": ["../src/index.ts"],
+            "rsform/styles": ["../src/styles/index.css"],
             "rsform/antd": ["../src/controls/index.ts"],
             "rsform/table": ["../src/table/index.ts"],
             "rsform/array-items": ["../src/array-items/index.ts"],

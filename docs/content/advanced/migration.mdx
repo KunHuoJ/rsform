@@ -1,0 +1,144 @@
+---
+title: 迁移指南
+description: 从 @formily/antd 迁移到 rsform
+---
+
+# 从 @formily/antd 迁移
+
+> rsform 是 Formily v2 + antd 5 的薄壳，核心模型（`createForm` / `FormProvider` / Field 响应式）完全沿用 Formily，只是把样板收起来、加了一层语法糖。迁移主要是改写法，数据流和响应式引擎不变。
+
+## 心智模型对照
+
+| @formily/antd | rsform | 说明 |
+| --- | --- | --- |
+| `<FormProvider form={form}>` + 手写布局 | `<Form onSubmit={...}>` | rsform `Form` 内部 `createForm` + `FormProvider`，省掉手写 provider |
+| `<Field component={[Input, {}]} decorator={[FormItem, {}]}>` | `<Form.Field title="X"><Form.Input /></Form.Field>` | rsform 自动注入 value/onChange，不用写 `component`/`decorator` 数组 |
+| `form.setInitialValues` / `createField` 手动 | `initialValues` prop / 自动 | rsform Field 挂载即注册 |
+| `onFieldValueChange` 裸写联动 | `effects={$ => $.linkedFieldProps(...)}` | `$` helper 闭包绑好 form，声明式 |
+| `form.submit()` + 手写按钮 | `<Form.Submit>` | 自带 loading + 校验态 |
+| antd `Form.List` | `<Form.ArrayItems>` | 类似 API，增删 / 上下移 |
+| 自做可编辑表格（每格 Field） | `<Form.Table>` | 性能从 O(N×M) 降到 O(1) |
+
+## 1. Field：去掉 component/decorator 数组
+
+```jsx title="@formily/antd"
+import { Field } from '@formily/react';
+import { Input, FormItem } from 'antd';
+
+<Field name="username" component={[Input, { placeholder: '请输入' }]} decorator={[FormItem, { label: '用户名' }]} />
+```
+
+```jsx title="rsform"
+<Form.Field name="username" title="用户名">
+    <Form.Input placeholder="请输入" />
+</Form.Field>
+```
+
+`value` / `onChange` 自动注入，`title` 当 label，`required` 既显红星又触发校验。控件直接丢进去，不用包 `component=[]`。
+
+## 2. 校验：rules 数组 → validator 函数
+
+rsform `Form.Field` 的 `validator` 接 Formily 校验器（函数返回空串通过 / 非空串报错）：
+
+```jsx title="validator"
+<Form.Field name="qty" title="数量" required validator={(v) => (v > 0 ? '' : '必须大于 0')}>
+    <Form.InputNumber />
+</Form.Field>
+```
+
+跨字段校验用 `effects` 里的 `$.validateField`（见下）。
+
+## 3. 联动：reactions → effects + $ helper
+
+```jsx title="@formily/antd：确认密码校验"
+onFieldValueChange('confirm', (field) => {
+    const pwd = form.getValuesIn('password');
+    field.setSelfErrors(field.value === pwd ? '' : '不一致');
+});
+```
+
+```jsx title="rsform"
+<Form
+    effects={($ ) =>
+        $.validateField('confirm', ['password', 'confirm'], ({ password, confirm }) =>
+            password === confirm ? '' : '两次密码不一致',
+        )
+    }
+>
+    {/* ... */}
+</Form>
+```
+
+级联 options（异步派生 props）用 `$.linkedFieldProps`，按行联动用 `$.onEachRowChange`。详见 [Effects 详解](/advanced/effects-detail)。
+
+## 4. 表单实例：createForm → formRef
+
+@formily/antd 手动 `const form = createForm({ effects })` 再传 `<FormProvider form={form}>`。rsform 默认内部创建，需要拿实例时用 `formRef`：
+
+```jsx title="formRef"
+const formRef = useRef(null);
+<Form formRef={formRef} onSubmit={...}>
+    {/* ... */}
+</Form>;
+// formRef.current.values / .submit() / .reset() / .query(...)
+```
+
+已有外部 form 实例也可传 `form` prop 复用。
+
+## 5. 提交：手写按钮 → Form.Submit
+
+```jsx title="提交按钮"
+// @formily/antd
+<Button loading={form.submitting} onClick={() => form.submit()}>
+    提交
+</Button>
+
+// rsform
+<Form.Submit>提交</Form.Submit>
+```
+
+自带 loading + 校验中禁用。校验通过才触发 `<Form onSubmit>`。需要「某个按钮单独行为」传 `onSubmit` prop 覆盖（详见 [API](/advanced/api)）。
+
+## 6. 可编辑表格：自做 → Form.Table
+
+@formily/antd 没内置高性能可编辑表格，常见做法是每格一个 `<Field>`，N×M 订阅卡顿。rsform：
+
+```jsx title="Form.Table"
+<Form.Table<Row>
+    name="rows"
+    columns={[
+        { title: '名称', dataIndex: 'name', control: 'input', required: true },
+        { title: '数量', dataIndex: 'qty', control: 'inputNumber' },
+    ]}
+/>
+```
+
+单元格不是 Formily Field，编辑一格只重渲染该格。详见 [可编辑表格](/components/table)。
+
+## 7. ArrayItems：Form.List → Form.ArrayItems
+
+```jsx title="Form.List → Form.ArrayItems"
+// antd Form.List
+<Form.List name="users">
+    {(fields, { add, remove }) => fields.map((f) => <Form.Item name={[f.name, 'email']}><Input /></Form.Item>)}
+</Form.List>
+
+// rsform
+<Form.ArrayItems name="users" itemDefaultValue={{ email: '' }}>
+    {() => <Form.Field name="email"><Form.Input /></Form.Field>}
+</Form.ArrayItems>
+```
+
+行内 `name="email"` 自动解析到当前行（相对路径），增删 / 上下移按钮内置。
+
+## 不用改的部分
+
+- **`form.values` / `form.query` / `form.setValuesIn`** 等 Formily core API 全部不变——rsform 透传同一份 formily 实例
+- **响应式引擎**（`@formily/reactive`）不变，`observer` / `autorun` / `untracked` 照常可用
+- **antd 控件**原样用，rsform 只是 re-export + 自动注入；需要 antd 原始 props 直接传
+
+## 常见踩坑
+
+- **peer 依赖** — `@formily/*` 必须复用消费者同一份实例，别重复装，否则响应式失效
+- **dayjs 等类实例** — 别直接进 `form.values`（Formily Proxy 会序列化），在控件边界做 string↔实例 转换（表格用 `'date'` 控件已内置）
+- **`Form.Submit` 必须在 `Form` 子树内**（读 Formily context）。Modal footer 提交要让 `Form` 包住 `Modal`

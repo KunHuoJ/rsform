@@ -1,38 +1,23 @@
-import * as React from 'react';
-import { CodeBlock } from './CodeBlock';
+import type * as React from 'react';
 
 interface DemoProps {
-    /** Source code shown in the collapsible code block. */
-    code: string;
     /** Title shown in the demo header. */
     title?: string;
     children: React.ReactNode;
 }
 
 /**
- * 演示容器：上半实时预览，下半可折叠源码（仿 antd pro-components 文档）。
- * 默认收起代码，点「显示代码」展开。
+ * 演示预览框：包裹 live demo 组件，提供统一的边框 + 标题样式。
+ * 源码不再由本组件渲染——改用 Rspress 原生 ```tsx 代码块（Shiki 高亮 +
+ * 可折叠）写在 <Demo> 下方，代码与预览天然在一起。
  */
-export function Demo({ code, title, children }: DemoProps): React.ReactElement {
-    const [open, setOpen] = React.useState(false);
+export function Demo({ title, children }: DemoProps): React.ReactElement {
     return (
         <div className="rsfd-demo">
             <div className="rsfd-demo-head">
                 <span className="rsfd-demo-label">{title ?? '实时演示'}</span>
-                <button
-                    type="button"
-                    className="rsfd-demo-toggle"
-                    onClick={() => setOpen((o) => !o)}
-                >
-                    {open ? '收起代码' : '显示代码'}
-                </button>
             </div>
             <div className="rsfd-demo-body">{children}</div>
-            {open && (
-                <div className="rsfd-demo-code">
-                    <CodeBlock code={code} />
-                </div>
-            )}
         </div>
     );
 }

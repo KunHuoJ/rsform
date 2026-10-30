@@ -1,8 +1,11 @@
-import {CodeBlock} from '../CodeBlock';
+---
+title: API 参考
+description: rsform 全部导出与 props
+---
 
-## API 参考
+# API 参考
 
-### Form
+## Form
 
 表单容器。底层 `createForm` + `FormProvider`，children 外包一层空 `preName` 的
 `FieldContext.Provider`，让相对路径 Field 能解析。
@@ -31,7 +34,7 @@ import {Form} from 'rsform';
 
 ---
 
-### Form.Field
+## Form.Field
 
 字段单元。包 Formily `<Field>`，用 `commonMap` 自动把 `field.value` / `field.onInput`
 桥接成 antd 控件的 `value` / `onChange`，无需手写受控样板。
@@ -56,7 +59,7 @@ import {Form} from 'rsform';
 
 ---
 
-### Form.Submit
+## Form.Submit
 
 提交按钮。包 antd `Button`，点击调 `form.submit()`，提交/校验期间显示 loading。提交先跑整表校验；**校验失败则拦截 onSubmit**（onSubmit 挂在 `onFormSubmitSuccess`，只在通过后执行）。
 
@@ -69,7 +72,7 @@ import {Form} from 'rsform';
 
 ---
 
-### Form.Consumer
+## Form.Consumer
 
 render-prop 订阅表单值。底层 `observer` + `form.values`/`form.getValuesIn`，只追踪读到的叶子，所以只有那片数据变化才重渲染。
 
@@ -86,11 +89,13 @@ render-prop 订阅表单值。底层 `observer` + `form.values`/`form.getValuesI
 | `name` | `string` | — | 字段路径；省略则订阅整个 `form.values`。支持相对路径（`.foo` 在 `Form.Field` 内解析到当前行） |
 | `children` | `(data) => ReactNode` | — | render-prop：接收订阅到的数据并返回节点。`name` 省略时 `data` 是整个 `form.values`；有 `name` 时 `data` 是该字段值 |
 
-> `children` 是纯渲染函数，不要在里面写副作用（写状态/发请求）；需要副作用用 `effects` 里的 `$.onFieldValueChange`。
+:::info
+`children` 是纯渲染函数，不要在里面写副作用（写状态 / 发请求）；需要副作用用 `effects` 里的 `$.onFieldValueChange`。
+:::
 
 ---
 
-### useFormDraft
+## useFormDraft
 
 草稿自动保存 / 恢复 hook。在 `<Form>` 内部调用，给定业务语义稳定的 key，表单每次值变化防抖写进 `localStorage`，提交成功后草稿自动清除，重新进入发现历史草稿时 `hasDraft` 为 `true` 供渲染恢复横条。
 
@@ -113,7 +118,7 @@ const draft = useFormDraft('order-edit', {debounceMs: 400});
 
 ---
 
-### 控件
+## 控件
 
 薄 antd 5 控件 re-export，加静态 `__rsfOptionControl` 标记供 Table 控件注册识别。
 
@@ -130,7 +135,7 @@ const draft = useFormDraft('order-edit', {debounceMs: 400});
 
 控件可直接 import：`import {Select} from 'rsform'`，或走 `Form.Select` 命名空间。
 
-#### 自定义控件注册（Table）
+### 自定义控件注册（Table）
 
 Table 的 `control` 列属性有三种写法，**都共享同一份性能契约**（CellBridge 注入 value/onChange、只订阅叶子、支持 validator/effects）：
 
@@ -149,13 +154,15 @@ registerControl('companyPicker', CompanyPicker);
 
 3. **元素**（`control: <CompanyPicker companies={...} />`）：一次性，CellBridge 用 `cloneElement` 注入 value/onChange。
 
-自定义控件只需接收 `value` / `onChange`（传裸值或 event 均可），无需感知 Formily/rsform。详见「可编辑表格」页的[自定义控件](#自定义控件)小节与完整示例。
+自定义控件只需接收 `value` / `onChange`（传裸值或 event 均可），无需感知 Formily/rsform。详见「可编辑表格」页的[自定义控件](/components/table#自定义控件)小节与完整示例。
 
-> ⚠️ 类实例（dayjs/moment 等）不要直接进 `form.values`——Formily 响应式 Proxy 会序列化它。仿照内置 `'date'`（`DateCell`，存 ISO 字符串、边界转 Dayjs），在控件边界做值类型转换。
+:::warning 类实例边界转换
+类实例（dayjs / moment 等）不要直接进 `form.values`——Formily 响应式 Proxy 会序列化它。仿照内置 `'date'`（`DateCell`，存 ISO 字符串、边界转 Dayjs），在控件边界做值类型转换。
+:::
 
 ---
 
-### Form.Table
+## Form.Table
 
 高性能可编辑表格。单元格**不是** Formily Field——只订阅 `form.values` 的叶子节点，
 编辑一格只重渲染该格。
@@ -166,7 +173,7 @@ import {Form} from 'rsform';
 <Form.Table<Row> name="rows" columns={[...]} />
 ```
 
-#### Form.Table props
+### Form.Table props
 
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
@@ -182,7 +189,7 @@ import {Form} from 'rsform';
 | `tableProps` | `object` | — | antd `Table` props 透传（`virtual`/`bordered`/`size`/`rowSelection`/`onChange`/`onRow`/`sticky`…）。rsform 接管的 `columns`/`dataSource`/`pagination`/`rowKey`/`scroll` 优先 |
 | `className` | `string` | — | 表格包装类名 |
 
-#### RsfTableColumn
+### RsfTableColumn
 
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
@@ -199,11 +206,13 @@ import {Form} from 'rsform';
 | `fixed` | `'left' \| 'right' \| boolean` | — | 固定列 |
 | `render` | `(value, record, index, actions) => Node` | — | 完全自定义渲染（覆盖 CellBridge）。`actions` 提供 `add`/`insert`/`remove`/`move`/`moveUp`/`moveDown`/`form`/`field`，可在任意列放操作按钮 |
 
-> `render` 的 `actions`（`RsfTableColumnActions`）：`add(value?)`、`insert(index, value?)`、`remove(index)`、`move(from, to)`、`moveUp(index)`、`moveDown(index)`、`form`、`field`。`add`/`insert` 默认用 `itemDefaultValue`。
+:::info `render` 的 `actions`
+`RsfTableColumnActions`：`add(value?)`、`insert(index, value?)`、`remove(index)`、`move(from, to)`、`moveUp(index)`、`moveDown(index)`、`form`、`field`。`add` / `insert` 默认用 `itemDefaultValue`。
+:::
 
 ---
 
-### Form.ArrayItems
+## Form.ArrayItems
 
 轻量增删列表，类似 antd `Form.List`。基于 Formily `ArrayField` mutators。默认只给
 删除按钮；上下移动按需开启（`sortable`）。添加/删除均可自定义按钮或拦截。
@@ -216,7 +225,7 @@ import {Form} from 'rsform';
 </Form.ArrayItems>
 ```
 
-#### props
+### props
 
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
@@ -234,18 +243,18 @@ import {Form} from 'rsform';
 | `sortable` | `boolean` | `false` | 是否显示上移/下移按钮；多数表单不需要排序 |
 | `children` | `(value, index) => ReactNode \| ReactNode` | — | 行内容；render-prop 内用相对路径 Field |
 
-#### 相对路径
+### 相对路径
 
 `children` 是 render-prop 时，内部 `Field name="label"` 会解析到当前行
 （`name.0.label`、`name.1.label`...），无需手拼路径。
 
-#### 行操作
+### 行操作
 
 默认每行行末一个删除按钮。`sortable` 开启后额外显示上移/下移（走 Formily
 `moveUp`/`moveDown`）。`renderRemove` 可整行替换删除按钮；`onRemove` 可在删除前
 拦截（如弹确认框，返回 `false` 取消）。`renderAdd` 同理替换底部新增按钮。
 
-#### 跨行唯一校验 `arrayUnion`
+### 跨行唯一校验 `arrayUnion`
 
 `arrayUnion(key, message?)` 返回一个 validator，挂在行内 `<Field validator={arrayUnion('email')}>` 上，自动读取最近数组祖先，若该 `key` 在其他行已出现则报错。
 

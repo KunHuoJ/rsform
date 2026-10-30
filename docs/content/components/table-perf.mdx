@@ -1,0 +1,92 @@
+---
+title: 表格性能压测
+description: 50×20 可编辑单元格性能验证
+---
+
+import {Demo} from '../../Demo';
+import {TablePerfDemo} from '../../demos/TablePerfDemo';
+
+# 表格性能压测
+
+> 50 行 × 20 列 = **1000 个可编辑单元格**，混合 input / inputNumber / select / date / switch 五种控件。编辑任意一格只该格重渲染，FPS 不掉。
+
+对比「每格做成 Formily `<Field>`」的实现，编辑一格的响应式重算量从 O(N×M) = O(1000) 降到 O(1)。
+
+<Demo title="50×20 混合控件性能表格">
+    <TablePerfDemo />
+</Demo>
+
+```tsx title="50×20 性能表格"
+import * as React from 'react';
+import { Form, type RsfTableColumn } from 'rsform';
+
+interface Row {
+    name: string;
+    qty: number;
+    price: number;
+    status: string;
+    // ...共 20 个字段
+}
+
+const ROWS = 50;
+const DEFAULT_ROW: Row = { name: '', qty: 0, price: 0, status: 'pending' /* ... */ };
+
+function makeInitial(): Row[] {
+    return Array.from({ length: ROWS }, (_, i) => ({
+        name: `行${i + 1}`,
+        qty: i + 1,
+        price: (i + 1) * 1.5,
+        status: 'pending' /* ...其余字段 */,
+    }));
+}
+
+const columns: RsfTableColumn<Row>[] = [
+    { title: '名称', dataIndex: 'name', control: 'input', width: 120, required: true },
+    { title: '数量', dataIndex: 'qty', control: 'inputNumber', width: 80 },
+    { title: '单价', dataIndex: 'price', control: 'inputNumber', width: 90 },
+    { title: '状态', dataIndex: 'status', control: 'select', width: 100, controlProps: { options: STATUS_OPTS } },
+    { title: '入库日期', dataIndex: 'inDate', control: 'date', width: 180 },
+    { title: '启用', dataIndex: 'active', control: 'switch', width: 70 },
+    // ...共 20 列
+];
+
+export function TablePerfDemo() {
+    const [result, setResult] = React.useState('');
+    return (
+        <Form
+            initialValues={{ rows: makeInitial() }}
+            validateFailed="scroll"
+            onSubmit={(values) => setResult(JSON.stringify(values, null, 2))}
+        >
+            <Form.Table<Row>
+                name="rows"
+                pagination={false}
+                itemDefaultValue={DEFAULT_ROW}
+                columns={columns}
+            />
+            <Form.Submit>提交</Form.Submit>
+            {result && <pre>{result}</pre>}
+        </Form>
+    );
+}
+```
+
+## 怎么验证它快
+
+1. 打开 Chrome DevTools → Performance，点录制
+2. 在表格里连续编辑几个单元格（输入、切换 select、选日期）
+3. 停止录制，看每次编辑的 Rendering 区间——应该只有一格的 commit，没有整表 1000 格的重渲染
+4. 对比：把 `Form.Table` 换成「每格 `<Form.Field>`」的朴素实现，同样编辑一格，Rendering 区间会暴涨到整表
+
+## 为什么快
+
+单元格只订阅 `form.values` 的叶子节点（`rows.i.j`），编辑 (i,j) 只通知 (i,j) 的观察者；表体 `untracked` 读数组、不订阅编辑，`columns` 引用跨编辑稳定。
+
+:::tip
+想了解完整的性能机制（读 / 写 / 表体 / columns 稳定性），见 [可编辑表格](/components/table) 的「为什么快」一节。
+:::
+
+## 下一步
+
+- [可编辑表格](/components/table) — 列定义、自定义控件、行操作
+- [API 参考](/advanced/api) — `Form.Table` 完整 props
