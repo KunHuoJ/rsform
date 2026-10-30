@@ -23,9 +23,9 @@ Formily 的响应式引擎很强，但直接用 `@formily/react` 样板太多：
 - ⊕ **自动注入 Field**——控件丢进 `Form.Field` 即受控，支持相对路径
 - ↕ **可增删 ArrayItems**——Formily ArrayField mutators，增删/上下移开箱即用，类似 antd Form.List，零拖拽依赖
 - 🎨 **CSS 变量主题**——`--rsf-*` 变量，antd 风格默认值，覆盖即定制
-- 🌗 **深色模式**——内置，按 `data-theme` 或系统偏好
+- 🌗 **深色模式**——内置,跟随 `.dark` class(Rspress / Tailwind 等)或 `data-theme`、系统偏好
 - 📦 **单包多入口**——`rsform` 核心无 antd 依赖，控件/表格/数组按需引入
-- 🧪 **完整测试**——Vitest，52+ 测试覆盖核心契约
+- 🧪 **完整测试**——Vitest,84 测试覆盖核心契约
 
 ## 快速上手
 
@@ -45,10 +45,10 @@ import { Form } from 'rsform';
   initialValues={{ name: '', age: 18 }}
   onSubmit={async values => console.log(values)}
 >
-  <Form.Field name="name" title="姓名" required>
+  <Form.Field name="name" label="姓名" required>
     <Form.Input placeholder="请输入姓名" />
   </Form.Field>
-  <Form.Field name="age" title="年龄" required>
+  <Form.Field name="age" label="年龄" required>
     <Form.InputNumber min={0} />
   </Form.Field>
   <Form.Submit>提交</Form.Submit>
@@ -68,10 +68,10 @@ import { Form } from 'rsform';
     )
   }
 >
-  <Form.Field name="password" title="密码" required>
+  <Form.Field name="password" label="密码" required>
     <Form.Input.Password />
   </Form.Field>
-  <Form.Field name="confirm" title="确认密码" required>
+  <Form.Field name="confirm" label="确认密码" required>
     <Form.Input.Password />
   </Form.Field>
 </Form>
@@ -88,8 +88,8 @@ import { Form } from 'rsform';
     })
   }
 >
-  <Form.Field name="province" title="省份"><Form.Select options={PROVINCES} /></Form.Field>
-  <Form.Field name="city" title="城市"><Form.Select /></Form.Field>
+  <Form.Field name="province" label="省份"><Form.Select options={PROVINCES} /></Form.Field>
+  <Form.Field name="city" label="城市"><Form.Select /></Form.Field>
 </Form>
 ```
 
@@ -147,7 +147,7 @@ interface Row { name: string; qty: number; price: number }
 - **引擎**：`@formily/core` + `@formily/react` v2（开源 MIT）
 - **UI**：antd 5 + React 19
 - **打包**：`@rslib/core`（bundleless，ESM + CJS + dts）
-- **文档**：Vite + React + MDX
+- **文档**：Rspress 2（Rsbuild + React + MDX）
 - **测试**：Vitest + Testing Library（jsdom）
 
 ## 开发
@@ -155,7 +155,7 @@ interface Row { name: string; qty: number; price: number }
 ```sh
 pnpm install
 pnpm dev            # 库 watch 构建
-pnpm docs:dev       # 文档站本地预览（http://localhost:6173）
+pnpm docs:dev       # 文档站本地预览（http://localhost:9527）
 pnpm test           # 测试
 pnpm typecheck      # 类型检查
 pnpm build          # 库构建到 dist/
