@@ -240,6 +240,8 @@ function LiveSummary() {
 
 export function PlaygroundDemo(): React.ReactElement {
     const formRef = React.useRef<any>(null);
+    // 最近一次提交的值：提交后渲染到输出区，让页面可见验证结果（不只是 console.log）
+    const [submitted, setSubmitted] = React.useState<any>(null);
 
     return (
         <Form
@@ -302,6 +304,7 @@ export function PlaygroundDemo(): React.ReactElement {
             }}
             onSubmit={(values) => {
                 console.log(values);
+                setSubmitted(values);
             }}
         >
             <Section title="基本信息">
@@ -400,10 +403,25 @@ export function PlaygroundDemo(): React.ReactElement {
 
             <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
                 <Form.Submit>提交订单</Form.Submit>
-                <Form.Button type="default" onClick={() => formRef.current?.reset()}>
+                <Form.Button
+                    type="default"
+                    onClick={() => {
+                        formRef.current?.reset();
+                        setSubmitted(null);
+                    }}
+                >
                     重置
                 </Form.Button>
             </div>
+
+            {submitted && (
+                <div className="rsfd-output">
+                    <div style={{ marginBottom: 6, color: 'var(--rsf-muted)', fontSize: 12 }}>
+                        onSubmit 输出（普通对象，可直接 JSON.stringify / 送接口）：
+                    </div>
+                    {JSON.stringify(submitted, null, 2)}
+                </div>
+            )}
         </Form>
     );
 }
