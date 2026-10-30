@@ -3,6 +3,8 @@ import { FieldError } from './FieldError';
 
 export interface FieldUiProps {
     label?: React.ReactNode;
+    /** `htmlFor` target — the id injected onto the control, to link label ↔ control. */
+    htmlFor?: string;
     required?: boolean;
     error?: React.ReactNode;
     className?: string;
@@ -15,6 +17,7 @@ export interface FieldUiProps {
  */
 export function FieldUi({
     label,
+    htmlFor,
     required,
     error,
     className,
@@ -23,7 +26,7 @@ export function FieldUi({
     return (
         <div className={`${prefixCls}-field ${className ?? ''}`.trim()}>
             {label != null && (
-                <label className={`${prefixCls}-field-label`}>
+                <label className={`${prefixCls}-field-label`} htmlFor={htmlFor}>
                     {required && <span className={`${prefixCls}-field-required`}>*</span>}
                     {label}
                 </label>

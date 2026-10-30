@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { Field, Form, Input } from '../src/index';
 
 describe('Field', () => {
@@ -36,7 +36,7 @@ describe('Field', () => {
         expect(screen.getByText('hello')).toBeTruthy();
     });
 
-    it('runs under React.StrictMode without crashing (R2 spike)', () => {
+    it('runs under React.StrictMode without crashing', () => {
         const formRef: React.MutableRefObject<any> = { current: null };
         render(
             <React.StrictMode>
@@ -74,8 +74,32 @@ describe('Field', () => {
         expect(formRef.current.query('name').take().selfErrors).toContain('name is required');
     });
 
-    // Silence unused-import noise in some runners.
-    it('noop', () => {
-        expect(vi.fn()).toBeDefined();
+    it('renders `label`, and `title` still works as a back-compat alias', () => {
+        render(
+            <Form initialValues={{ a: '', b: '' }}>
+                <Field name="a" label="标签 A">
+                    <Input data-testid="a" />
+                </Field>
+                <Field name="b" title="标签 B">
+                    <Input data-testid="b" />
+                </Field>
+            </Form>,
+        );
+        expect(screen.getByText('标签 A')).toBeTruthy();
+        expect(screen.getByText('标签 B')).toBeTruthy();
+    });
+
+    it('links the label to the control via htmlFor/id', () => {
+        const { container } = render(
+            <Form initialValues={{ name: '' }}>
+                <Field name="name" label="姓名">
+                    <Input data-testid="name" />
+                </Field>
+            </Form>,
+        );
+        const label = container.querySelector('label') as HTMLLabelElement;
+        const input = screen.getByTestId('name') as HTMLInputElement;
+        expect(label.htmlFor).toBeTruthy();
+        expect(label.htmlFor).toBe(input.id);
     });
 });

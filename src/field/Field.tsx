@@ -19,6 +19,9 @@ export interface FieldRenderApi {
 export interface FieldProps {
     /** Field name; may be relative (`.foo`, `..foo`) against the parent context. */
     name: string;
+    /** Field label (preferred). Falls back to `title` when omitted. */
+    label?: React.ReactNode;
+    /** @deprecated Alias of `label`, kept for back-compat. Prefer `label`. */
     title?: React.ReactNode;
     required?: boolean;
     editable?: boolean;
@@ -44,7 +47,7 @@ export interface FieldProps {
 
 interface FieldBodyProps {
     resolvedName: string;
-    title?: React.ReactNode;
+    label?: React.ReactNode;
     required?: boolean;
     editable?: boolean;
     format?: (value: any) => any;
@@ -66,7 +69,7 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
         return null;
     }
     const {
-        title,
+        label,
         required,
         editable,
         format,
@@ -79,9 +82,13 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
 
     useSelectFirst({ field, selectFirst, children });
 
+    // Stable id to link the <label htmlFor> with the control. Only used when the
+    // child is a concrete element we can inject `id` into (not render-props).
+    const autoId = React.useId();
     const isNonEditable = editable === false || field.editable === false;
 
     let content: React.ReactNode;
+    let controlId: string | undefined;
     if (isNonEditable) {
         content = <NonEditable value={field.value} format={format} />;
     } else if (typeof children === 'function') {
@@ -94,7 +101,9 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
         const childEl = children as React.ReactElement<any>;
         const optionCtrl = isOptionControl(childEl);
         const inject = commonMap(field, { format, parse, isOptionControl: optionCtrl });
+        controlId = childEl.props.id ?? autoId;
         const injectProps: Record<string, any> = {
+            id: controlId,
             onChange: inject.onChange,
             onBlur: inject.onBlur,
             onFocus: inject.onFocus,
@@ -104,8 +113,8 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
         } else {
             injectProps.value = inject.value;
         }
-        if (!childEl.props.placeholder && typeof title === 'string') {
-            injectProps.placeholder = `请输入${title}`;
+        if (!childEl.props.placeholder && typeof label === 'string') {
+            injectProps.placeholder = `请输入${label}`;
         }
         // Forward `linkedFieldProps`-derived control props. The effects helper
         // merges its `compute` result into `field.componentProps`; spread those
@@ -131,7 +140,12 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
         );
     } else {
         node = (
-            <FieldUi label={title} required={required} error={(field as any)?.selfErrors?.[0]}>
+            <FieldUi
+                label={label}
+                htmlFor={controlId}
+                required={required}
+                error={(field as any)?.selfErrors?.[0]}
+            >
                 {content}
             </FieldUi>
         );
@@ -169,6 +183,7 @@ const FieldBody = observer(FieldBodyImpl);
 export function Field(props: FieldProps): React.ReactElement {
     const {
         name,
+        label,
         title,
         required,
         editable,
@@ -184,12 +199,14 @@ export function Field(props: FieldProps): React.ReactElement {
     } = props;
 
     const resolvedName = useContentName(name);
+    // `label` is canonical; `title` kept as a back-compat alias.
+    const resolvedLabel = label ?? title;
 
     return (
         <FormilyField
             name={resolvedName}
             basePath={basePath ?? ''}
-            title={title}
+            title={resolvedLabel}
             required={required}
             editable={editable}
             validator={validator}
@@ -198,7 +215,7 @@ export function Field(props: FieldProps): React.ReactElement {
         >
             <FieldBody
                 resolvedName={resolvedName}
-                title={title}
+                label={resolvedLabel}
                 required={required}
                 editable={editable}
                 format={format}
