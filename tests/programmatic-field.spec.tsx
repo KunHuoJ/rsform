@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { Field, Form, Input } from '../src/index';
 
 /**
- * R1 spike: verify form.createField({name, validator}) registers a field for
- * validation WITHOUT rendering a <Field> in the tree. This is the feasibility
- * gate for the high-perf Table's CellBridge (Phase 5), which needs cell
- * validation to work without per-cell Formily Field subscriptions.
+ * A field created via `form.createField({name, validator})` registers for
+ * validation WITHOUT rendering a <Field> in the tree. This underpins the
+ * high-perf Table's CellBridge, where cell validation must work without
+ * per-cell Formily Field subscriptions.
  */
-describe('R1 spike — form.createField without rendering <Field>', () => {
+describe('programmatic field — form.createField without rendering <Field>', () => {
     it('runs a validator on a programmatically created field', async () => {
         const formRef: React.MutableRefObject<any> = { current: null };
 
