@@ -25,13 +25,13 @@ import {ConsumerDemo} from '../../demos/ConsumerDemo';
 import { Form } from 'rsform';
 
 <Form initialValues={{ name: 'rsform', age: 1, status: 'draft' }}>
-    <Form.Field name="name" title="名称">
+    <Form.Field name="name" label="名称">
         <Form.Input />
     </Form.Field>
-    <Form.Field name="age" title="数量">
+    <Form.Field name="age" label="数量">
         <Form.InputNumber min={0} />
     </Form.Field>
-    <Form.Field name="status" title="状态">
+    <Form.Field name="status" label="状态">
         <Form.Select options={STATUS} />
     </Form.Field>
 

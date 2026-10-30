@@ -3,13 +3,13 @@ import { prefixCls } from '../shared/prefixCls';
 
 export interface NonEditableProps {
     value?: any;
-    /** Transform the form value for display (e.g. option label lookup). */
+    /** 转换表单值以供显示(例如查找选项的 label)。 */
     format?: (value: any) => React.ReactNode;
 }
 
 /**
- * Renders a field's value as plain text when `editable={false}`.
- * Falls back to '-' when the value is null/undefined/''.
+ * 当 `editable={false}` 时将字段值渲染为纯文本。
+ * 当值为 null/undefined/'' 时回退显示 '-'。
  */
 export function NonEditable({ value, format }: NonEditableProps): React.ReactElement {
     const display = format ? format(value) : value;

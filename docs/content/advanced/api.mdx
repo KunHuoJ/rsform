@@ -42,20 +42,32 @@ import {Form} from 'rsform';
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
 | `name` | `string` | — | 字段路径；支持相对路径 `.foo` / `..foo`（在 ArrayItems 行内） |
-| `title` | `ReactNode` | — | label 文本 |
+| `label` | `ReactNode` | — | label 文本（首选属性） |
+| `title` | `ReactNode` | — | `label` 的别名，为向后兼容保留（`@deprecated`，优先用 `label`） |
 | `required` | `boolean` | — | 显示红星 **且** 触发 Formily 内置非空校验（submit 空值被拦截）。自定义规则另配 `validator`，两者叠加 |
 | `editable` | `boolean` | `true` | `false` 渲染为 `NonEditable` 文本态 |
 | `format` | `(value) => any` | — | 写入控件前变换值 |
 | `parse` | `(value) => any` | — | 控件 onChange 后写入表单前变换值 |
 | `selectFirst` | `boolean` | — | 挂载时自动选首项（单选 option 控件） |
 | `hideUi` | `boolean` | — | 只渲染控件，无 label/error 外壳 |
-| `requiredOnlyUi` | `boolean` | — | 只渲染红星 + 控件，隐藏 title |
+| `requiredOnlyUi` | `boolean` | — | 只渲染红星 + 控件，隐藏 label |
 | `validator` | `FormilyValidator` | — | Formily 校验器 |
 | `reactions` | `FormilyReactions` | — | Formily 字段 reactions |
 | `basePath` | `string` | — | Formily basePath 覆盖 |
 | `children` | `ReactElement \| (api) => Node` | — | 控件元素，或 render-prop |
 
 `children` 为 render-prop 时收到 `{value, onChange, state}`，用于自定义控件。
+
+`Form.Field` 带值类型泛型 `<Value>`：显式写出后，render-prop 的 `value` / `onChange`
+以及 `format` / `parse` 都获得精确类型（不写时默认 `any`，与旧用法一致）。`state`
+为 Formily 的 `GeneralField` 模型。
+
+```tsx
+// value 推断为 number，onChange 接收 number
+<Form.Field<number> name="age">
+  {({ value, onChange }) => <Form.InputNumber value={value} onChange={onChange} />}
+</Form.Field>
+```
 
 ---
 
@@ -150,6 +162,23 @@ registerControl('companyPicker', CompanyPicker);
 
 `getControl(key)` 查单个、`getControls()` 查全部（返回防御性拷贝）。
 
+想让自定义 key 也获得 **IDE 自动补全 + 类型校验**（而非只接受裸 `string`），用 TS
+的**声明合并**扩充 `RsfControlRegistry` 接口即可，无需 fork：
+
+```ts
+import type {ControlComponent} from 'rsform';
+
+declare module 'rsform' {
+  interface RsfControlRegistry {
+    companyPicker: ControlComponent;
+  }
+}
+```
+
+合并后 `'companyPicker'` 进入 `ControlKey`，列的 `control: 'companyPicker'` 与
+`registerControl('companyPicker', CompanyPicker)` 都会被类型系统识别；未声明的任意
+字符串仍可用（运行时注册照常生效）。
+
 2. **组件类型**（`control: CompanyPicker`）：直接传组件类型，配合 `controlProps` 最自然，无需注册。
 
 3. **元素**（`control: <CompanyPicker companies={...} />`）：一次性，CellBridge 用 `cloneElement` 注入 value/onChange。
@@ -182,7 +211,7 @@ import {Form} from 'rsform';
 | `rowKey` | `string \| (record, index) => Key` | 绝对行号 | 行 key |
 | `pagination` | `false \| object` | `false` | antd 分页；默认不分页。⚠️ 用分页时必须**受控**传 `current`/`pageSize`——非受控分页下 `useTable` 拿不到当前页，跨页单元格路径会错位 |
 | `scroll` | `object` | 见说明 | antd `scroll`。省略时 rsform 按列 `width` 求和算 `scroll.x`（让每列 `width` 严格生效，固定布局）；无列声明 width 时回退 `'max-content'`。传自定义则覆盖 |
-| `itemDefaultValue` | `any` | `{}` | `actions.add`/`actions.insert` 不传 value 时的默认行值 |
+| `itemDefaultValue` | `Partial<RecordType>` | `{}` | `actions.add`/`actions.insert` 不传 value 时的默认行值 |
 | `max` | `number` | — | 行数上限；到上限后 `actions.add`/`actions.insert` 静默拒绝 |
 | `min` | `number` | `0` | 行数下限；到下限后 `actions.remove` 静默拒绝 |
 | `validateBeforeAdd` | `boolean \| (values, itemDefault) => boolean \| string \| void` | `false` | `add`/`insert` 前门禁。`true`：先 `form.validate(\`${name}.*\`)` 校验已有行，有错拒绝。传函数同 `ArrayItems` 签名自定义门禁 |
@@ -194,7 +223,7 @@ import {Form} from 'rsform';
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
 | `title` | `ReactNode` | — | 列标题 |
-| `dataIndex` | `string` | — | 行对象里对应此列的 key |
+| `dataIndex` | `keyof RecordType \| string` | — | 行对象里对应此列的 key；指定 `RecordType` 时补全字段名，并放宽到任意 `string`（便于操作列如 `'actions'`） |
 | `width` | `number \| string` | — | 列宽 |
 | `control` | `ControlKey \| ComponentType \| ReactElement` | — | 控件：字符串 key（`'input'`/`'inputNumber'`/`'select'`/`'radioGroup'`/`'switch'`/`'date'`，IDE 自动补全）、组件类型（`control: MyInput`）、或 React 元素；省略=只读文本。三种写法见上方[自定义控件注册](#自定义控件注册table) |
 | `editable` | `boolean` | `true`（有 control 时） | 单元格是否可编辑 |
@@ -207,7 +236,7 @@ import {Form} from 'rsform';
 | `render` | `(value, record, index, actions) => Node` | — | 完全自定义渲染（覆盖 CellBridge）。`actions` 提供 `add`/`insert`/`remove`/`move`/`moveUp`/`moveDown`/`form`/`field`，可在任意列放操作按钮 |
 
 :::info `render` 的 `actions`
-`RsfTableColumnActions`：`add(value?)`、`insert(index, value?)`、`remove(index)`、`move(from, to)`、`moveUp(index)`、`moveDown(index)`、`form`、`field`。`add` / `insert` 默认用 `itemDefaultValue`。
+`RsfTableColumnActions`：`add(value?)`、`insert(index, value?)`、`remove(index)`、`move(from, to)`、`moveUp(index)`、`moveDown(index)`、`form`（Formily `Form`）、`field`（Formily `ArrayField`）。`add` / `insert` 默认用 `itemDefaultValue`。
 :::
 
 ---
@@ -230,7 +259,7 @@ import {Form} from 'rsform';
 | 属性 | 类型 | 默认 | 说明 |
 |---|---|---|---|
 | `name` | `string` | — | 数组字段名；支持相对路径 |
-| `itemDefaultValue` | `any` | `{}` | 新增行默认值 |
+| `itemDefaultValue` | `Partial<RecordType>` | `{}` | 新增行默认值 |
 | `min` | `number` | — | 最小行数，到限禁用删除 |
 | `max` | `number` | — | 最大行数，到限禁用新增 |
 | `validateBeforeAdd` | `(values, itemDefault) => boolean \| string \| void` | — | 新增前门禁；`false` 静默阻止，`string` 报错 |

@@ -41,18 +41,18 @@ export function ArrayItemsDemo(): React.ReactElement {
             <Form.ArrayItems name="members" itemDefaultValue={DEFAULT_MEMBER} min={1}>
                 {() => (
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <Form.Field name="name" title="姓名" required>
+                        <Form.Field name="name" label="姓名" required>
                             <Form.Input placeholder="姓名" style={{ width: 120 }} />
                         </Form.Field>
                         <Form.Field
                             name="email"
-                            title="邮箱"
+                            label="邮箱"
                             required
                             validator={arrayUnion('email', '该邮箱已存在')}
                         >
                             <Form.Input placeholder="邮箱" style={{ width: 200 }} />
                         </Form.Field>
-                        <Form.Field name="role" title="角色">
+                        <Form.Field name="role" label="角色">
                             <Form.Select
                                 options={ROLES}
                                 style={{ width: 120 }}

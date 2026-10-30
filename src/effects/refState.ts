@@ -1,14 +1,13 @@
 import { type Draft, produce } from 'immer';
 
 /**
- * Non-reactive per-form scratch storage. Effects often need to keep a piece of
- * mutable state that must NOT trigger Formily reactions (counters, caches,
- * "last value" snapshots). `setRefState`/`getRefState` provide a WeakMap-backed
- * store keyed by form instance + string key, so it is GC-friendly and never
- * participates in the reactive graph.
+ * 非响应式的、按 form 隔离的临时存储。effects 经常需要保存一块可变状态，
+ * 而这块状态绝不能触发 Formily 的 reaction（计数器、缓存、「上一个值」快照）。
+ * `setRefState`/`getRefState` 提供一个以 WeakMap 为底、按 form 实例 + 字符串
+ * key 建索引的存储，因此它对 GC 友好，且永不参与响应式依赖图。
  *
- * Passing a function as `value` treats it as an immer updater against the
- * current value (convenient for mutating drafts in place).
+ * 将函数作为 `value` 传入时，会把它当作针对当前值的 immer updater
+ * （便于就地修改 draft）。
  */
 
 type Store = Map<string, any>;

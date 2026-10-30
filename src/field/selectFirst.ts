@@ -7,12 +7,12 @@ export interface UseSelectFirstOptions {
 }
 
 /**
- * Auto-select the first non-disabled option on mount when `selectFirst` is set
- * and the field has no value yet. Targets single-select option controls
- * (Select without `mode='multiple'`, Radio.Group). No-op for multi-select.
+ * 当设置了 `selectFirst` 且字段尚无值时,在挂载时自动选中第一个未禁用的选项。
+ * 针对单选的选项型控件(未设 `mode='multiple'` 的 Select、Radio.Group)。
+ * 对多选为空操作(no-op)。
  *
- * "No value yet" means null/undefined/'' — an empty string is treated as
- * unset so a field initialised to `''` still picks the first option.
+ * “尚无值” 指 null/undefined/'' —— 空字符串被视作未设置,
+ * 因此初始化为 `''` 的字段仍会选中第一个选项。
  */
 export function useSelectFirst({ field, selectFirst, children }: UseSelectFirstOptions): void {
     const optionsRef = React.useRef<any>(null);

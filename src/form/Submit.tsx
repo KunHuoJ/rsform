@@ -7,33 +7,30 @@ import { useFormInternals } from './RsfFormInternals';
 
 export interface SubmitProps
     extends Omit<React.ComponentProps<typeof Button>, 'onClick' | 'htmlType' | 'loading'> {
-    /** Override the form's onSubmit for this submit only (defaults to the Form onSubmit prop). */
+    /** 仅为此 submit 覆盖表单的 onSubmit(默认沿用 Form 的 onSubmit prop)。 */
     onSubmit?: (values: any) => void | Promise<void>;
     /**
-     * Block duplicate submission. Two effects:
-     *  1. A synchronous re-entry guard (ref) so two clicks in the same tick
-     *     before re-render can't both enter `form.submit()`.
-     *  2. After a successful submit the button stays disabled (one-shot lock)
-     *     until the form is reset — so the same form instance can't be
-     *     submitted twice. Cleared automatically when `form.pristine` returns
-     *     (i.e. after `form.reset()`).
+     * 阻止重复提交。两种作用:
+     *  1. 同步的重入守卫(ref),使同一 tick 内、重渲染之前的两次点击
+     *     不会都进入 `form.submit()`。
+     *  2. 提交成功后按钮保持禁用(一次性锁),直到表单被重置 —— 这样
+     *     同一个表单实例无法被提交两次。当 `form.pristine` 恢复
+     *     (即 `form.reset()` 之后)时自动解除。
      */
     preventDuplicate?: boolean;
-    /** Children of the button. */
+    /** 按钮的子节点。 */
     children?: React.ReactNode;
 }
 
 /**
- * A submit button bound to the nearest rsform: clicking it calls
- * `form.submit()`, and it shows its antd loading state while the form is
- * submitting, validating, or while the form's `onSubmit` callback is pending.
+ * 一个绑定到最近 rsform 的提交按钮:点击它会调用 `form.submit()`,并在表单
+ * 提交中、校验中、或表单的 `onSubmit` 回调处于 pending 时显示 antd 的 loading 状态。
  *
- * `form.submit()` fires the form's `onSubmit` (from `<Form onSubmit>`) through
- * the `onFormSubmitSuccess` lifecycle but does NOT await it; rsform captures
- * that promise via the form internals so this button keeps loading for the real
- * onSubmit duration. An explicit `onSubmit` prop, if provided, temporarily
- * overrides the form-level callback for this click only (by swapping the
- * shared onSubmit ref), so the two never fire together.
+ * `form.submit()` 会通过 `onFormSubmitSuccess` 生命周期触发表单的 `onSubmit`
+ *(来自 `<Form onSubmit>`),但并不会 await 它;rsform 通过表单内部状态捕获
+ * 该 promise,使此按钮在真实 onSubmit 执行期间保持 loading。若提供了显式的
+ * `onSubmit` prop,它会仅为本次点击临时覆盖表单级别的回调(通过交换共享的
+ * onSubmit ref),因此两者绝不会同时触发。
  */
 export const Submit = observer(function Submit({
     onSubmit,
@@ -45,14 +42,12 @@ export const Submit = observer(function Submit({
     const form = useForm();
     const internals = useFormInternals();
     const [submitting, setSubmitting] = React.useState(false);
-    // One-shot lock: after a successful submit (preventDuplicate), the button
-    // stays disabled until the form is reset. Cleared by subscribing to the
-    // form's `onFormReset` heartbeat event (Formily forms expose no `pristine`
-    // boolean, so the lifecycle event is the reliable signal).
+    // 一次性锁:成功提交后(preventDuplicate),按钮保持禁用直到表单被重置。
+    // 通过订阅表单的 `onFormReset` 心跳事件来解除(Formily 表单未暴露
+    // `pristine` 布尔值,所以该生命周期事件才是可靠信号)。
     const [locked, setLocked] = React.useState(false);
-    // Synchronous re-entry guard so two clicks in the same tick (before the
-    // `submitting` state re-renders and disables the button) can't both enter
-    // `form.submit()`.
+    // 同步的重入守卫,使同一 tick 内(在 `submitting` 状态重渲染并禁用按钮
+    // 之前)的两次点击不会都进入 `form.submit()`。
     const inFlight = React.useRef(false);
 
     React.useEffect(() => {

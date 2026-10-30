@@ -1,9 +1,8 @@
 /**
- * antd 5 control wrappers + the control registry (FormComMap) used by the
- * high-perf Table. The single `rsform` entry (`src/index.ts`) re-exports these
- * and attaches them onto the `Form` namespace (Form.Input, …, Form.Submit,
- * Form.Button). This module is the implementation surface for the controls;
- * consumers import from `rsform` directly.
+ * antd 5 控件封装 + 高性能 Table 使用的控件注册表（FormComMap）。单一的
+ * `rsform` 入口（`src/index.ts`）会重新导出这些内容，并把它们挂载到 `Form`
+ * 命名空间上（Form.Input、…、Form.Submit、Form.Button）。本模块是这些控件的
+ * 实现层面；消费方直接从 `rsform` 导入。
  */
 
 import type * as React from 'react';
@@ -19,15 +18,13 @@ import { Select } from './Select';
 import { Switch } from './Switch';
 
 /**
- * The rsform.Form namespace augmented with the antd controls + Submit (the
- * "controls" layer of the Form namespace). `Object.assign` mutates the shared
- * Form object in place and widens the type to include the controls.
+ * 增补了 antd 控件 + Submit 的 rsform.Form 命名空间（Form 命名空间的「控件」
+ * 层）。`Object.assign` 就地修改共享的 Form 对象，并将其类型拓宽以包含这些控件。
  *
- * `InputNumber`/`Select` are typed as `React.ComponentType<any>` here to keep
- * the emitted declaration portable (antd's exact types reference internal
- * `rc-*` packages that aren't resolvable from a consumer's `.d.ts`). Consumers
- * wanting precise antd prop types should import the components directly:
- * `import { InputNumber } from 'rsform'`.
+ * 这里将 `InputNumber`/`Select` 的类型标注为 `React.ComponentType<any>`，以保持
+ * 生成的声明文件可移植（antd 的精确类型会引用内部的 `rc-*` 包，而这些包从消费方
+ * 的 `.d.ts` 中无法解析）。想要精确 antd prop 类型的消费方应直接导入组件：
+ * `import { InputNumber } from 'rsform'`。
  */
 export type ControlsForm = typeof BaseForm & {
     Input: typeof Input;
@@ -38,8 +35,8 @@ export type ControlsForm = typeof BaseForm & {
     Switch: typeof Switch;
     DatePicker: typeof DatePicker;
     Submit: typeof Submit;
-    /** antd `Button` re-export, so consumers can build custom action buttons
-     * (e.g. a custom Table remove/add button) from the same antd the lib uses. */
+    /** antd `Button` 的重新导出，使消费方可以用库所使用的同一套 antd 来构建
+     * 自定义操作按钮（例如自定义的 Table 删除/新增按钮）。 */
     Button: typeof AntdButton;
 };
 
@@ -55,7 +52,7 @@ export const Form: ControlsForm = Object.assign(BaseForm, {
     Button: AntdButton,
 }) as ControlsForm;
 
-/** antd `Button` re-export (also `Form.Button`). Use for custom action buttons. */
+/** antd `Button` 的重新导出（也是 `Form.Button`）。用于自定义操作按钮。 */
 export { Button as AntdButton } from 'antd';
 export type { SubmitProps } from '../form/Submit';
 export { Submit } from '../form/Submit';

@@ -116,10 +116,10 @@ import { Form } from 'rsform';
     )
   }
 >
-  <Form.Field name="password" title="密码" required>
+  <Form.Field name="password" label="密码" required>
     <Form.Input.Password />
   </Form.Field>
-  <Form.Field name="confirm" title="确认密码" required>
+  <Form.Field name="confirm" label="确认密码" required>
     <Form.Input.Password />
   </Form.Field>
 </Form>
@@ -185,10 +185,10 @@ const CITIES = { gd: [{ label: '广州', value: 'gz' }, /* ... */] };
     })
   }
 >
-  <Form.Field name="province" title="省份" required>
+  <Form.Field name="province" label="省份" required>
     <Form.Select options={PROVINCES} />
   </Form.Field>
-  <Form.Field name="city" title="城市" required>
+  <Form.Field name="city" label="城市" required>
     <Form.Select />
   </Form.Field>
 </Form>
@@ -547,7 +547,7 @@ function searchUser(kw: string): Promise<Option[]> {
   // 进入页面先拉一次全量
   search('');
 }}>
-  <Form.Field name="userId" title="用户" required>
+  <Form.Field name="userId" label="用户" required>
     <Form.Select placeholder="输入姓名或拼音搜索" style={{ width: 280 }} />
   </Form.Field>
 </Form>

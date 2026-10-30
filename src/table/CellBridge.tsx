@@ -6,30 +6,30 @@ import { type ControlKey, getControl } from '../controls/FormComMap';
 import { prefixCls } from '../shared/prefixCls';
 
 export interface CellBridgeProps {
-    /** Absolute row index (page-corrected). */
+    /** 绝对行索引（已做分页校正）。 */
     rowIndex: number;
-    /** The field key within the row (e.g. 'price'). */
+    /** 行内的字段键（例如 'price'）。 */
     dataIndex: string;
-    /** The array field name (e.g. 'rows'). */
+    /** 数组 field 名称（例如 'rows'）。 */
     arrayName: string;
-    /** Control: a FormComMap key string, a component type, or a React element. */
+    /** 控件：FormComMap 的键字符串、组件类型，或 React 元素。 */
     control?: ControlKey | React.ComponentType<any> | React.ReactElement | (string & {});
-    /** Extra props merged into the control (options, placeholder, …). */
+    /** 合并进控件的额外 props（options、placeholder 等）。 */
     controlProps?: Record<string, any>;
-    /** Formily validator attached to the cell's registered field. */
+    /** 挂到单元格已注册 field 上的 Formily 校验器。 */
     validator?: any;
-    /** Whether this cell is required (empty value fails validation). */
+    /** 本单元格是否必填（空值会校验失败）。 */
     required?: boolean;
-    /** Error message shown when a `required` cell is empty. Default '必填'. */
+    /** `required` 单元格为空时显示的错误信息。默认 '必填'。 */
     requiredMessage?: string;
-    /** Whether the cell is editable; false → read-only text. */
+    /** 单元格是否可编辑；false → 只读文本。 */
     editable?: boolean;
 }
 
 const cellPath = (arrayName: string, rowIndex: number, dataIndex: string) =>
     `${arrayName}.${rowIndex}.${dataIndex}`;
 
-/** Whether a value counts as "empty" for `required` validation. */
+/** 判断某个值对 `required` 校验是否算作「空」。 */
 function isEmptyValue(v: unknown): boolean {
     if (v == null) return true;
     if (typeof v === 'string') return v.trim() === '';
@@ -38,9 +38,9 @@ function isEmptyValue(v: unknown): boolean {
 }
 
 /**
- * Compose the cell's validator: a required rule (when `required`) ahead of the
- * user's `validator`. The required rule returns a fixed message on empty; the
- * user validator runs only when the value is non-empty (or when not required).
+ * 组合单元格的校验器：把必填规则（当 `required` 时）排在用户的 `validator`
+ * 之前。必填规则在值为空时返回固定信息；用户校验器只在值非空时
+ * （或不要求必填时）才运行。
  */
 function composeValidator(
     required: boolean | undefined,
@@ -51,8 +51,8 @@ function composeValidator(
     const reqRule = required ? (value: any) => (isEmptyValue(value) ? reqMsg : '') : null;
     if (!reqRule) return validator;
     if (typeof validator !== 'function') return reqRule;
-    // Run required first; if it fails, short-circuit (don't run the user
-    // validator on an empty value — it may throw on undefined).
+    // 先跑必填；若未通过则短路（不要对空值运行用户校验器——
+    // 它可能在 undefined 上抛错）。
     return (value: any) => {
         const reqError = reqRule(value);
         if (reqError) return reqError;
@@ -62,29 +62,25 @@ function composeValidator(
 }
 
 /**
- * The high-perf editable cell. NOT a Formily `<Field>`:
+ * 高性能可编辑单元格。它不是 Formily 的 `<Field>`：
  *
- *  - The cell's DISPLAY value is read reactively from the deep form-values path
- *    `form.values[arrayName][rowIndex][dataIndex]`. Formily's `form.values` is a
- *    deeply observable tree, so this reads ONLY that leaf — editing cell (i,j)
- *    notifies just cell (i,j)'s observer, not the other N×M-1 cells. (This is
- *    the key difference from a "whole array value" subscription, which would
- *    re-fire every cell on every edit.)
- *  - `onChange` writes through the cell field's `onInput(v)`. `onInput` sets the
- *    leaf value (firing only this cell's leaf observer → single-cell re-render),
- *    runs the cell's validator, and propagates through the Formily field
- *    lifecycle so `onFieldValueChange` effects on the cell path fire — all
- *    without replacing the row object (so sibling cells in the same row do not
- *    re-render). `form.setValuesIn(cellPath, v)` would also do single-cell
- *    re-render but would NOT trigger validation or field effects.
- *  - The cell registers a Formily field in `useEffect` (via `form.createField`)
- *    for every EDITABLE cell. The field model exists for validation + onInput,
- *    but CellBridge does NOT subscribe to the field's value (it reads the
- *    `form.values` leaf); it subscribes only to the field's `selfErrors` (a
- *    narrow, rare-event read).
- *  - The Table body does NOT subscribe to the array value for cell edits — it
- *    re-renders only on length changes (add/remove) via a `lenTick` — so an edit
- *    never walks the whole row/cell tree.
+ *  - 单元格的显示值响应式地从 form-values 的深层路径
+ *    `form.values[arrayName][rowIndex][dataIndex]` 读取。Formily 的 `form.values`
+ *    是一棵深度可观察的树，因此这里只读取那一个叶子——编辑单元格 (i,j)
+ *    只通知单元格 (i,j) 的 observer，而非其余 N×M-1 个单元格。（这是与
+ *    「整个数组值」订阅的关键区别，后者会在每次编辑时触发每个单元格。）
+ *  - `onChange` 通过单元格 field 的 `onInput(v)` 写入。`onInput` 设置叶子值
+ *    （只触发本单元格的叶子 observer → 单个单元格重渲染）、运行单元格的校验器，
+ *    并沿 Formily 的 field 生命周期传播，使单元格路径上的 `onFieldValueChange`
+ *    副作用得以触发——全程不替换行对象（因此同行的兄弟单元格不会重渲染）。
+ *    `form.setValuesIn(cellPath, v)` 同样能做到单个单元格重渲染，
+ *    但不会触发校验或 field 副作用。
+ *  - 单元格在 `useEffect` 中为每个可编辑单元格注册一个 Formily field
+ *    （通过 `form.createField`）。该 field 模型用于校验 + onInput，
+ *    但 CellBridge 不订阅该 field 的值（它读取 `form.values` 的叶子）；
+ *    它只订阅该 field 的 `selfErrors`（一个范围很窄、很少触发的读取）。
+ *  - Table body 不会为单元格编辑订阅数组值——它只在长度变化（增加/删除）时
+ *    借助 `lenTick` 重渲染——因此一次编辑绝不会遍历整个行/单元格树。
  */
 export const CellBridge = observer(function CellBridge({
     rowIndex,
@@ -100,19 +96,17 @@ export const CellBridge = observer(function CellBridge({
     const form: any = useForm();
     const path = cellPath(arrayName, rowIndex, dataIndex);
 
-    // Compose the cell's validator: required rule (if any) ahead of the user
-    // validator. Memoised so the createField effect only re-runs when the
-    // composed validator's identity actually changes.
+    // 组合单元格的校验器：必填规则（若有）排在用户校验器之前。
+    // 做了 memo，使 createField 副作用只在组合后校验器的标识真正变化时才重跑。
     const composedValidator = React.useMemo(
         () => composeValidator(required, requiredMessage, validator),
         [required, requiredMessage, validator],
     );
 
-    // Register a Formily field on mount for every EDITABLE cell — this is the
-    // field `onInput` writes through (so validators + `onFieldValueChange`
-    // effects fire on edit) and whose `selfErrors` the cell observes. Re-run
-    // only when the composed validator changes. The field's value is NOT read
-    // here (the deep values read below drives display); only `selfErrors` is.
+    // 挂载时为每个可编辑单元格注册一个 Formily field——这正是 `onInput`
+    // 写入的那个 field（使编辑时校验器 + `onFieldValueChange` 副作用触发），
+    // 也是单元格所观察的 `selfErrors` 所属的 field。只在组合后校验器变化时才重跑。
+    // 这里不读取该 field 的值（下方对深层 values 的读取负责显示）；只读 `selfErrors`。
     React.useEffect(() => {
         if (!form || editable === false) {
             return;
@@ -124,44 +118,42 @@ export const CellBridge = observer(function CellBridge({
                 validator: composedValidator,
             });
         } catch {
-            // createField may no-op if a field already exists at this path
-            // (e.g. re-mount in StrictMode); that is fine.
+            // 若该路径上已存在 field，createField 可能是空操作
+            // （例如 StrictMode 下的重新挂载）；这没有问题。
         }
     }, [form, path, composedValidator, editable]);
 
-    // Display value: read ONLY this leaf of the deeply-observable form.values
-    // tree. Editing this cell notifies just this observer; editing any other
-    // cell notifies a different leaf, so this cell never re-renders for it.
-    // `toJS` unwraps the reactive Proxy back to a plain value — required for
-    // controls whose value is a class instance with prototype methods (e.g. an
-    // antd DatePicker dayjs object: the Proxy strips `.isValid`, breaking the
-    // picker). Plain primitives (string/number/boolean) pass through unchanged.
+    // 显示值：只读取这棵深度可观察的 form.values 树的该叶子。
+    // 编辑本单元格只通知本 observer；编辑任何其他单元格通知的是另一个叶子，
+    // 因此本单元格绝不会因它而重渲染。
+    // `toJS` 把响应式 Proxy 还原为普通值——对于值是带原型方法的类实例的控件
+    // 是必需的（例如 antd DatePicker 的 dayjs 对象：Proxy 会剥掉 `.isValid`，
+    // 使 picker 失效）。普通基本类型（string/number/boolean）则原样透传。
     const raw = form?.values?.[arrayName]?.[rowIndex]?.[dataIndex];
     const value = toJS(raw);
 
-    // Read this cell's errors reactively (observer layer). This is the only
-    // other reactive read inside a cell, and it changes rarely.
+    // 响应式地读取本单元格的错误（observer 层）。这是单元格内唯一的另一处
+    // 响应式读取，且很少变化。
     const field = form?.query?.(path)?.take?.();
     const error: string | undefined = field?.selfErrors?.[0];
 
     const handleChange = React.useCallback(
         (next: any) => {
             if (!form) return;
-            // Extract the value: antd Input passes a synthetic event
-            // (next.target.value), while InputNumber/Select/Switch pass the
-            // bare value/checked. Match commonMap's convention.
+            // 取出值：antd Input 传入的是合成事件（next.target.value），
+            // 而 InputNumber/Select/Switch 传入的是裸值/checked。
+            // 与 commonMap 的约定保持一致。
             const v =
                 next && typeof next === 'object' && 'target' in next
                     ? (next as React.ChangeEvent<HTMLInputElement>).target.value
                     : next;
-            // Write through the cell field's `onInput`: sets the leaf value
-            // (firing only this cell's leaf observer → single-cell re-render),
-            // runs the validator, and propagates through the Formily lifecycle
-            // so `onFieldValueChange` effects fire — all without replacing the
-            // row object (sibling cells in the same row do not re-render).
-            // `form.setValuesIn(cellPath, v)` would also single-cell re-render
-            // but would NOT trigger validation or field effects. Falls back to
-            // `setValuesIn` if the field has not been registered yet.
+            // 通过单元格 field 的 `onInput` 写入：设置叶子值
+            // （只触发本单元格的叶子 observer → 单个单元格重渲染）、运行校验器，
+            // 并沿 Formily 生命周期传播，使 `onFieldValueChange` 副作用触发——
+            // 全程不替换行对象（同行的兄弟单元格不会重渲染）。
+            // `form.setValuesIn(cellPath, v)` 同样能做到单个单元格重渲染，
+            // 但不会触发校验或 field 副作用。若 field 尚未注册，
+            // 则回退到 `setValuesIn`。
             const cellField = form.query?.(path)?.take?.();
             if (cellField) {
                 cellField.onInput(v);
@@ -178,18 +170,17 @@ export const CellBridge = observer(function CellBridge({
     if (readOnly) {
         content = value == null || value === '' ? '-' : String(value);
     } else if (React.isValidElement(control)) {
-        // A concrete element: clone it with value/onChange + controlProps.
+        // 一个具体的元素：克隆它并注入 value/onChange + controlProps。
         content = React.cloneElement(control as React.ReactElement<any>, {
             value,
             onChange: handleChange,
             ...controlProps,
         });
     } else if (typeof control === 'function') {
-        // A component TYPE (function/class/forwardRef/memo): render it fresh
-        // with value/onChange + controlProps. This is the most ergonomic form
-        // for a custom control that takes props — `control: MyInput` plus
-        // `controlProps: {...}` — no need to pre-register a string key or wrap
-        // in an element.
+        // 一个组件类型（function/class/forwardRef/memo）：用 value/onChange
+        // + controlProps 重新渲染它。这是带 props 的自定义控件最顺手的形式——
+        // `control: MyInput` 加上 `controlProps: {...}`——无需预先注册字符串键，
+        // 也无需包成元素。
         const ControlComp = control as React.ComponentType<any>;
         content = <ControlComp value={value} onChange={handleChange} {...controlProps} />;
     } else if (typeof control === 'string') {
@@ -212,11 +203,11 @@ export const CellBridge = observer(function CellBridge({
 });
 
 /**
- * Resolve the absolute row index. antd5 Table's `render(value, record, index)`
- * passes a PAGE-RELATIVE index (R3 spike). We correct it to absolute via the
- * current page + pageSize. The row's stable id (`rowKey`) is NOT used here —
- * a stable identity is not the array index, and conflating them sends cell
- * reads/writes/effects to the wrong leaf path (`rows.${businessId}.x`).
+ * 解析绝对行索引。antd5 Table 的 `render(value, record, index)` 传入的是
+ * 分页相对索引（R3 spike）。我们通过当前页 + pageSize 把它校正为绝对索引。
+ * 这里不使用行的稳定 id（`rowKey`）——稳定的身份标识并不是数组索引，
+ * 把二者混为一谈会把单元格的读/写/副作用发到错误的叶子路径
+ * （`rows.${businessId}.x`）。
  */
 export function resolveAbsoluteIndex(
     relativeIndex: number,

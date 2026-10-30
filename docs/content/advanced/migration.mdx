@@ -12,7 +12,7 @@ description: 从 @formily/antd 迁移到 rsform
 | @formily/antd | rsform | 说明 |
 | --- | --- | --- |
 | `<FormProvider form={form}>` + 手写布局 | `<Form onSubmit={...}>` | rsform `Form` 内部 `createForm` + `FormProvider`，省掉手写 provider |
-| `<Field component={[Input, {}]} decorator={[FormItem, {}]}>` | `<Form.Field title="X"><Form.Input /></Form.Field>` | rsform 自动注入 value/onChange，不用写 `component`/`decorator` 数组 |
+| `<Field component={[Input, {}]} decorator={[FormItem, {}]}>` | `<Form.Field label="X"><Form.Input /></Form.Field>` | rsform 自动注入 value/onChange，不用写 `component`/`decorator` 数组 |
 | `form.setInitialValues` / `createField` 手动 | `initialValues` prop / 自动 | rsform Field 挂载即注册 |
 | `onFieldValueChange` 裸写联动 | `effects={$ => $.linkedFieldProps(...)}` | `$` helper 闭包绑好 form，声明式 |
 | `form.submit()` + 手写按钮 | `<Form.Submit>` | 自带 loading + 校验态 |
@@ -29,19 +29,19 @@ import { Input, FormItem } from 'antd';
 ```
 
 ```jsx title="rsform"
-<Form.Field name="username" title="用户名">
+<Form.Field name="username" label="用户名">
     <Form.Input placeholder="请输入" />
 </Form.Field>
 ```
 
-`value` / `onChange` 自动注入，`title` 当 label，`required` 既显红星又触发校验。控件直接丢进去，不用包 `component=[]`。
+`value` / `onChange` 自动注入，`label` 作为标签（`title` 仍作兼容别名），`required` 既显红星又触发校验。控件直接丢进去，不用包 `component=[]`。
 
 ## 2. 校验：rules 数组 → validator 函数
 
 rsform `Form.Field` 的 `validator` 接 Formily 校验器（函数返回空串通过 / 非空串报错）：
 
 ```jsx title="validator"
-<Form.Field name="qty" title="数量" required validator={(v) => (v > 0 ? '' : '必须大于 0')}>
+<Form.Field name="qty" label="数量" required validator={(v) => (v > 0 ? '' : '必须大于 0')}>
     <Form.InputNumber />
 </Form.Field>
 ```

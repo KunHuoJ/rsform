@@ -1,7 +1,6 @@
 /**
- * Shallow equality check for two values. Returns true if they are referentially
- * equal, or if they are both plain objects/arrays with the same primitive
- * values at the same keys (one level deep).
+ * 对两个值做浅相等比较。若二者引用相等,或二者都是普通对象/数组
+ * 且在相同的键上拥有相同的原始值(仅比较一层),则返回 true。
  */
 export function shallowEqual<T>(a: T, b: T): boolean {
     if (Object.is(a, b)) {

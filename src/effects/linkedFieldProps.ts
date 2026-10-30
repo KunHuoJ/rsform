@@ -2,12 +2,11 @@ import type { Form as FormilyForm, GeneralField } from '@formily/core';
 import { onFieldValueChange } from '@formily/core';
 
 /**
- * The compute function receives the current dep values keyed by dep name and
- * the target field model (if mounted). It returns a partial object that is
- * split: Formily top-level state keys (visible/title/required/…) are set on the
- * field state directly; the rest (options/disabled/placeholder/…) are merged
- * into `componentProps` and forwarded to the control. Returning a Promise makes
- * the derivation async (e.g. fetching cascade options).
+ * compute 函数接收以依赖名为 key 的当前依赖值，以及目标字段模型（若已挂载）。
+ * 它返回一个 partial 对象，该对象会被拆分：Formily 顶层 state key
+ * （visible/title/required/…）直接设置到字段 state 上；其余部分
+ * （options/disabled/placeholder/…）合并进 `componentProps` 并转发给控件。
+ * 返回 Promise 则使该派生变为异步（例如拉取级联选项）。
  */
 export type LinkedFieldPropsCompute = (
     values: Record<string, any>,
@@ -15,20 +14,19 @@ export type LinkedFieldPropsCompute = (
 ) => Record<string, any> | Promise<Record<string, any>>;
 
 /**
- * Reactively derive the target's state/props from one or more dependency
- * fields. When any dep value changes (and once on initial registration), the
- * dep values are collected, `compute({ [dep]: value })` is invoked, and the
- * returned object is split and applied to the target field's state:
+ * 根据一个或多个依赖字段，响应式地派生出目标字段的 state/props。当任一依赖
+ * 值变化时（以及首次注册时各执行一次），收集依赖值，调用
+ * `compute({ [dep]: value })`，并将返回对象拆分后应用到目标字段的 state：
  *
- *  - Formily top-level field state keys (`visible`, `display`, `editable`,
- *    `required`, `title`, `value`, `dataSource`, …) are set directly on the
- *    state — so `{visible: false}` hides the field, `{title: 'X'}` relabels it.
- *  - Everything else (`options`, `disabled`, `placeholder`, `loading`, …) is
- *    merged into `state.componentProps`, which rsform's Field forwards to the
- *    control via cloneElement — so `{options: [...]}` reaches the Select.
+ *  - Formily 顶层字段 state key（`visible`、`display`、`editable`、
+ *    `required`、`title`、`value`、`dataSource`、…）直接设置到 state 上
+ *    ——因此 `{visible: false}` 隐藏字段，`{title: 'X'}` 为其重命名。
+ *  - 其余所有内容（`options`、`disabled`、`placeholder`、`loading`、…）
+ *    合并进 `state.componentProps`，由 rsform 的 Field 通过 cloneElement
+ *    转发给控件——因此 `{options: [...]}` 会抵达 Select。
  *
- * Async results are guarded by a per-target monotonic token so a slow earlier
- * request can never overwrite a newer one.
+ * 异步结果由每个目标各自的单调递增 token 守护，使较慢的先发请求永远无法
+ * 覆盖较新的请求。
  */
 export function linkedFieldProps(
     form: FormilyForm,
@@ -38,8 +36,8 @@ export function linkedFieldProps(
 ): void {
     let token = 0;
 
-    // Formily top-level field state keys that `linkedFieldProps` sets directly
-    // on `state`. Anything else goes into `state.componentProps` for the control.
+    // `linkedFieldProps` 直接设置到 `state` 上的 Formily 顶层字段 state key。
+    // 其余任何内容都进入 `state.componentProps` 交给控件。
     const STATE_KEYS = new Set([
         'visible',
         'display',
@@ -71,8 +69,7 @@ export function linkedFieldProps(
         }
         const targetField = form.query(target).take();
         Promise.resolve(compute(values, targetField)).then((result) => {
-            // Stale guard: a newer run has superseded this one, or the result
-            // was empty/no-op.
+            // 陈旧守护：已有更新的一次运行取代了本次，或者结果为空/无操作。
             if (myToken !== token || !result) {
                 return;
             }

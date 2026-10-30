@@ -4,18 +4,18 @@ import { Radio } from 'antd';
 export interface RadioGroupProps
     extends Omit<React.ComponentProps<typeof Radio.Group>, 'optionType'> {
     /**
-     * How options render. Defaults to `'button'` (rsform convention) so a
-     * basic `<Field name="x"><RadioGroup options=[…]/></Field>` reads as a
-     * segmented button group without extra config.
+     * 选项的渲染方式。默认为 `'button'`（rsform 约定），使一个基础的
+     * `<Field name="x"><RadioGroup options=[…]/></Field>` 无需额外配置
+     * 即可呈现为分段式按钮组。
      */
     optionType?: 'button' | 'default';
 }
 
 /**
- * antd Radio.Group wrapper that defaults `optionType='button'` and accepts
- * `options` (the common rsform shape). rsform Field auto-injects `value`/
- * `onChange` — the selected option's value, not a boolean, so RadioGroup is
- * NOT tagged as an option-control (no `checked` swap).
+ * antd Radio.Group 封装，默认 `optionType='button'` 并接受 `options`
+ * （常见的 rsform 形态）。rsform Field 会自动注入 `value`/`onChange`
+ * ——注入的是选中项的 value，而非布尔值，因此 RadioGroup 不被标记为
+ * option-control（不做 `checked` 替换）。
  */
 export function RadioGroup({
     optionType = 'button',

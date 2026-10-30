@@ -1,16 +1,15 @@
 /**
- * Build a cross-row uniqueness validator for an array field's child key.
+ * 为数组字段的某个子键构建跨行唯一性校验器。
  *
- * Usage: attach to a per-row `<Field>` (e.g. a row's `id` or `name`) as its
- * `validator`. The validator reads the whole array from the field's nearest
- * array ancestor and rejects a value that already appears in another row's
- * same key.
+ * 用法:将其作为 `validator` 挂到每行的 `<Field>` 上(例如某行的
+ * `id` 或 `name`)。校验器会从该字段最近的数组祖先读取整个数组,
+ * 并在某个值已出现在其他行的同一键时拒绝该值。
  *
- * `message` customises the error; defaults to a generic "duplicated" message.
+ * `message` 用于自定义错误信息;默认为一条通用的"重复"提示。
  *
- * This is a generic uniqueness pattern (independent of any internal library).
- * Formily passes the validator a context `{ field, form }`; `ctx.field` is the
- * Formily field model whose `parent` chain leads to the array field.
+ * 这是一个通用的唯一性校验模式(不依赖任何内部库)。Formily 会向
+ * 校验器传入上下文 `{ field, form }`;`ctx.field` 是 Formily 字段模型,
+ * 其 `parent` 链会指向数组字段。
  */
 export type ArrayUnionValidator = (
     value: any,
@@ -25,8 +24,8 @@ export function arrayUnion(key: string, message = '该值已存在'): ArrayUnion
         }
         const field = ctx?.field ?? ctx;
         const form = ctx?.form ?? field?.form;
-        // Prefer the model's nearest-array-ancestor records; fall back to a
-        // parent-chain walk then to form.values lookup by the field's address.
+        // 优先使用模型最近数组祖先的 records;其次回退到沿 parent 链
+        // 向上查找,最后再按字段地址到 form.values 中查找。
         let arr: any[] | undefined;
         let node = field;
         while (node) {
@@ -38,7 +37,7 @@ export function arrayUnion(key: string, message = '该值已存在'): ArrayUnion
             node = node?.parent;
         }
         if (!Array.isArray(arr) && form) {
-            // Walk up the field's address to find the array segment.
+            // 沿字段地址向上查找数组所在的那一段。
             const addr = String(field?.address ?? field?.path ?? '');
             const segs = addr.split('.').filter(Boolean);
             for (let i = segs.length - 1; i >= 0; i--) {

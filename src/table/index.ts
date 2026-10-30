@@ -1,11 +1,10 @@
 /**
- * High-performance editable Table backed by a Formily
- * ArrayField. Cells are `CellBridge`s (NOT Formily Fields): each cell reads
- * its own value reactively from a `form.values` leaf (single-cell re-render on
- * edit), onChange writes through the cell field's `onInput` (so validators +
- * `onFieldValueChange` effects fire), and the Table body re-renders only on
- * length changes. The `columns` array is referentially stable across value
- * edits, so editing one cell re-renders exactly that cell.
+ * 以 Formily ArrayField 为底层的高性能可编辑 Table。
+ * 单元格是 `CellBridge`（并非 Formily Field）：每个单元格响应式地从
+ * `form.values` 的某个叶子读取自己的值（编辑时只重渲染单个单元格），
+ * onChange 通过单元格 field 的 `onInput` 写入（这样校验器 +
+ * `onFieldValueChange` 副作用才会触发），而 Table body 只在长度变化时重渲染。
+ * `columns` 数组在值编辑时保持引用稳定，因此编辑一个单元格恰好只重渲染该单元格。
  */
 import { Form as BaseForm } from '../form/FormNamespace';
 import { Table } from './Table';
@@ -17,9 +16,9 @@ export { useTable } from './useTable';
 export { Table };
 
 /**
- * Form namespace helper: attaches Table onto the shared Form as `Form.Table`.
- * rsform's single entry (`src/index.ts`) re-exports `Table` and attaches it
- * there; this barrel is the implementation surface for the table module.
+ * Form 命名空间辅助：把 Table 挂到共享的 Form 上，作为 `Form.Table`。
+ * rsform 的单一入口（`src/index.ts`）会重新导出 `Table` 并在那里完成挂载；
+ * 本 barrel 文件是 table 模块的实现层出口。
  */
 export type TableForm = typeof BaseForm & {
     Table: typeof Table;

@@ -117,6 +117,31 @@ interface Row { name: string; qty: number; price: number }
 
 编辑一格只重渲染该格——读走 `form.values` 叶子订阅，写走 `field.onInput`（触发校验 + effect，不替换行对象）。详见[文档·高性能表格](https://kunhuoj.github.io/rsform/#table)。
 
+## TypeScript
+
+`Form.Field` 带值类型泛型，render-prop 的 `value` / `onChange` 与 `format` / `parse` 随之精确（不写泛型则为 `any`）：
+
+```tsx
+<Form.Field<number> name="age">
+  {({ value, onChange }) => <Form.InputNumber value={value} onChange={onChange} />}
+</Form.Field>
+```
+
+`Form.Table` 的列对 `RecordType` 泛型化：`columns` 的 `dataIndex` 会补全行字段名（同时放宽到任意 `string`，便于操作列），`render` 的 `record` 与 `actions.form` / `actions.field` 均有类型。
+
+自定义控件 key 想要补全，用声明合并扩充 `RsfControlRegistry`：
+
+```ts
+import type { ControlComponent } from 'rsform';
+
+declare module 'rsform' {
+  interface RsfControlRegistry {
+    companyPicker: ControlComponent;
+  }
+}
+// 之后 control: 'companyPicker' 与 registerControl('companyPicker', C) 均获类型识别
+```
+
 ## 子路径导出
 
 单包 `rsform`，按需从子路径引入：

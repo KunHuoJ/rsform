@@ -48,10 +48,10 @@ export function CascadeDemo(): React.ReactElement {
                 })
             }
         >
-            <Form.Field name="province" title="省份" required>
+            <Form.Field name="province" label="省份" required>
                 <Form.Select options={PROVINCES} placeholder="请选择省份" style={{ width: 200 }} />
             </Form.Field>
-            <Form.Field name="city" title="城市" required>
+            <Form.Field name="city" label="城市" required>
                 <Form.Select placeholder="请先选择省份" style={{ width: 200 }} />
             </Form.Field>
         </Form>

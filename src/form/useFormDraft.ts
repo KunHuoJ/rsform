@@ -4,30 +4,30 @@ import { useForm } from '@formily/react';
 import { debounce } from '../effects/debounce';
 
 export interface UseFormDraftOptions {
-    /** Debounce auto-save by this many ms (default 500). */
+    /** 自动保存的防抖毫秒数(默认 500)。 */
     debounceMs?: number;
     /**
-     * Storage backend. Defaults to `window.localStorage`; pass a mock for SSR /
-     * tests. When `window`/`localStorage` is unavailable the hook becomes a
-     * no-op (no save, no restore prompt), so it is SSR-safe out of the box.
+     * 存储后端。默认使用 `window.localStorage`;在 SSR / 测试中可传入 mock。
+     * 当 `window`/`localStorage` 不可用时,该 hook 退化为空操作(no-op)
+     *(不保存、不弹出恢复提示),因此开箱即用地对 SSR 安全。
      */
     storage?: Storage;
-    /** Auto-clear the draft after a successful submit (default `true`). */
+    /** 提交成功后自动清除草稿(默认 `true`)。 */
     clearOnSubmit?: boolean;
-    /** Expire the draft after this many ms; an older snapshot is ignored on read. */
+    /** 草稿在此毫秒数后过期;读取时更旧的快照会被忽略。 */
     maxAge?: number;
 }
 
 export interface UseFormDraftResult {
-    /** A saved draft exists in storage — show the restore prompt. */
+    /** 存储中存在已保存的草稿 —— 应显示恢复提示。 */
     hasDraft: boolean;
-    /** The saved draft snapshot, or `undefined` if none / already dismissed. */
+    /** 已保存的草稿快照,若没有 / 已被忽略则为 `undefined`。 */
     draft: Record<string, any> | undefined;
-    /** Load the saved draft into the form (deep-merged over current values). */
+    /** 将已保存的草稿载入表单(在当前值之上深合并)。 */
     restore: () => void;
-    /** Dismiss the restore prompt without loading — keeps the draft in storage. */
+    /** 不载入即关闭恢复提示 —— 草稿仍保留在存储中。 */
     dismiss: () => void;
-    /** Delete the saved draft from storage. */
+    /** 从存储中删除已保存的草稿。 */
     clear: () => void;
 }
 
@@ -70,7 +70,7 @@ function readDraft(
             try {
                 storage.removeItem(key);
             } catch {
-                /* ignore */
+                /* 忽略 */
             }
             return undefined;
         }
@@ -85,7 +85,7 @@ function writeDraft(storage: Storage | undefined, key: string, values: Record<st
     try {
         storage.setItem(key, JSON.stringify({ v: values, t: Date.now() }));
     } catch {
-        /* quota exceeded / storage disabled — ignore; the draft just won't persist */
+        /* 配额超限 / 存储被禁用 —— 忽略;草稿只是不会被持久化 */
     }
 }
 
@@ -96,19 +96,18 @@ function removeDraft(storage: Storage | undefined, key: string): void {
     try {
         storage.removeItem(key);
     } catch {
-        /* ignore */
+        /* 忽略 */
     }
 }
 
 /**
- * Auto-save / restore a form draft from `localStorage` (or a custom storage).
+ * 从 `localStorage`(或自定义存储)自动保存 / 恢复表单草稿。
  *
- * Inside a `<Form>`, call it with a stable `key` unique to this form's
- * purpose (e.g. `'order-edit'`). On mount it checks storage for a saved draft
- * and exposes `hasDraft` so you can render a restore banner; every value
- * change is debounced and persisted automatically, and (by default) the draft
- * is cleared once the form submits successfully — so the draft only lingers
- * for abandoned, unsubmitted work.
+ * 在 `<Form>` 内部,传入一个对该表单用途唯一且稳定的 `key`
+ *(例如 `'order-edit'`)调用它。挂载时它会检查存储中是否有已保存的草稿,
+ * 并通过 `hasDraft` 暴露出来,便于你渲染恢复横幅;每次值变化都会被防抖并
+ * 自动持久化,且(默认)在表单提交成功后清除草稿 —— 因此草稿只会为被放弃、
+ * 未提交的工作而留存。
  *
  * @example
  * const draft = useFormDraft('order-edit');
@@ -132,17 +131,16 @@ export function useFormDraft(key: string, options: UseFormDraftOptions = {}): Us
     );
     const hasDraft = draft !== undefined;
 
-    // The debounced persister is stable across renders for fixed
-    // (storage, key, debounceMs), so the subscription effect below is stable too.
+    // 对固定的 (storage, key, debounceMs),防抖持久化函数在多次渲染间保持稳定,
+    // 因此下方的订阅 effect 也保持稳定。
     const save = React.useMemo(
         () =>
             debounce((values: Record<string, any>) => writeDraft(storage, key, values), debounceMs),
         [storage, key, debounceMs],
     );
 
-    // Auto-save on every value mutation (user input + effects). Reading
-    // `form.values` (not the event payload) keeps this robust against payload
-    // shape changes across Formily versions.
+    // 在每次值变更(用户输入 + effects)时自动保存。读取 `form.values`
+    //(而非事件 payload)使其能稳健应对 Formily 不同版本间 payload 形状的变化。
     React.useEffect(() => {
         const id = form.subscribe(({ type }) => {
             if (type === LifeCycleTypes.ON_FORM_VALUES_CHANGE) {
@@ -152,8 +150,7 @@ export function useFormDraft(key: string, options: UseFormDraftOptions = {}): Us
         return () => form.unsubscribe(id);
     }, [form, save]);
 
-    // Auto-clear the draft once a submit succeeds — the work is committed, so
-    // the persisted snapshot no longer represents abandoned data.
+    // 提交成功后自动清除草稿 —— 工作已提交,持久化的快照不再代表被放弃的数据。
     React.useEffect(() => {
         if (!clearOnSubmit) {
             return NOOP;

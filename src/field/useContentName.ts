@@ -2,13 +2,13 @@ import { useFieldContext } from '../shared/FieldContext';
 import { resolvePath } from '../shared/paths';
 
 /**
- * Resolve a (possibly relative) field name against the parent FieldContext.
+ * 相对于父级 FieldContext 解析一个(可能是相对的)字段名。
  *
- *  - absolute `name` is appended to the parent `preName`
- *  - relative `.name` peels one parent up then appends the remainder
- *  - relative `..name` peels two parents, etc.
+ *  - 绝对的 `name` 会被追加到父级 `preName` 之后
+ *  - 相对的 `.name` 向上剥离一层父级后再追加余下部分
+ *  - 相对的 `..name` 向上剥离两层父级,以此类推
  *
- * Returns the full resolved dot path usable as a Formily field name.
+ * 返回可用作 Formily 字段名的完整点分路径。
  */
 export function useContentName(name: string): string {
     const { preName } = useFieldContext();

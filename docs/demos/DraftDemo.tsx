@@ -52,13 +52,13 @@ function DraftBody(): React.ReactElement {
                     </button>
                 </div>
             )}
-            <Form.Field name="name" title="姓名" required>
+            <Form.Field name="name" label="姓名" required>
                 <Form.Input placeholder="姓名" />
             </Form.Field>
-            <Form.Field name="email" title="邮箱">
+            <Form.Field name="email" label="邮箱">
                 <Form.Input placeholder="邮箱" />
             </Form.Field>
-            <Form.Field name="memo" title="备注">
+            <Form.Field name="memo" label="备注">
                 <Form.TextArea placeholder="备注" rows={2} />
             </Form.Field>
             <Form.Submit preventDuplicate>提交</Form.Submit>

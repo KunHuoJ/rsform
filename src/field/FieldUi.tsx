@@ -3,7 +3,7 @@ import { FieldError } from './FieldError';
 
 export interface FieldUiProps {
     label?: React.ReactNode;
-    /** `htmlFor` target — the id injected onto the control, to link label ↔ control. */
+    /** `htmlFor` 目标 —— 注入到控件上的 id,用于关联 label ↔ 控件。 */
     htmlFor?: string;
     required?: boolean;
     error?: React.ReactNode;
@@ -12,8 +12,7 @@ export interface FieldUiProps {
 }
 
 /**
- * Layout shell for a field: a label row (with optional required asterisk) and
- * the control, followed by an inline error message below.
+ * 字段的布局外壳:一行标签(可带必填星号)加上控件,下方跟一条内联错误信息。
  */
 export function FieldUi({
     label,

@@ -1,11 +1,11 @@
 /**
- * Build the injection props bag for a control element bound to a Formily field.
+ * 为绑定到某个 Formily 字段的控件元素构建注入 props 集合。
  *
- *  - `value` runs through `format` for display (form value -> control value)
- *  - `onChange` runs the raw control value through `parse` then `field.onInput`
- *  - `onBlur` re-feeds the current value to trigger validation
- *  - for option controls (Switch/Checkbox/Radio) callers should use `checked`
- *    instead of `value` (this helper returns both; the caller picks)
+ *  - `value` 经过 `format` 处理后用于显示(表单值 -> 控件值)
+ *  - `onChange` 将控件的原始值经 `parse` 处理后交给 `field.onInput`
+ *  - `onBlur` 重新喂入当前值以触发校验
+ *  - 对于选项型控件(Switch/Checkbox/Radio),调用方应使用 `checked`
+ *    而非 `value`(本辅助函数两者都返回,由调用方自行选择)
  */
 export interface CommonMapOptions {
     format?: (value: any) => any;
@@ -29,11 +29,11 @@ export function commonMap(field: any, opts: CommonMapOptions = {}): CommonMapRes
         field.onInput(parsed);
     };
     const onBlur = () => {
-        // Re-feed current value to trigger validate-on-blur.
+        // 重新喂入当前值以触发失焦校验(validate-on-blur)。
         field.onInput(field.value);
     };
     const onFocus = () => {
-        // Placeholder for future focus reactions; intentionally a no-op.
+        // 为将来的聚焦联动预留;当前有意为空操作(no-op)。
     };
     const result: CommonMapResult = { value, onChange, onBlur, onFocus };
     if (opts.isOptionControl) {

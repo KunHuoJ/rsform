@@ -4,24 +4,23 @@ import { parseRowIndex } from '../shared/paths';
 import { applyRowState } from './onEachRowChange';
 
 /**
- * Per-row multi-key reactive effect. Watches every `pre.*.k` for `k` in
- * `keys`; whenever any of them changes, `cb` fires with the row index, the
- * full set of field models + values for that row, which key triggered, and a
- * row-scoped `setFieldState`. Useful for derived row fields that depend on
- * several inputs (e.g. `total = price * qty - discount`).
+ * 按行、多 key 的响应式 effect。监听 `keys` 中每个 `k` 对应的 `pre.*.k`；
+ * 每当其中任一个变化时，`cb` 会被触发，并带上行索引、该行全部的字段模型 + 值、
+ * 是哪个 key 触发的，以及一个行作用域的 `setFieldState`。适用于依赖多个输入的
+ * 派生行字段（例如 `total = price * qty - discount`）。
  */
 export interface EachRowMultiCtx {
-    /** Absolute row index within the `pre` array. */
+    /** 在 `pre` 数组中的绝对行索引。 */
     index: number;
-    /** Field models keyed by watched key (model may be undefined if not mounted). */
+    /** 以被监听的 key 为键的字段模型（若未挂载，模型可能为 undefined）。 */
     fields: Record<string, GeneralField | undefined>;
-    /** Values keyed by watched key. */
+    /** 以被监听的 key 为键的值。 */
     values: Record<string, any>;
-    /** Which watched key triggered this run. */
+    /** 本次运行由哪个被监听的 key 触发。 */
     triggerKey: string;
-    /** The field model that triggered this run. */
+    /** 触发本次运行的字段模型。 */
     triggerField: DataField;
-    /** Set state on a sibling key within this row: setFieldState(key, partial). */
+    /** 对本行内的兄弟 key 设置 state：setFieldState(key, partial)。 */
     setFieldState: (key: string, state: Record<string, any>) => void;
 }
 
@@ -57,7 +56,7 @@ export function onEachRowMultiChange(
     for (const triggerKey of keys) {
         const pattern = `${pre}.*.${triggerKey}`;
         onFieldValueChange(pattern, (field: GeneralField) => run(field, triggerKey));
-        // Fire once per row on mount so the derived value is computed initially.
+        // 在每一行挂载时触发一次，使派生值在初始时就被计算出来。
         onFieldMount(pattern, (field: GeneralField) => run(field, triggerKey));
     }
 }

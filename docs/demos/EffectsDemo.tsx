@@ -15,10 +15,10 @@ export function EffectsDemo(): React.ReactElement {
                 )
             }
         >
-            <Form.Field name="password" title="密码" required>
+            <Form.Field name="password" label="密码" required>
                 <Form.Input.Password placeholder="请设置密码" />
             </Form.Field>
-            <Form.Field name="confirm" title="确认密码" required>
+            <Form.Field name="confirm" label="确认密码" required>
                 <Form.Input.Password placeholder="请再次输入" />
             </Form.Field>
         </Form>

@@ -2,18 +2,16 @@ import type { Form as FormilyForm, GeneralField } from '@formily/core';
 import { onFieldMount, onFieldUnmount, onFieldValueChange } from '@formily/core';
 
 /**
- * Cross-field reactive validator. `cb` receives the current trigger values
- * keyed by trigger name and the target field model; a non-empty string/array
- * result is written to the target field's `selfErrors`, while an empty/null/
- * undefined result clears them.
+ * 跨字段的响应式校验器。`cb` 接收以触发器名为 key 的当前触发器值，以及目标
+ * 字段模型；非空的字符串/数组结果会写入目标字段的 `selfErrors`，而空/null/
+ * undefined 结果则清空它们。
  *
- * `triggers` defaults to `[name]`. When the target field is unmounted its
- * errors are cleared; when it (re)mounts with pending errors they are
- * re-applied.
+ * `triggers` 默认为 `[name]`。当目标字段卸载时其错误被清空；当它（重新）挂载
+ * 且存在待处理错误时，这些错误会被重新应用。
  *
- * Returns a handle whose `clearEffect()` freezes the validator so subsequent
- * trigger changes become no-ops (Formily v2 hooks live for the form's
- * lifetime, so we use a liveness flag rather than hook disposal).
+ * 返回一个 handle，其 `clearEffect()` 会冻结校验器，使后续的触发器变更变为
+ * 无操作（Formily v2 的 hook 在 form 的整个生命周期内存活，因此我们用一个
+ * 存活标志而非销毁 hook）。
  */
 export type ValidateFieldCb = (
     values: Record<string, any>,
@@ -42,7 +40,7 @@ export function validateField(
         if (!alive) return;
         const field = form.query(name).take();
         if (!field || !(field as any).mounted) {
-            // Field not yet mounted: remember the verdict to apply on mount.
+            // 字段尚未挂载：记住这个判定结果，待挂载时再应用。
             pendingErrors = errors;
             return;
         }
@@ -74,7 +72,7 @@ export function validateField(
     }
     onFieldMount(name, () => {
         if (!alive) return;
-        // Apply any verdict computed before the field mounted.
+        // 应用在字段挂载前就已计算出的任何判定结果。
         if (pendingErrors) {
             const field = form.query(name).take();
             if (field && (field as any).mounted) {

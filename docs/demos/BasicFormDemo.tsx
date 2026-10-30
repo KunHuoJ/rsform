@@ -16,18 +16,18 @@ export function BasicFormDemo(): React.ReactElement {
                     setSubmitted(values);
                 }}
             >
-                <Form.Field name="username" title="用户名" required>
+                <Form.Field name="username" label="用户名" required>
                     <Form.Input placeholder="请输入用户名" />
                 </Form.Field>
                 <Form.Field
                     name="age"
-                    title="年龄"
+                    label="年龄"
                     required
                     validator={(v: number) => (v >= 0 ? '' : '必须 ≥ 0')}
                 >
                     <Form.InputNumber style={{ width: 120 }} />
                 </Form.Field>
-                <Form.Field name="bio" title="简介">
+                <Form.Field name="bio" label="简介">
                     <Form.TextArea rows={2} placeholder="选填" />
                 </Form.Field>
                 <div style={{ marginTop: 12 }}>

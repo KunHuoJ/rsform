@@ -309,15 +309,15 @@ export function PlaygroundDemo(): React.ReactElement {
         >
             <Section title="基本信息">
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
-                    <Form.Field name="orderName" title="订单名称" required>
+                    <Form.Field name="orderName" label="订单名称" required>
                         <Form.Input placeholder="请输入订单名称" />
                     </Form.Field>
-                    <Form.Field name="priority" title="优先级" required>
+                    <Form.Field name="priority" label="优先级" required>
                         <Form.RadioGroup options={PRIORITY} />
                     </Form.Field>
                     <Form.Field
                         name="orderDate"
-                        title="下单日期"
+                        label="下单日期"
                         required
                         format={toDayjs}
                         parse={toIso}
@@ -326,27 +326,27 @@ export function PlaygroundDemo(): React.ReactElement {
                     </Form.Field>
                     <Form.Field
                         name="deliveryDate"
-                        title="交付日期"
+                        label="交付日期"
                         required
                         format={toDayjs}
                         parse={toIso}
                     >
                         <Form.DatePicker style={{ width: '100%' }} />
                     </Form.Field>
-                    <Form.Field name="category" title="物料分类" required>
+                    <Form.Field name="category" label="物料分类" required>
                         <Form.Select
                             style={{ width: '100%' }}
                             options={CATEGORY}
                             placeholder="请选择分类"
                         />
                     </Form.Field>
-                    <Form.Field name="subcategory" title="子分类">
+                    <Form.Field name="subcategory" label="子分类">
                         <Form.Select style={{ width: '100%' }} placeholder="请先选择分类" />
                     </Form.Field>
-                    <Form.Field name="enabled" title="启用订单">
+                    <Form.Field name="enabled" label="启用订单">
                         <Form.Switch />
                     </Form.Field>
-                    <Form.Field name="remark" title="备注">
+                    <Form.Field name="remark" label="备注">
                         <Form.TextArea rows={2} placeholder="选填" />
                     </Form.Field>
                 </div>
@@ -364,18 +364,18 @@ export function PlaygroundDemo(): React.ReactElement {
                 >
                     {() => (
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <Form.Field name="name" title="姓名" required>
+                            <Form.Field name="name" label="姓名" required>
                                 <Form.Input placeholder="姓名" style={{ width: 100 }} />
                             </Form.Field>
                             <Form.Field
                                 name="phone"
-                                title="手机号"
+                                label="手机号"
                                 required
                                 validator={phoneValidator}
                             >
                                 <Form.Input placeholder="11 位手机号" style={{ width: 160 }} />
                             </Form.Field>
-                            <Form.Field name="role" title="角色">
+                            <Form.Field name="role" label="角色">
                                 <Form.Select
                                     options={CONTACT_ROLE}
                                     style={{ width: 110 }}

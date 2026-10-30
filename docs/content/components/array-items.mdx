@@ -32,18 +32,18 @@ const ROLES = [
     >
         {() => (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <Form.Field name="name" title="姓名" required>
+                <Form.Field name="name" label="姓名" required>
                     <Form.Input placeholder="姓名" />
                 </Form.Field>
                 <Form.Field
                     name="email"
-                    title="邮箱"
+                    label="邮箱"
                     required
                     validator={arrayUnion('email', '该邮箱已存在')}
                 >
                     <Form.Input placeholder="邮箱" />
                 </Form.Field>
-                <Form.Field name="role" title="角色">
+                <Form.Field name="role" label="角色">
                     <Form.Select options={ROLES} />
                 </Form.Field>
             </div>

@@ -1,16 +1,13 @@
 /**
- * Trailing-edge debounce. Repeated calls within `ms` collapse into a single
- * invocation of `fn` with the latest arguments, fired `ms` after the last
- * call. Plain utility — no Formily dependency — useful inside `effects` for
- * taming high-frequency triggers (a Select's `onSearch` before a remote
- * request, an Input's `onChange` before a联想 query, …).
+ * 后沿（trailing-edge）防抖。`ms` 时间内的重复调用会合并为对 `fn` 的单次
+ * 调用，使用最新的参数，并在最后一次调用之后的 `ms` 时触发。纯工具函数
+ * ——不依赖 Formily——适合在 `effects` 内用于驯服高频触发器（发起远程请求
+ * 前的 Select `onSearch`、发起联想查询前的 Input `onChange`、…）。
  *
- * The returned function is stable for the lifetime of the closure it
- * captures, so it is safe to pass directly as a prop (no `useCallback`
- * needed). Timers are cleared on every subsequent call; there is no
- * form-level dispose hook, so a pending timer may fire shortly after a form
- * unmount — in practice harmless because the callback only touches the
- * (still-valid) form model.
+ * 返回的函数在其捕获的闭包的整个生命周期内保持稳定，因此可以安全地直接作为
+ * prop 传入（无需 `useCallback`）。每次后续调用都会清除定时器；没有 form
+ * 级别的销毁 hook，因此待执行的定时器可能在 form 卸载后不久触发——实践中
+ * 无害，因为回调只接触（仍然有效的）form 模型。
  */
 export function debounce<A extends unknown[]>(
     fn: (...args: A) => void | Promise<void>,

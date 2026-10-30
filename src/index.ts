@@ -17,28 +17,28 @@ import { Table } from './table/Table';
 export const VERSION = '0.1.0';
 
 /**
- * rsform — High-performance React form library built on Formily v2 + antd 5.
+ * rsform — 基于 Formily v2 + antd 5 的高性能 React 表单库。
  *
- * Single entry. `import { Form } from 'rsform'` gives the whole `Form`
- * namespace: `Form.Field` / `Form.Consumer` (core) + `Form.Input` /
- * `Form.Select` / … / `Form.Submit` / `Form.Button` (antd controls) +
- * `Form.Table` + `Form.ArrayItems`. Use `rsform/styles` separately for the CSS.
+ * 单一入口。`import { Form } from 'rsform'` 即可得到完整的 `Form`
+ * 命名空间:`Form.Field` / `Form.Consumer`(核心)+ `Form.Input` /
+ * `Form.Select` / … / `Form.Submit` / `Form.Button`(antd 控件)+
+ * `Form.Table` + `Form.ArrayItems`。CSS 样式请单独引入 `rsform/styles`。
  *
- * The control registry (`FormComMap`, pre-populated with the antd controls) is
- * imported transitively via `Table` → `CellBridge` → `FormComMap`, so the
- * Table's `control: 'input'` lookups resolve without any extra import.
+ * 控件注册表(`FormComMap`,已预置 antd 控件)通过
+ * `Table` → `CellBridge` → `FormComMap` 被间接引入,因此
+ * Table 的 `control: 'input'` 查找无需任何额外 import 即可解析。
  */
 
 export { Button } from 'antd';
-// ArrayItems.
+// ArrayItems。
 export type { ArrayItemsProps } from './array-items/ArrayItems';
 export { ArrayItems } from './array-items/ArrayItems';
 export type { ArrayUnionValidator } from './array-items/arrayUnion';
 export { arrayUnion } from './array-items/arrayUnion';
 export { ArrayFieldContext, useArrayField } from './array-items/useArrayItems';
 export { DatePicker } from './controls/DatePicker';
-// Controls + control registry.
-export type { ControlComponent, ControlKey } from './controls/FormComMap';
+// 控件 + 控件注册表。
+export type { ControlComponent, ControlKey, RsfControlRegistry } from './controls/FormComMap';
 export { getControl, getControls, registerControl } from './controls/FormComMap';
 export { Input, TextArea } from './controls/Input';
 export { InputNumber } from './controls/InputNumber';
@@ -46,7 +46,7 @@ export type { RadioGroupProps } from './controls/RadioGroup';
 export { RadioGroup } from './controls/RadioGroup';
 export { Select } from './controls/Select';
 export { Switch } from './controls/Switch';
-// Effects helpers + types.
+// Effects 辅助函数 + 类型。
 export type {
     EachRowCb,
     EachRowCtx,
@@ -80,7 +80,7 @@ export {
     setRefState,
     validateField,
 } from './effects';
-// Field pieces + types.
+// Field 相关组件 + 类型。
 export type {
     CommonMapOptions,
     CommonMapResult,
@@ -106,7 +106,7 @@ export {
     useFieldContext,
     useSelectFirst,
 } from './field';
-// Form pieces.
+// Form 相关组件。
 export { Consumer as FormConsumer } from './form/Consumer';
 export type { FormProps } from './form/Form';
 export type { FormConsumerProps } from './form/FormNamespace';
@@ -117,7 +117,7 @@ export { useFormDraft } from './form/useFormDraft';
 export type { CellBridgeProps } from './table/CellBridge';
 export { CellBridge } from './table/CellBridge';
 export { Table } from './table/Table';
-// Table.
+// Table。
 export type {
     BuiltColumns,
     RsfTableColumn,
@@ -127,13 +127,12 @@ export type {
 export { useTable } from './table/useTable';
 
 /**
- * The unified `Form` namespace: the bare `Form` (Field / Consumer / Formily)
- * plus the antd controls, `Submit`, `Table`, and `ArrayItems` — all attached as
- * static properties so `Form.Field` / `Form.Input` / `Form.Table` /
- * `Form.ArrayItems` / `Form.Submit` work from a single `rsform` import.
+ * 统一的 `Form` 命名空间:基础的 `Form`(Field / Consumer / Formily)
+ * 加上 antd 控件、`Submit`、`Table` 和 `ArrayItems` —— 全部作为静态属性
+ * 挂载,因此只需一次 `rsform` import 即可使用 `Form.Field` / `Form.Input` /
+ * `Form.Table` / `Form.ArrayItems` / `Form.Submit`。
  *
- * `Object.assign` attaches the static properties onto the shared `Form`
- * component in place.
+ * `Object.assign` 将这些静态属性就地挂载到共享的 `Form` 组件上。
  */
 export type RsfForm = typeof FormComponent & {
     Field: typeof Field;
@@ -147,7 +146,7 @@ export type RsfForm = typeof FormComponent & {
     Switch: typeof Switch;
     DatePicker: typeof DatePicker;
     Submit: typeof Submit;
-    /** antd `Button` re-export, for custom action buttons. */
+    /** 转导出 antd 的 `Button`,用于自定义操作按钮。 */
     Button: typeof AntdButton;
     Table: typeof Table;
     ArrayItems: typeof ArrayItems;

@@ -68,7 +68,7 @@ export function RemoteSearchDemo(): React.ReactElement {
                 search('');
             }}
         >
-            <Form.Field name="userId" title="用户" required>
+            <Form.Field name="userId" label="用户" required>
                 <Form.Select placeholder="输入姓名或拼音搜索" style={{ width: 280 }} />
             </Form.Field>
         </Form>

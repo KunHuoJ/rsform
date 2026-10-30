@@ -37,7 +37,7 @@ function DraftBody() {
                     <button onClick={draft.dismiss}>忽略</button>
                 </div>
             )}
-            <Form.Field name="name" title="姓名" required>
+            <Form.Field name="name" label="姓名" required>
                 <Form.Input />
             </Form.Field>
             <Form.Submit preventDuplicate>提交</Form.Submit>
@@ -123,7 +123,7 @@ function DraftableBody() {
                     <button onClick={draft.dismiss}>忽略</button>
                 </div>
             )}
-            <Form.Field name="orderName" title="订单名称" required>
+            <Form.Field name="orderName" label="订单名称" required>
                 <Form.Input />
             </Form.Field>
             {/* ... contacts / items ... */}

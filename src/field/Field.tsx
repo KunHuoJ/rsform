@@ -1,4 +1,5 @@
 import * as React from 'react';
+import type { GeneralField } from '@formily/core';
 import { Field as FormilyField, useField } from '@formily/react';
 import { observer } from '@formily/reactive-react';
 import { FieldContext } from '../shared/FieldContext';
@@ -10,39 +11,45 @@ import { NonEditable } from './NonEditable';
 import { useSelectFirst } from './selectFirst';
 import { useContentName } from './useContentName';
 
-export interface FieldRenderApi {
-    value: any;
-    onChange: (value: any) => void;
-    state: any;
+/**
+ * render-prop 子元素收到的 API。按字段值类型 `Value` 泛型化，使
+ * `<Form.Field<number>>{({ value }) => ...}` 中的 `value` / `onChange`
+ * 获得精确类型（默认 `any`，不指定时与此前行为一致）。
+ */
+export interface FieldRenderApi<Value = any> {
+    value: Value;
+    onChange: (value: Value) => void;
+    /** 底层 Formily 字段模型。 */
+    state: GeneralField;
 }
 
-export interface FieldProps {
-    /** Field name; may be relative (`.foo`, `..foo`) against the parent context. */
+export interface FieldProps<Value = any> {
+    /** 字段名;可相对于父级上下文(`.foo`、`..foo`)。 */
     name: string;
-    /** Field label (preferred). Falls back to `title` when omitted. */
+    /** 字段标签(首选)。省略时回退为 `title`。 */
     label?: React.ReactNode;
-    /** @deprecated Alias of `label`, kept for back-compat. Prefer `label`. */
+    /** @deprecated `label` 的别名,为向后兼容保留。请优先使用 `label`。 */
     title?: React.ReactNode;
     required?: boolean;
     editable?: boolean;
-    /** Transform the form value before passing it to the control. */
-    format?: (value: any) => any;
-    /** Transform the control's onChange value before writing it to the form. */
-    parse?: (value: any) => any;
-    /** Auto-select the first option on mount (for single-select option controls). */
+    /** 在传入控件之前对表单值做转换。 */
+    format?: (value: Value) => any;
+    /** 在写回表单之前对控件的 onChange 值做转换。 */
+    parse?: (value: any) => Value;
+    /** 挂载时自动选中第一个选项(用于单选的选项型控件)。 */
     selectFirst?: boolean;
-    /** Render only the control, no label/error shell. */
+    /** 仅渲染控件,不渲染标签 / 错误外壳。 */
     hideUi?: boolean;
-    /** Show only the required marker + control, hide the title. */
+    /** 仅显示必填标记 + 控件,隐藏标题。 */
     requiredOnlyUi?: boolean;
-    /** Formily validator. */
+    /** Formily 校验器。 */
     validator?: any;
-    /** Formily field reactions. */
+    /** Formily 字段联动(reactions)。 */
     reactions?: any;
-    /** Optional Formily basePath override. */
+    /** 可选的 Formily basePath 覆盖。 */
     basePath?: string;
-    /** A control element, or a render-prop receiving {value, onChange, state}. */
-    children?: React.ReactElement | ((api: FieldRenderApi) => React.ReactNode);
+    /** 一个控件元素,或一个接收 {value, onChange, state} 的 render-prop。 */
+    children?: React.ReactElement | ((api: FieldRenderApi<Value>) => React.ReactNode);
 }
 
 interface FieldBodyProps {
@@ -59,9 +66,9 @@ interface FieldBodyProps {
 }
 
 /**
- * Renders the field's content from the Formily field model. Lives inside the
- * Formily <Field> so it can read the field via useField() — keeping all hooks
- * at the component top level (no hooks in render-prop callbacks).
+ * 根据 Formily 字段模型渲染字段内容。它位于 Formily 的 <Field> 内部,
+ * 因此可以通过 useField() 读取字段 —— 让所有 hooks 都保持在组件顶层
+ *(render-prop 回调中不放 hooks)。
  */
 function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
     const field: any = useField();
@@ -82,8 +89,8 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
 
     useSelectFirst({ field, selectFirst, children });
 
-    // Stable id to link the <label htmlFor> with the control. Only used when the
-    // child is a concrete element we can inject `id` into (not render-props).
+    // 用于将 <label htmlFor> 与控件关联的稳定 id。仅当子元素是我们能注入
+    // `id` 的具体元素时才使用(render-prop 情况不适用)。
     const autoId = React.useId();
     const isNonEditable = editable === false || field.editable === false;
 
@@ -116,9 +123,9 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
         if (!childEl.props.placeholder && typeof label === 'string') {
             injectProps.placeholder = `请输入${label}`;
         }
-        // Forward `linkedFieldProps`-derived control props. The effects helper
-        // merges its `compute` result into `field.componentProps`; spread those
-        // onto the control so e.g. cascading `options` reach the Select.
+        // 转发由 `linkedFieldProps` 派生的控件 props。该 effects 辅助函数会把
+        // 它的 `compute` 结果合并进 `field.componentProps`;将其展开到控件上,
+        // 这样例如级联得到的 `options` 就能传到 Select。
         const componentProps = (field as any)?.componentProps;
         if (componentProps && typeof componentProps === 'object') {
             Object.assign(injectProps, componentProps);
@@ -166,21 +173,20 @@ function FieldBodyImpl(props: FieldBodyProps): React.ReactElement | null {
 }
 
 /**
- * `observer` is required because Formily's <Field> uses `component={[]}` (no
- * rendered component), so its own ReactiveInternal never reads `field.value` /
- * `field.errors` during render and therefore won't re-subscribe to those
- * changes. Wrapping FieldBody makes it reactive to value/error/pattern changes
- * so render-prop children, injected controls and the error message all update.
+ * 需要 `observer` 是因为 Formily 的 <Field> 使用了 `component={[]}`(不渲染
+ * 任何组件),所以它自身的 ReactiveInternal 在渲染期间从不读取 `field.value` /
+ * `field.errors`,因此也不会重新订阅这些变化。用 observer 包裹 FieldBody 使其
+ * 对 value/error/pattern 变化保持响应式,从而让 render-prop 子元素、注入的控件
+ * 以及错误信息都能同步更新。
  */
 const FieldBody = observer(FieldBodyImpl);
 
 /**
- * rsform Field wraps Formily's <Field> and auto-injects value/onChange into the
- * child control, switches to `checked` for option controls, supports
- * format/parse transforms, editable=false -> NonEditable, selectFirst, relative
- * name resolution, and publishes a FieldContext for descendants.
+ * rsform 的 Field 包裹 Formily 的 <Field>,自动向子控件注入 value/onChange,
+ * 对选项型控件切换为 `checked`,支持 format/parse 转换、editable=false ->
+ * NonEditable、selectFirst、相对名称解析,并为后代发布一个 FieldContext。
  */
-export function Field(props: FieldProps): React.ReactElement {
+export function Field<Value = any>(props: FieldProps<Value>): React.ReactElement {
     const {
         name,
         label,
@@ -199,7 +205,7 @@ export function Field(props: FieldProps): React.ReactElement {
     } = props;
 
     const resolvedName = useContentName(name);
-    // `label` is canonical; `title` kept as a back-compat alias.
+    // `label` 为规范属性;`title` 作为向后兼容的别名保留。
     const resolvedLabel = label ?? title;
 
     return (

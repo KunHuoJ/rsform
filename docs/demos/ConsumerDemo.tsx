@@ -20,13 +20,13 @@ const STATUS: Status[] = [
 export function ConsumerDemo(): React.ReactElement {
     return (
         <Form initialValues={{ name: 'rsform', age: 1, status: 'draft' }}>
-            <Form.Field name="name" title="名称" required>
+            <Form.Field name="name" label="名称" required>
                 <Form.Input placeholder="请输入名称" style={{ width: 200 }} />
             </Form.Field>
-            <Form.Field name="age" title="数量" required>
+            <Form.Field name="age" label="数量" required>
                 <Form.InputNumber min={0} style={{ width: 200 }} />
             </Form.Field>
-            <Form.Field name="status" title="状态">
+            <Form.Field name="status" label="状态">
                 <Form.Select options={STATUS} style={{ width: 200 }} />
             </Form.Field>
 

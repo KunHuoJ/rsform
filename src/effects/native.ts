@@ -1,13 +1,12 @@
 /**
- * Formily v2 lifecycle hooks re-exported as rsform's "native" effect helpers.
- * These are global registration helpers: calling them inside an `effects`
- * callback (while the form's effect scope is active) wires the form's
- * lifecycle. rsform's sugar helpers (`linkedFieldProps`, `validateField`, …)
- * are built on top of these.
+ * 将 Formily v2 的生命周期 hook 重新导出为 rsform 的「原生」effect helper。
+ * 它们是全局注册 helper：在 `effects` 回调内调用它们（当 form 的 effect
+ * 作用域处于激活状态时）会接入该 form 的生命周期。rsform 的语法糖 helper
+ * （`linkedFieldProps`、`validateField`、…）都构建在它们之上。
  *
- * Note: Formily v2 effect hooks return `void` (no per-hook disposer); they are
- * registered for the lifetime of the form. rsform's `validateField` provides a
- * `clearEffect` handle via an internal liveness flag for hot-reload/teardown.
+ * 注意：Formily v2 的 effect hook 返回 `void`（没有单个 hook 的 disposer）；
+ * 它们在 form 的整个生命周期内保持注册。rsform 的 `validateField` 通过一个
+ * 内部存活标志提供了 `clearEffect` handle，用于热重载/拆卸。
  */
 export {
     LifeCycleTypes,

@@ -9,25 +9,22 @@ import type { RsfTableProps } from './types';
 import { useTable } from './useTable';
 
 /**
- * rsform Table: a high-performance editable table backed by a Formily
- * ArrayField.
+ * rsform Table：以 Formily ArrayField 为底层的高性能可编辑表格。
  *
- * The perf win over a naive "every cell is a Formily `<Field>`" table:
- *  - The Table body does NOT subscribe to the array value for cell edits — it
- *    reads the array via `untracked` and re-renders only on length changes
- *    (add/remove) via a `lenTick`. So an edit never walks the N×M cell tree.
- *  - Each cell is a `CellBridge`: it reads its own value reactively from a
- *    `form.values` leaf (so editing cell (i,j) re-renders ONLY cell (i,j)) and
- *    observes only its own `selfErrors` (a rare event). It is NOT a Formily
- *    `<Field>`, so it does not take part in the N×M reactive re-render cascade.
- *  - The `columns` array is referentially stable across value edits (its
- *    useMemo deps exclude the array value/length); fresh values are read via
- *    refs / the per-cell leaf subscription.
+ * 相比朴素的「每个单元格都是 Formily `<Field>`」表格，性能收益在于：
+ *  - Table body 不会为单元格编辑订阅数组值——它通过 `untracked` 读取数组，
+ *    只在长度变化（增加/删除）时借助 `lenTick` 重渲染。因此一次编辑
+ *    绝不会遍历 N×M 的单元格树。
+ *  - 每个单元格是一个 `CellBridge`：它响应式地从 `form.values` 的某个叶子
+ *    读取自己的值（因此编辑单元格 (i,j) 只重渲染单元格 (i,j)），且只观察
+ *    自己的 `selfErrors`（罕见事件）。它并非 Formily `<Field>`，
+ *    所以不参与 N×M 的响应式重渲染级联。
+ *  - `columns` 数组在值编辑时保持引用稳定（其 useMemo 依赖项不含数组值/长度）；
+ *    最新的值通过 ref / 每个单元格的叶子订阅读取。
  *
- * The cell value flows: `onChange` → the cell field's `onInput(v)` (sets the
- * leaf value, runs the cell's validator, fires `onFieldValueChange` effects on
- * the cell path — all without replacing the row object, so sibling cells do
- * not re-render).
+ * 单元格值的流向：`onChange` → 单元格 field 的 `onInput(v)`（设置叶子值，
+ * 运行单元格的校验器，触发单元格路径上的 `onFieldValueChange` 副作用——
+ * 全程不替换行对象，因此同行的兄弟单元格不会重渲染）。
  */
 const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<string, any>>(
     props: RsfTableProps<RecordType>,
@@ -35,11 +32,10 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
     const { dataSource, columns } = useTable(props);
     const { pagination, rowKey, className, scroll, tableProps } = props;
 
-    // Default row key: the absolute index. antd passes a page-relative index
-    // to rowKey(record, index); attach a synthetic __rsfIdx (absolute) to each
-    // row so keys are stable across pages. Wrapped records are shallow copies
-    // (never mutate Formily values); CellBridge reads only record[dataIndex],
-    // so the new object reference does not break cell memoisation.
+    // 默认行 key：绝对索引。antd 传给 rowKey(record, index) 的是分页相对索引；
+    // 给每行附加一个合成的 __rsfIdx（绝对索引），使 key 在跨页时保持稳定。
+    // 被包装的记录是浅拷贝（绝不改动 Formily 的值）；CellBridge 只读取
+    // record[dataIndex]，因此新的对象引用不会破坏单元格的 memo。
     const pag = typeof pagination === 'object' && pagination ? pagination : {};
     const page = pag.current && pag.current > 0 ? pag.current : 1;
     const size = pag.pageSize && pag.pageSize > 0 ? pag.pageSize : 0;
@@ -55,22 +51,19 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
             ...row,
             __rsfIdx: size > 0 ? (page - 1) * size + i : i,
         }));
-        // keyedDataSource is recomputed each render (it is cheap and must
-        // track value edits); it intentionally is NOT in the columns memo deps.
+        // keyedDataSource 在每次渲染时重新计算（代价很低且必须跟踪值编辑）；
+        // 它刻意不进入 columns 的 memo 依赖项。
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dataSource, rowKey, page, size]);
 
-    // antd Table defaults to `tableLayout: 'auto'`, under which the browser
-    // auto-distributes column widths from content and a column's `width` is only
-    // a suggestion — with many columns the table squishes each column to its
-    // content's minimum (a short input renders ~tens of px regardless of a
-    // declared `width: 120`). To make column `width`s actually take effect we
-    // switch to fixed layout by providing `scroll.x`. antd auto-enables
-    // `tableLayout: 'fixed'` whenever `scroll.x` is set, and fixed layout
-    // honours each `<col width>` strictly. We sum the declared column widths as
-    // the scroll width; if no column declares a width we fall back to
-    // 'max-content' so the table still sizes to content. A user-supplied
-    // `scroll` always wins.
+    // antd Table 默认 `tableLayout: 'auto'`，此布局下浏览器会根据内容
+    // 自动分配列宽，列的 `width` 只是建议值——列数一多，表格会把每列挤压到
+    // 其内容的最小宽度（一个短输入框无论声明了 `width: 120` 都只渲染约几十 px）。
+    // 为了让列的 `width` 真正生效，我们通过提供 `scroll.x` 切换到固定布局。
+    // 只要设置了 `scroll.x`，antd 就会自动启用 `tableLayout: 'fixed'`，
+    // 而固定布局会严格遵守每个 `<col width>`。我们把声明的各列宽度之和
+    // 作为滚动宽度；若没有任何列声明宽度，则回退到 'max-content'，
+    // 使表格仍按内容计算尺寸。用户自行传入的 `scroll` 始终优先。
     const resolvedScroll = React.useMemo(() => {
         if (scroll) return scroll;
         const total = columns.reduce((sum: number, col: any) => {
@@ -96,10 +89,9 @@ const RsfTableBody = observer(function RsfTableBody<RecordType extends Record<st
 ) => React.ReactElement;
 
 /**
- * rsform Table wrapper: scopes the body inside a Formily `<ArrayField>` (so
- * `useField()` returns the array model for mutators) and a FieldContext with
- * the resolved array name as preName, so the body's `useTable` resolves
- * relative names correctly.
+ * rsform Table 包装器：把 body 作用域限定在一个 Formily `<ArrayField>` 内
+ * （使 `useField()` 返回数组模型以供调用变更方法），并包裹一个 FieldContext，
+ * 以解析出的数组名作为 preName，让 body 的 `useTable` 能正确解析相对名称。
  */
 export function Table<RecordType extends Record<string, any>>(
     props: RsfTableProps<RecordType>,

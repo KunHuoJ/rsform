@@ -5,7 +5,7 @@ export interface FieldErrorProps {
     error?: React.ReactNode;
 }
 
-/** Class name applied to the error message node, used for scroll-to-error. */
+/** 应用于错误信息节点的类名,用于滚动定位到错误处。 */
 export const errorClassName = `${prefixCls}-field-error-message`;
 
 export function FieldError({ error }: FieldErrorProps): React.ReactElement | null {

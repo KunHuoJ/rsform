@@ -7,23 +7,23 @@ import { type RsfFormInternals, RsfFormInternalsContext } from './RsfFormInterna
 import { scrollToFirstError } from './validateFailedScroll';
 
 export interface FormProps {
-    /** External form instance; rsform creates one if omitted. */
+    /** 外部传入的表单实例;省略时 rsform 会自行创建一个。 */
     form?: FormilyForm;
     initialValues?: Record<string, any>;
-    /** Async initial values; the form mounts after they resolve. */
+    /** 异步初始值;表单在其解析完成后才挂载。 */
     asyncInitialValues?: () => Promise<Record<string, any>>;
     /**
-     * Effect function (or array of them, fanned out in order). Each receives
-     * the rsform `$` helpers bundle: use `$.linkedFieldProps`,
-     * `$.validateField`, `$.onEachRowChange`, etc., or call bare Formily
-     * lifecycle hooks directly (they auto-register on the active form). For
-     * raw form access use `$.form`.
+     * Effect 函数(或其数组,按顺序依次展开执行)。每个函数都会收到
+     * rsform 的 `$` 辅助工具集:可使用 `$.linkedFieldProps`、
+     * `$.validateField`、`$.onEachRowChange` 等,或直接调用裸的 Formily
+     * 生命周期 hooks(它们会自动注册到当前激活的表单上)。如需访问原始
+     * 表单实例,使用 `$.form`。
      */
     effects?: EffectsProp;
     onSubmit?: (values: any) => void | Promise<void>;
     onReset?: () => void;
     validateFirst?: boolean;
-    /** 'scroll' (default behaviour) or a custom callback on validate failure. */
+    /** 'scroll'(默认行为)或校验失败时触发的自定义回调。 */
     validateFailed?: 'scroll' | ((firstErrorField: any) => void);
     formRef?: React.MutableRefObject<FormilyForm | null>;
     children?: React.ReactNode;
@@ -66,16 +66,16 @@ export function Form(props: FormProps): React.ReactElement {
         asyncInitialValues ? null : {},
     );
 
-    // Keep latest onSubmit/onReset in refs so the form effects (registered once
-    // at creation) always invoke the freshest callbacks without recreating the form.
+    // 将最新的 onSubmit/onReset 保存在 ref 中,使得(在创建时一次性注册的)
+    // 表单 effects 始终调用最新的回调,而无需重建表单。
     const onSubmitRef = React.useRef<FormProps['onSubmit']>(onSubmit);
     const onResetRef = React.useRef<FormProps['onReset']>(onReset);
     onSubmitRef.current = onSubmit;
     onResetRef.current = onReset;
 
-    // Holds the in-flight onSubmit promise so Submit can keep its loading state
-    // alive for the real onSubmit duration (form.submit() fires onSubmit through
-    // the onFormSubmit lifecycle but does not await it).
+    // 保存进行中的 onSubmit promise,使 Submit 能在真实 onSubmit 执行期间
+    // 保持其 loading 状态(form.submit() 通过 onFormSubmit 生命周期触发
+    // onSubmit,但并不会 await 它)。
     const submitPromiseRef = React.useRef<Promise<any> | undefined>(undefined);
     const internals: RsfFormInternals = React.useMemo(
         () => ({ submitPromiseRef, onSubmitRef }),
@@ -115,9 +115,8 @@ export function Form(props: FormProps): React.ReactElement {
             ),
             validateFirst,
         });
-        // Re-create the form only when the async values first land or when an
-        // external form is supplied. Initial values / effects changes are NOT
-        // meant to recreate the form at runtime.
+        // 仅在异步值首次到达或提供了外部表单时才重建表单。初始值 / effects
+        // 的变化在运行时并不会重建表单。
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formProp, asyncValues]);
 
@@ -127,10 +126,9 @@ export function Form(props: FormProps): React.ReactElement {
         }
     }, [form, formRef]);
 
-    // Expose the form synchronously during render so child effects (which run
-    // before this component's own effect) can already read formRef.current —
-    // needed for programmatic field creation (e.g. the high-perf Table's
-    // CellBridge) and for tests that drive the form from a useEffect.
+    // 在渲染期间同步暴露表单,使子级 effects(它们先于本组件自身的 effect
+    // 运行)就能读取到 formRef.current —— 这对以编程方式创建字段(例如
+    // 高性能 Table 的 CellBridge)以及那些通过 useEffect 驱动表单的测试是必需的。
     if (formRef) {
         formRef.current = form;
     }
