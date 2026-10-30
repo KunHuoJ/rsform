@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+    <defs>
+        <linearGradient id="rsf-logo-grad" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#2563eb" />
+            <stop offset="1" stop-color="#0ea5e9" />
+        </linearGradient>
+    </defs>
+    <!-- 圆角方块底（品牌蓝青渐变） -->
+    <rect width="80" height="80" rx="18" fill="url(#rsf-logo-grad)" />
+    <!-- 抽象表单：一条 label + 输入框 + 输入光标 -->
+    <rect x="20" y="24" width="22" height="5" rx="2.5" fill="#fff" opacity="0.9" />
+    <rect x="20" y="36" width="40" height="22" rx="5" stroke="#fff" stroke-width="3" opacity="0.95" />
+    <!-- 输入光标：一条竖线，表「可输入」 -->
+    <rect x="29" y="42" width="3" height="10" rx="1.5" fill="#fff" />
+</svg>

@@ -35,7 +35,10 @@
         'Liberation Mono', monospace;
 }
 
-:root[data-theme='dark'] {
+/* Rspress 夜间模式用 class（<html class="dark rp-dark">）而非 data-theme 属性，
+ * 所以 dark 变量块挂 `:root.dark`——跟 `useThemeState()==='dark'` 驱动的 antd
+ * darkAlgorithm 同步切换，demo 容器与 antd 控件深浅一致。 */
+:root.dark {
     --rsf-bg: #0f172a;
     --rsf-bg-soft: #1e293b;
     --rsf-fg: #e2e8f0;

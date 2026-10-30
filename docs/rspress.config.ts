@@ -2,22 +2,6 @@ import * as path from 'node:path';
 import { defineConfig } from '@rspress/core';
 import rspressMermaid from 'rspress-plugin-mermaid';
 
-/**
- * rsform docs site — Rspress 2.
- *
- * Prose lives in `docs/content/*.mdx`; live demos are plain `.tsx` components
- * imported into MDX. `rsform` / `rsform/styles` resolve to the workspace source
- * so docs always reflect the latest code.
- *
- * Key facts (verified via scaffold build):
- *  - `ssg: false`: antd 5 under SSR has interop issues, and live form demos
- *    need client rendering anyway (forms submit/validate/cascade at runtime).
- *  - Aliases live under `builderConfig.resolve.alias` (NOT `source.alias`).
- *    `rsform/styles` MUST come before `rsform` — rspack alias is a prefix
- *    match, so the longer key wins only if listed first.
- *  - OutDir is `doc_build` (Rspress default), surfaced to CI via the root
- *    `docs:build` script / `docs.yml`.
- */
 const RSFORM_ROOT = path.resolve(__dirname, '..');
 
 export default defineConfig({
@@ -29,11 +13,10 @@ export default defineConfig({
     title: 'rsform',
     description: 'Formily v2 · antd 5 · 高性能表单',
     icon: '/icon.svg',
-    // mermaid 图表支持(intro 架构图用)。
+    logo: '/logo.svg',
+    logoText: 'rsform',
     plugins: [rspressMermaid()],
     ssg: false,
-    // 代码块全局默认折叠：超过 300px 自动收起，带展开按钮。
-    // 单块用 ```tsx fold / fold=false / height=400 精细控制。
     markdown: {
         defaultCodeOverflow: { behavior: 'fold', height: 300 },
     },
@@ -49,18 +32,14 @@ export default defineConfig({
             },
         },
         dev: {
-            // rspack dev 的 lazyCompilation + HMR 在 workspace 源码 alias（rsform →
-            // ../src → @formily/* pnpm 符号链接）下会 panic（"revoke the parent
-            // module" / "Dependency with ID not found"）。关掉 lazy 编译与 HMR，
-            // 全量一次性编译避开内存模块图竞态。dev 失效时回退 build + preview。
             lazyCompilation: false,
             hmr: false,
         },
+        server: {
+            open: true,
+            port: 9527,
+        },
     },
-    // 侧栏：4 组（对应顶部 nav），每组带中文小标题。Rspress v2 顶层禁用
-    // `_meta.json`（只能用 `_nav.json`），各子目录用各自 `_meta.json` 定顺序，
-    // 这里用显式 `sidebar` 给出分组与中文名，dev / build 行为一致。首页
-    // `index.md` 不进侧栏（点 logo 回首页）。
     sidebar: {
         '/intro': [
             {
