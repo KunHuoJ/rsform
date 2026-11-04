@@ -5,6 +5,7 @@ import { debounce } from './debounce';
 import { type LinkedFieldPropsCompute, linkedFieldProps } from './linkedFieldProps';
 import { type EachRowCb, onEachRowChange } from './onEachRowChange';
 import { type EachRowMultiCb, onEachRowMultiChange } from './onEachRowMultiChange';
+import { type FieldsValueChangeCb, onFieldsValueChange } from './onFieldsValueChange';
 import { getRefState, setRefState } from './refState';
 import { type ValidateFieldCb, type ValidateFieldHandle, validateField } from './validateField';
 
@@ -43,6 +44,13 @@ export interface EffectHelpers {
     onEachRowChange: (pre: string, key: string, cb: EachRowCb) => void;
     onEachRowMultiChange: (pre: string, keys: string[], cb: EachRowMultiCb) => void;
     /**
+     * 多字段值变化监听。监听 `keys` 中每个字段，任一值变化即触发 `cb`，回调收到
+     * 所有 key 的当前值、本次触发的 key 与字段模型。是 `onFieldValueChange` 的
+     * 多字段版本。初始化不触发（与 `onFieldValueChange` 一致）；需要初始化也
+     * 执行时用 `onFieldReact`。
+     */
+    onFieldsValueChange: (keys: string[], cb: FieldsValueChangeCb) => void;
+    /**
      * 后沿（trailing-edge）防抖。跨重渲染保持稳定，可安全作为 prop 传入。
      * 用于在发起远程请求前，驯服 `onSearch` / `onChange` 的高频触发。
      */
@@ -75,6 +83,7 @@ export function createEffects(form: FormilyForm): EffectHelpers {
         validateField: (name, triggers, cb) => validateField(form, name, triggers, cb),
         onEachRowChange: (pre, key, cb) => onEachRowChange(form, pre, key, cb),
         onEachRowMultiChange: (pre, keys, cb) => onEachRowMultiChange(form, pre, keys, cb),
+        onFieldsValueChange: (keys, cb) => onFieldsValueChange(form, keys, cb),
         debounce,
         clearOn: (deps, targets, clearValue) => clearOn(form, deps, targets, clearValue),
         setVisible: (name, visible) =>

@@ -241,9 +241,9 @@ describe('effects: $ bundle + sugar helpers', () => {
             </Form>,
         );
         await flush();
-        // Both rows mirrored their initial price on mount.
-        expect(formRef.current.getValuesIn('rows.0.mirror')).toBe(10);
-        expect(formRef.current.getValuesIn('rows.1.mirror')).toBe(5);
+        // 初始化不触发：mirror 未被设置（派生初始值应由调用方种好）
+        expect(formRef.current.getValuesIn('rows.0.mirror')).toBeUndefined();
+        expect(formRef.current.getValuesIn('rows.1.mirror')).toBeUndefined();
         const callsBeforeChange = calls.length;
         fireEvent.change(screen.getByTestId('p1'), { target: { value: '99' } });
         await flush();
@@ -252,7 +252,7 @@ describe('effects: $ bundle + sugar helpers', () => {
         expect(calls.length).toBe(callsBeforeChange + 1);
         // Row-scoped: row 1's mirror updated, row 0's mirror untouched.
         expect(formRef.current.getValuesIn('rows.1.mirror')).toBe('99');
-        expect(formRef.current.getValuesIn('rows.0.mirror')).toBe(10);
+        expect(formRef.current.getValuesIn('rows.0.mirror')).toBeUndefined();
     });
 
     it('onEachRowMultiChange computes a derived row field from several inputs', async () => {
@@ -284,11 +284,11 @@ describe('effects: $ bundle + sugar helpers', () => {
             </Form>,
         );
         await flush();
-        // initial: 10 * 2 - 1 = 19
-        expect(formRef.current.getValuesIn('rows.0.total')).toBe(19);
+        // 初始化不触发：total 保持 initialValues 里的 0（派生初始值应由调用方种好）
+        expect(formRef.current.getValuesIn('rows.0.total')).toBe(0);
         fireEvent.change(screen.getByTestId('qty'), { target: { value: '5' } });
         await flush();
-        // 10 * 5 - 1 = 49
+        // 10 * 5 - 1 = 49（变化后才由 helper 维护）
         expect(formRef.current.getValuesIn('rows.0.total')).toBe(49);
     });
 
@@ -305,6 +305,44 @@ describe('effects: $ bundle + sugar helpers', () => {
             </Form>,
         );
         expect(order).toEqual(['first', 'second']);
+    });
+
+    it('onFieldsValueChange fires when any dep changes (not on init)', async () => {
+        const formRef = useFormRef();
+        const seen: Array<{ triggerKey: string; values: any }> = [];
+        render(
+            <Form
+                initialValues={{ a: '1', b: '2' }}
+                effects={($) => {
+                    $.onFieldsValueChange(['a', 'b'], ({ triggerKey, values }) => {
+                        seen.push({ triggerKey, values });
+                    });
+                }}
+                formRef={formRef}
+            >
+                <Field name="a">
+                    <Input data-testid="a" />
+                </Field>
+                <Field name="b">
+                    <Input data-testid="b" />
+                </Field>
+            </Form>,
+        );
+        await flush();
+        // Init does not fire.
+        expect(seen).toHaveLength(0);
+
+        fireEvent.change(screen.getByTestId('a'), { target: { value: 'x' } });
+        await flush();
+        expect(seen).toHaveLength(1);
+        expect(seen[0].triggerKey).toBe('a');
+        expect(seen[0].values).toEqual({ a: 'x', b: '2' });
+
+        fireEvent.change(screen.getByTestId('b'), { target: { value: 'y' } });
+        await flush();
+        expect(seen).toHaveLength(2);
+        expect(seen[1].triggerKey).toBe('b');
+        expect(seen[1].values).toEqual({ a: 'x', b: 'y' });
     });
 
     it('validateField clearEffect stops further reactions', async () => {

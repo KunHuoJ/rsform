@@ -33,6 +33,8 @@ export type { EachRowCb, EachRowCtx } from './onEachRowChange';
 export { onEachRowChange } from './onEachRowChange';
 export type { EachRowMultiCb, EachRowMultiCtx } from './onEachRowMultiChange';
 export { onEachRowMultiChange } from './onEachRowMultiChange';
+export type { FieldsValueChangeCb, FieldsValueChangeCtx } from './onFieldsValueChange';
+export { onFieldsValueChange } from './onFieldsValueChange';
 export { getRefState, setRefState } from './refState';
 export type { ValidateFieldCb, ValidateFieldHandle } from './validateField';
 export { validateField } from './validateField';

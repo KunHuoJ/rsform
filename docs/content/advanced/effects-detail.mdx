@@ -24,6 +24,7 @@ effects 回调是**注册时机**，不是**执行时机**。回调里写的每�
 - **联动类**
   - [`onFieldReact`](#onfieldreact--初始化--变化都执行的响应式联动) — 初始化 + 变化都跑
   - [`onFieldValueChange`](#onfieldvaluechange--字段值变化监听) — 只在 value 变化跑（初始化不跑）
+  - [`onFieldsValueChange`](#onfieldsvaluechange--多字段值变化监听) — 多字段任一变化跑（初始化不跑）
   - [`linkedFieldProps`](#linkedfieldprops--异步派生字段状态props) — 派生 options / 显隐
 - **校验类**
   - [`validateField`](#validatefield--跨字段响应式校验) — 跨字段校验
@@ -49,8 +50,8 @@ effects 回调是**注册时机**，不是**执行时机**。回调里写的每�
 
 `$` 包含两类东西：
 
-1. **rsform 糖 helper**：`linkedFieldProps` / `validateField` / `onEachRowChange` /
-   `onEachRowMultiChange`，闭包绑定好了 form，调用即注册，自动随字段卸载而拆卸。
+1. **rsform 糖 helper**：`linkedFieldProps` / `validateField` / `onFieldsValueChange` /
+   `onEachRowChange` / `onEachRowMultiChange`，闭包绑定好了 form，调用即注册，自动随字段卸载而拆卸。
 2. **原始 Formily form**：`$.form`，以及 `$.onFieldReact` / `$.onFieldValueChange`（透传
    Formily 同名 hook）。其他 Formily 生命周期 hook（`onFieldMount` / `onFormSubmit` /
    `onFormSubmitValidateFailed` / `onFormReset` / …）**不在 `$` 上**，需从 `rsform`
@@ -306,10 +307,73 @@ effects={$ => {
 
 ---
 
+## `$.onFieldsValueChange` — 多字段值变化监听
+
+:::tip TL;DR
+`onFieldValueChange` 的多字段版本：监听 `keys` 里每个字段,**任一值变化**就跑 `cb`,回调拿到**所有 key 的当前值** + 是哪个 key 触发的。初始化不跑(回显安全)。适合「一个联动依赖多个字段,任一变了都要重算/重查」(如物流费依赖城市+地址+物品)。
+:::
+
+当一段联动依赖**多个字段**、任一变化都要重跑时，用这个比给每个字段各写一个
+`onFieldValueChange` 更省——一次注册，任一变化都触发，且 `cb` 里能一次拿到所有
+依赖的当前值。
+
+### 签名
+
+```ts
+$.onFieldsValueChange(
+  keys: string[],                        // 依赖的字段名数组
+  cb: (ctx: {
+    values: Record<string, any>,         // 所有 key 的当前值（未挂载的从 form.values 读）
+    triggerKey: string,                  // 本次由哪个 key 触发
+    triggerField: GeneralField,          // 触发的字段模型
+  }) => void,
+): void
+```
+
+### 触发时机
+
+| 时机 | 是否触发 |
+|---|---|
+| 字段 init / mount | ❌ 不跑（回显安全，与 `onFieldValueChange` 一致） |
+| `keys` 中任一字段 value 变化 | ✅ 跑 |
+| 非 `keys` 字段变化 | ❌ 不跑 |
+
+### 示例：物流费依赖城市 + 地址 + 物品
+
+```jsx
+effects={$ => {
+  // senderCity / senderAddress / logisticsItemDTOS 任一变化都重算物流费
+  $.onFieldsValueChange(
+    ['senderCity', 'senderAddress', 'logisticsItemDTOS'],
+    ({ values }) => {
+      updateLogisticsCost(values.senderCity, values.senderAddress, values.logisticsItemDTOS);
+    },
+  );
+}}
+```
+
+任一依赖变化 → `cb` 重跑，`values` 是三个字段最新值的快照。比写三个
+`onFieldValueChange` 各自调同一个函数更清晰，也少两份注册。
+
+### 与相关 helper 的区别
+
+| | `onFieldsValueChange` | `onFieldValueChange` | `onFieldReact` |
+|---|---|---|---|
+| 监听字段数 | 多个（任一变化触发） | 单个 | 单个 |
+| 初始化执行 | ❌ | ❌ | ✅ |
+| 追踪范围 | value | value | 所有 observable（value/visible/…） |
+| 典型用途 | 多依赖联动（重算/重查） | 单字段自定义联动 | 值驱动显隐（初始也生效） |
+
+> 口诀：**多字段任一变化 → `onFieldsValueChange`；单字段只要变化 → `onFieldValueChange`；
+> 初始化也要生效 → `onFieldReact`**。需要驯服高频触发（如发请求前防抖）时，在 `cb`
+> 内部配合 `$.debounce` 使用。
+
+---
+
 ## `$.onEachRowChange` — 数组按行单 key 联动
 
 :::tip TL;DR
-数组字段(Table / ArrayItems)每行的某个 key 变化时,基于该行其他 key 做联动。`pre` 是数组字段名,`key` 是监听的 key。`setFieldState(key, {value})` 派生值进 `form.values` 叶子(只读派生列也能提交)。多 key 用 `onEachRowMultiChange`。
+数组字段(Table / ArrayItems)每行的某个 key 变化时,基于该行其他 key 做联动。`pre` 是数组字段名,`key` 是监听的 key。`setFieldState(key, {value})` 派生值进 `form.values` 叶子(只读派生列也能提交)。**只在变化时触发,初始化不跑**——派生列的初始值在 initialValues 里种好,本 helper 负责此后维护。多 key 用 `onEachRowMultiChange`。
 :::
 
 当数组字段（Table / ArrayItems）里**每一行的某个 key 变化时**，基于该行其他 key
@@ -364,15 +428,25 @@ setFieldState('total', { value: qty * price });                 // 只派生值
 setFieldState('discount', { visible: hasDiscount, required: hasDiscount }); // 改显隐 + 必填
 ```
 
-> **初始触发**：每行挂载时 `cb` 也会跑一次（不只等第一次变化），所以派生值在初始就有，
-> 不用手动播种。
+> **初始化不触发**：`cb` 只在 `key` 值变化时跑，不在行挂载时跑（与
+> `onFieldValueChange` 一致）。派生列的**初始值要自己在 initialValues 里种好**，
+> 本 helper 负责此后随变化维护。把计算抽成函数可避免 initialValues 与 effect 两处漂移：
+>
+> ```jsx
+> const subtotal = (r) => (Number(r.qty) || 0) * (Number(r.price) || 0);
+> const initialValues = { rows: rawRows.map((r) => ({ ...r, subtotal: subtotal(r) })) };
+> // effect 只管变化后维护
+> $.onEachRowChange('rows', 'qty', ({ index, setFieldState }) => { /* ... */ });
+> ```
+>
+> 需要 init 也执行时用 `onFieldReact`。
 
 ---
 
 ## `$.onEachRowMultiChange` — 数组按行多 key 联动
 
 :::tip TL;DR
-`onEachRowChange` 的多 key 版本——监听一行里多个 key,任一变化触发,`cb` 拿到所有监听 key 的值。比写多个 `onEachRowChange` 省,一次注册多 key 任一变化都触发。
+`onEachRowChange` 的多 key 版本——监听一行里多个 key,任一变化触发,`cb` 拿到所有监听 key 的值。比写多个 `onEachRowChange` 省,一次注册多 key 任一变化都触发。**只在变化时触发,初始化不跑**——派生列初始值在 initialValues 种好。
 :::
 
 `onEachRowChange` 的多 key 版本：监听一行里多个 key，任一变化触发，cb 拿到所有监听
@@ -407,7 +481,7 @@ effects={$ => {
 ```
 
 比写两个 `onEachRowChange` 更省——一次注册，多 key 任一变化都触发。`setFieldState` 的
-`partial` 分流、`value` 持久语义与初始触发同 `onEachRowChange`（见上表）。
+`partial` 分流、`value` 持久语义同 `onEachRowChange`（见上表）。初始化同样不触发——派生列初始值在 initialValues 种好，本 helper 负责变化后维护。
 
 ---
 
@@ -593,8 +667,9 @@ effects={$ => {
 | `$.linkedFieldProps` | 依赖字段值变化 | 派生 options/disabled（进 componentProps）、visible/required（进字段 state） |
 | `$.onFieldReact` | 字段 init 跑一次 + 任一 observable 变化 | 值驱动显隐/联动 props（**初始也生效**） |
 | `$.onFieldValueChange` | 字段 value 变化（**初始化不跑**） | 自定义联动（设值/显隐），只关心变化 |
-| `$.onEachRowChange` | 数组行内单 key 变化 | 按行联动 |
-| `$.onEachRowMultiChange` | 数组行内多 key 任一变化 | 按行多 key 联动 |
+| `$.onFieldsValueChange` | 多字段任一 value 变化（**初始化不跑**） | 多依赖联动（重算/重查），一次拿全部依赖值 |
+| `$.onEachRowChange` | 数组行内单 key 值变化（**初始化不跑**） | 按行联动（派生列初始值在 initialValues 种好） |
+| `$.onEachRowMultiChange` | 数组行内多 key 任一值变化（**初始化不跑**） | 按行多 key 联动（派生列初始值在 initialValues 种好） |
 | `$.clearOn` | 依赖字段值变化（**初始化不跑**） | 级联清空（回显安全） |
 | `$.debounce` | 主动调用（trailing-edge） | 联动防抖（远程搜索 / 输入联想） |
 | `$.setVisible` / `$.setRequired` / `$.setEditable` | 主动调用 | 改字段 visible/required/editable（`setFieldState` 语义糖） |

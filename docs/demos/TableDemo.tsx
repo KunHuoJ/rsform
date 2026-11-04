@@ -8,6 +8,7 @@ interface Row {
     qty: number;
     price: number;
     status: string;
+    subtotal?: number;
 }
 
 const STATUS = [
@@ -16,14 +17,16 @@ const STATUS = [
     { label: '已退回', value: 'rejected' },
 ];
 
-const DEFAULT_ROW: Row = { name: '', qty: 1, price: 0, status: 'pending' };
+const subtotal = (r: Pick<Row, 'qty' | 'price'>) => (Number(r.qty) || 0) * (Number(r.price) || 0);
+
+const DEFAULT_ROW: Row = { name: '', qty: 1, price: 0, status: 'pending', subtotal: 0 };
 
 const INITIAL_ROWS: Row[] = [
     { name: '组件 A', qty: 2, price: 9.5, status: 'done' },
     { name: '组件 B', qty: 1, price: 19.0, status: 'pending' },
     { name: '组件 C', qty: 5, price: 4.25, status: 'done' },
     { name: '组件 D', qty: 3, price: 7.75, status: 'rejected' },
-];
+].map((r) => ({ ...r, subtotal: subtotal(r) }));
 
 /**
  * 添加行按钮：用 useForm 拿到 form，往数组追加一行默认值。
@@ -87,6 +90,12 @@ export function TableDemo(): React.ReactElement {
             onSubmit={(values) => {
                 setResult(JSON.stringify(values, null, 2));
             }}
+            effects={($) => {
+                $.onEachRowMultiChange('rows', ['qty', 'price'], ({ values, setFieldState }) => {
+                    const sub = (Number(values.qty) || 0) * (Number(values.price) || 0);
+                    setFieldState('subtotal', { value: sub });
+                });
+            }}
         >
             <Form.Table<Row>
                 name="rows"
@@ -125,10 +134,6 @@ export function TableDemo(): React.ReactElement {
                         dataIndex: 'subtotal',
                         width: 100,
                         editable: false,
-                        render: (_v: any, record: Row) => {
-                            const sub = (Number(record.qty) || 0) * (Number(record.price) || 0);
-                            return <span>{sub.toFixed(2)}</span>;
-                        },
                     },
                     {
                         // 操作列：用 render 的 actions 自定义——上移/下方插入/删除

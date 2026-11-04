@@ -1,5 +1,5 @@
 import type { DataField, Form as FormilyForm, GeneralField } from '@formily/core';
-import { onFieldMount, onFieldValueChange } from '@formily/core';
+import { onFieldValueChange } from '@formily/core';
 import { parseRowIndex } from '../shared/paths';
 
 /**
@@ -44,9 +44,9 @@ export function onEachRowChange(form: FormilyForm, pre: string, key: string, cb:
         });
     };
     onFieldValueChange(pattern, handler);
-    // 在每一行的 `key` 字段挂载时触发一次，使 cb 在初始时就运行，
-    // 而不仅仅在首次变更时运行。
-    onFieldMount(pattern, handler);
+    // 仅在值变化时触发（与 onFieldValueChange 一致，初始化不跑）。
+    // 派生行字段（如 total = qty * price）的初始值应在 initialValues 中种好，
+    // 本 helper 负责此后随变化维护。需要 init 也执行时用 onFieldReact。
 }
 
 /** 两个数组 helper 共用的行 state 应用器。 */

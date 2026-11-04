@@ -1,5 +1,5 @@
 import type { DataField, Form as FormilyForm, GeneralField } from '@formily/core';
-import { onFieldMount, onFieldValueChange } from '@formily/core';
+import { onFieldValueChange } from '@formily/core';
 import { parseRowIndex } from '../shared/paths';
 import { applyRowState } from './onEachRowChange';
 
@@ -56,7 +56,7 @@ export function onEachRowMultiChange(
     for (const triggerKey of keys) {
         const pattern = `${pre}.*.${triggerKey}`;
         onFieldValueChange(pattern, (field: GeneralField) => run(field, triggerKey));
-        // 在每一行挂载时触发一次，使派生值在初始时就被计算出来。
-        onFieldMount(pattern, (field: GeneralField) => run(field, triggerKey));
+        // 仅在值变化时触发（与 onFieldValueChange 一致，初始化不跑）。
+        // 派生行字段的初始值应在 initialValues 中种好，本 helper 负责此后随变化维护。
     }
 }
