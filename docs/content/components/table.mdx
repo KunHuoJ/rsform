@@ -300,116 +300,9 @@ import { Form } from 'rsform';
 
 ## 自定义控件
 
-`control` 有三种写法，按场景选最顺手的即可。**三种都共享同一份性能契约**——CellBridge 照样注入 `value` / `onChange`、照样只订阅叶子、照样支持 `validator` 与 `onFieldValueChange` effects。自定义控件**无需感知 Formily/rsform**，只要是个接收 `value` / `onChange` 的普通受控组件即可。
+列 `control` 支持三种写法（传组件类型 / 注册字符串 key / 传元素），自定义控件只需是接收 `value` / `onChange` 的普通受控组件，无需感知 Formily/rsform。详见 [自定义控件](/components/custom-controls)。
 
-### 1. 传组件类型（最符合 React 习惯）
-
-直接把组件类型给 `control`，CellBridge 渲染 `<MyInput value onChange {...controlProps} />`。适合「控件 + 配置 props」的场景，复用时不必注册：
-
-```tsx title="control 传组件类型"
-import { CompanyPicker } from './CompanyPicker';
-
-const columns = [
-    {
-        title: '供应商',
-        dataIndex: 'supplier',
-        width: 120,
-        control: CompanyPicker,
-        controlProps: { companies: COMPANY_LIST, multiple: false },
-    },
-];
-```
-
-### 2. 注册字符串 key（跨多个表格复用）
-
-和内置 `'input'` / `'select'` 一样，注册一次到处用，列定义里只写字符串最干净：
-
-```tsx title="registerControl 注册字符串 key"
-import { registerControl } from 'rsform';
-import { CompanyPicker } from './CompanyPicker';
-
-registerControl('companyPicker', CompanyPicker);
-
-// 之后任意表格都能用
-const columns = [
-    { title: '供应商', dataIndex: 'supplier', width: 120, control: 'companyPicker', controlProps: { companies: COMPANY_LIST } },
-];
-```
-
-内置 key：`'input'` / `'inputNumber'` / `'select'` / `'radioGroup'` / `'switch'` / `'date'`（`'date'` 是存 ISO 字符串、边界转 Dayjs 的 `DateCell`，避免 dayjs 被 Formily 响应式序列化）。
-
-### 3. 传元素（一次性）
-
-适合「这个控件只用在这一个表格、不想单独抽组件」的临时场景。CellBridge 用 `cloneElement` 注入 `value` / `onChange`，`controlProps` 也会展开进去（同名 prop 以 `controlProps` 为准）：
-
-```tsx title="control 传元素"
-const columns = [
-    { title: '供应商', dataIndex: 'supplier', width: 120, control: <CompanyPicker companies={COMPANY_LIST} /> },
-];
-```
-
-### 自定义控件约定
-
-接收 `value`（当前值）与 `onChange`（写回新值）。`onChange` 传**裸值**或 **event**（`e.target.value`）都行，CellBridge 内部已处理。
-
-<details>
-<summary>完整示例：点文本 → 弹窗选 → 确定 → 回写</summary>
-
-```tsx title="CompanyPicker：弹窗选择并回写单元格"
-import * as React from 'react';
-import { Modal, Radio } from 'antd';
-
-const COMPANIES = [
-    { label: '阿里巴巴', value: 'ali' },
-    { label: '字节跳动', value: 'bytedance' },
-    { label: '小红书', value: 'xhs' },
-];
-
-export function CompanyPicker({ value, onChange, companies = COMPANIES }: any) {
-    const [open, setOpen] = React.useState(false);
-    const [picked, setPicked] = React.useState(value);
-    React.useEffect(() => {
-        if (open) setPicked(value);
-    }, [open, value]);
-
-    const label = companies.find((c) => c.value === value)?.label ?? value ?? '请选择';
-
-    return (
-        <>
-            <a onClick={() => setOpen(true)} style={{ display: 'block', width: '100%' }}>
-                {label}
-            </a>
-            <Modal
-                title="选择供应商"
-                open={open}
-                onCancel={() => setOpen(false)}
-                onOk={() => {
-                    onChange(picked); // 回写——只更新这一格
-                    setOpen(false);
-                }}
-            >
-                <Radio.Group
-                    value={picked}
-                    onChange={(e) => setPicked(e.target.value)}
-                    style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 0' }}
-                >
-                    {companies.map((c) => (
-                        <Radio key={c.value} value={c.value}>
-                            {c.label}
-                        </Radio>
-                    ))}
-                </Radio.Group>
-            </Modal>
-        </>
-    );
-}
-```
-
-</details>
-
-:::warning 类实例边界转换铁律
-若你的控件内部用的是**类实例**（dayjs、moment 等），不要让实例进 `form.values`——Formily 的响应式 Proxy 会把类实例序列化成字符串。仿照内置 `DateCell`：存原始值（ISO 字符串、number、boolean、普通对象 / 数组都安全），在控件边界做 `string ↔ 实例` 转换。
-:::
+内置 key：`'input'` / `'inputNumber'` / `'select'` / `'radioGroup'` / `'switch'` / `'date'`。
 
 ## Table props
 
@@ -493,4 +386,4 @@ function Summary() {
 
 - [表格性能压测](/components/table-perf) — 50×20 大表格压测
 - [可增删列表](/components/array-items) — 轻量列表增删
-- [API 参考](/advanced/api) — `Form.Table` / `RsfTableColumn` 完整 props
+- [API 参考](/api/api) — `Form.Table` / `RsfTableColumn` 完整 props

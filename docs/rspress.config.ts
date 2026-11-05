@@ -56,6 +56,7 @@ export default defineConfig({
                 items: [
                     { text: '基础表单', link: '/components/basic' },
                     { text: '订阅表单值（Form.Consumer）', link: '/components/consumer' },
+                    { text: '自定义控件', link: '/components/custom-controls' },
                     { text: '草稿自动保存', link: '/components/draft' },
                     { text: '可增删列表（ArrayItems）', link: '/components/array-items' },
                     { text: '可编辑表格', link: '/components/table' },

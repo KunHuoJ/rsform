@@ -55,16 +55,17 @@ export default function App() {
 
 ## 加联动
 
-Effect 驱动联动：在 `effects` 回调里用 `onFieldReact` 声明字段间联动。
+Effect 驱动联动：在 `effects` 回调里用 `$.onFieldReact` 声明字段间联动——回调在字段**初始化时跑一次**，之后字段值变化再跑（init + 变化都执行）。
 
 ```tsx title="字段联动"
-import { Form, onFieldReact } from 'rsform';
+import {Form} from 'rsform';
 
 <Form
-    effects={() => {
-        // 选了「其他」就显示补充输入框
-        onFieldReact('other_reason', (field) => {
-            field.visible = field.query('reason').value() === '其他';
+    effects={$ => {
+        // 监听驱动方 reason：选了「其他」就显示补充输入框
+        // onFieldReact 在 reason 初始 + 每次变化时都跑，所以回显场景也生效
+        $.onFieldReact('reason', (reasonField) => {
+            $.setVisible('other_reason', reasonField.value === '其他');
         });
     }}
     onSubmit={(values) => console.log(values)}
@@ -72,8 +73,8 @@ import { Form, onFieldReact } from 'rsform';
     <Form.Field name="reason" label="原因">
         <Form.Select
             options={[
-                { label: '个人原因', value: 'personal' },
-                { label: '其他', value: '其他' },
+                {label: '个人原因', value: 'personal'},
+                {label: '其他', value: '其他'},
             ]}
         />
     </Form.Field>
@@ -85,7 +86,7 @@ import { Form, onFieldReact } from 'rsform';
 ```
 
 :::tip
-`onFieldReact` 里读了哪个字段，Formily 响应式引擎就自动订阅它，无需手动声明依赖。
+`onFieldReact` 回调里读了哪个字段（`reasonField.value`），Formily 响应式引擎就自动订阅它，无需手动声明依赖。
 :::
 
 ## 主题定制
@@ -101,9 +102,3 @@ import { Form, onFieldReact } from 'rsform';
 ```
 
 完整变量清单见 [主题变量](/theme/tokens)。
-
-## 下一步
-
-- [介绍](/intro/intro) — rsform 的定位与架构
-- [基础表单](/components/basic) — 自动注入、提交校验、错误展示
-- [Effects 详解](/advanced/effects-detail) — 全部 effects helper

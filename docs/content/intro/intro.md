@@ -40,7 +40,7 @@ rsform 不是替代 antd 控件，而是替代 antd `Form` 这一层。控件仍
 - **Effect 驱动联动** — 在 `effects` 回调里用 `$` helper 声明字段联动、跨字段校验、级联派生
 - **自动注入 Field** — 控件丢进 `Form.Field`，`value`/`onChange` 自动流转，零样板
 - **高性能表格** — 单元格非 Formily Field，编辑一格只重渲染该格，N×M 不卡
-- **ArrayItems 列表** — 增删、上下移开箱即用，零拖拽依赖
+- **ArrayItems 列表** — 增删、上下移开箱即用
 - **草稿恢复** — `useFormDraft` 自动保存 / 恢复表单值
 - **统一入口** — `import { Form } from 'rsform'` 一个 `Form` 拿到全部语法糖
 
@@ -77,5 +77,3 @@ Formily 响应式引擎自动追踪依赖：你在 `effects` 里读了哪个字�
 ## 下一步
 
 - [快速上手](/intro/quickstart) — 从零搭建一个完整表单
-- [基础表单](/components/basic) — 自动注入与提交校验
-- [可编辑表格](/components/table) — 单元格级渲染

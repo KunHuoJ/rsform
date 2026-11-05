@@ -1,0 +1,145 @@
+---
+title: 自定义控件
+description: rsform 控件的 value/onChange 契约与三种接入方式
+---
+
+# 自定义控件
+
+rsform 的控件**无需感知 Formily/rsform**——只要是一个接收 `value` / `onChange` 的普通受控组件即可。`Form.Field` 用子元素、`Form.Table` 列用 `control` prop，底层都走同一份 `commonMap` 桥接，自动注入 `value` / `onChange`，无需手写受控样板。
+
+本页讲清两件事：
+
+1. **控件契约** — 接收什么 props、`onChange` 怎么传、类实例边界怎么处理
+2. **在 Table 列里接入** — `control` prop 的三种写法（传组件类型 / 注册字符串 key / 传元素）
+
+## 控件契约
+
+接收 `value`（当前值）与 `onChange`（写回新值）。`onChange` 传**裸值**或 **event**（`e.target.value`）都行，rsform 内部已处理。
+
+```tsx title="一个最朴素的受控控件"
+export function MyInput({ value, onChange }: any) {
+    return <input value={value ?? ''} onChange={(e) => onChange(e.target.value)} />;
+}
+```
+
+没有 Formily import、没有 rsform import——任意满足这个契约的组件都能用。
+
+:::warning 类实例边界转换铁律
+若你的控件内部用的是**类实例**（dayjs、moment 等），不要让实例进 `form.values`——Formily 的响应式 Proxy 会把类实例序列化成字符串。仿照内置 `DateCell`：存原始值（ISO 字符串、number、boolean、普通对象 / 数组都安全），在控件边界做 `string ↔ 实例` 转换。
+:::
+
+## 在 Table 列里接入：`control` 的三种写法
+
+`Form.Table` 列定义里的 `control` 有三种写法，按场景选最顺手的即可。**三种都共享同一份性能契约**——CellBridge 照样注入 `value` / `onChange`、照样只订阅叶子、照样支持 `validator` 与 `onFieldValueChange` effects。
+
+> 下面三种写法都用同一个 `CompanyPicker`（点文本 → 弹窗选 → 确定 → 回写单元格）。它的**完整定义见本页末尾「CompanyPicker 完整示例」折叠块**——一个只接收 `value` / `onChange` 的普通受控组件，没有任何 Formily/rsform API。
+
+### 1. 传组件类型（最符合 React 习惯）
+
+直接把组件类型给 `control`，CellBridge 渲染 `<MyInput value onChange {...controlProps} />`。适合「控件 + 配置 props」的场景，复用时不必注册：
+
+```tsx title="control 传组件类型"
+import { CompanyPicker } from './CompanyPicker'; // 定义见本页末尾「CompanyPicker 完整示例」
+
+const columns = [
+    {
+        title: '供应商',
+        dataIndex: 'supplier',
+        width: 120,
+        control: CompanyPicker,
+        controlProps: { companies: COMPANY_LIST, multiple: false },
+    },
+];
+```
+
+### 2. 注册字符串 key（跨多个表格复用）
+
+和内置 `'input'` / `'select'` 一样，注册一次到处用，列定义里只写字符串最干净：
+
+```tsx title="registerControl 注册字符串 key"
+import { registerControl } from 'rsform';
+import { CompanyPicker } from './CompanyPicker';
+
+registerControl('companyPicker', CompanyPicker);
+
+// 之后任意表格都能用
+const columns = [
+    { title: '供应商', dataIndex: 'supplier', width: 120, control: 'companyPicker', controlProps: { companies: COMPANY_LIST } },
+];
+```
+
+内置 key：`'input'` / `'inputNumber'` / `'select'` / `'radioGroup'` / `'switch'` / `'date'`（`'date'` 是存 ISO 字符串、边界转 Dayjs 的 `DateCell`，避免 dayjs 被 Formily 响应式序列化）。
+
+### 3. 传元素（一次性）
+
+适合「这个控件只用在这一个表格、不想单独抽组件」的临时场景。CellBridge 用 `cloneElement` 注入 `value` / `onChange`，`controlProps` 也会展开进去（同名 prop 以 `controlProps` 为准）：
+
+```tsx title="control 传元素"
+const columns = [
+    { title: '供应商', dataIndex: 'supplier', width: 120, control: <CompanyPicker companies={COMPANY_LIST} /> },
+];
+```
+
+## CompanyPicker 完整示例
+
+一个只接收 `value` / `onChange` 的普通受控组件：点文本 → 弹窗选 → 确定 → 回写。没有任何 Formily/rsform API。
+
+<details>
+<summary><strong>CompanyPicker：点文本 → 弹窗选 → 确定 → 回写</strong></summary>
+
+```tsx title="CompanyPicker：弹窗选择并回写单元格"
+import * as React from 'react';
+import { Modal, Radio } from 'antd';
+
+const COMPANIES = [
+    { label: '阿里巴巴', value: 'ali' },
+    { label: '字节跳动', value: 'bytedance' },
+    { label: '小红书', value: 'xhs' },
+];
+
+export function CompanyPicker({ value, onChange, companies = COMPANIES }: any) {
+    const [open, setOpen] = React.useState(false);
+    const [picked, setPicked] = React.useState(value);
+    React.useEffect(() => {
+        if (open) setPicked(value);
+    }, [open, value]);
+
+    const label = companies.find((c) => c.value === value)?.label ?? value ?? '请选择';
+
+    return (
+        <>
+            <a onClick={() => setOpen(true)} style={{ display: 'block', width: '100%' }}>
+                {label}
+            </a>
+            <Modal
+                title="选择供应商"
+                open={open}
+                onCancel={() => setOpen(false)}
+                onOk={() => {
+                    onChange(picked); // 回写——只更新这一格
+                    setOpen(false);
+                }}
+            >
+                <Radio.Group
+                    value={picked}
+                    onChange={(e) => setPicked(e.target.value)}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 0' }}
+                >
+                    {companies.map((c) => (
+                        <Radio key={c.value} value={c.value}>
+                            {c.label}
+                        </Radio>
+                    ))}
+                </Radio.Group>
+            </Modal>
+        </>
+    );
+}
+```
+
+</details>
+
+## 下一步
+
+- [可编辑表格](/components/table) — `control` 在列定义里的使用、列 `render` / 行操作 / 校验
+- [API 参考](/api/api) — `registerControl` / `RsfTableColumn` 完整定义
