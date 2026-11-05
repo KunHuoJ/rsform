@@ -20,6 +20,11 @@
         "activeMatch": "/advanced"
     },
     {
+        "text": "API参考",
+        "link": "/api/api",
+        "activeMatch": "/api"
+    },
+    {
         "text": "主题",
         "link": "/theme/tokens",
         "activeMatch": "/theme"

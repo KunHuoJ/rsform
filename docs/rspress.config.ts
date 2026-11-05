@@ -69,7 +69,6 @@ export default defineConfig({
                 items: [
                     { text: 'Effects 详解', link: '/advanced/effects-detail' },
                     { text: '迁移指南', link: '/advanced/migration' },
-                    { text: 'API 参考', link: '/advanced/api' },
                 ],
             },
         ],
@@ -77,6 +76,12 @@ export default defineConfig({
             {
                 text: '演练场',
                 items: [{ text: '综合样板间', link: '/playground/playground' }],
+            },
+        ],
+        '/api': [
+            {
+                text: 'API参考',
+                items: [{ text: 'API参考', link: '/api/api' }],
             },
         ],
         '/theme': [
